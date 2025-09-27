@@ -1,5 +1,5 @@
 {
-  "name": "EcoMi",
+  "name": "Eco Mi",
   "slug": "EcoMi",
   "scheme": "ecomi",
   "version": "1.0.0",
@@ -11,10 +11,12 @@
   },
   "newArchEnabled": true,
   "jsEngine": "hermes",
-  "assetBundlePatterns": ["**/*"],
+  "assetBundlePatterns": [
+    "**/*"
+  ],
   "android": {
     "icon": "./assets/images/app-icon-android-legacy.png",
-    "package": "com.ecomi",
+    "package": "com.frankcalise.ecomi",
     "adaptiveIcon": {
       "foregroundImage": "./assets/images/app-icon-android-adaptive-foreground.png",
       "backgroundImage": "./assets/images/app-icon-android-adaptive-background.png"
@@ -25,7 +27,7 @@
   "ios": {
     "icon": "./assets/images/app-icon-ios.png",
     "supportsTablet": true,
-    "bundleIdentifier": "com.ecomi"
+    "bundleIdentifier": "com.frankcalise.ecomi"
   },
   "web": {
     "favicon": "./assets/images/app-icon-web-favicon.png",
@@ -61,6 +63,10 @@
   "extra": {
     "ignite": {
       "version": "11.1.3"
+    },
+    "router": {},
+    "eas": {
+      "projectId": "a7ae3db1-a5a2-4deb-ba44-ffa09d58aead"
     }
   }
 }
