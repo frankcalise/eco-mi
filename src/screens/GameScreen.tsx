@@ -425,6 +425,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "600",
+    fontFamily: "Oxanium-SemiBold",
   },
   centerCircle: {
     alignItems: "center",
@@ -443,7 +444,7 @@ const styles = StyleSheet.create({
   centerText: {
     color: "white",
     fontSize: 10,
-    fontWeight: "bold",
+    fontFamily: "Oxanium-Regular",
   },
   container: {
     alignItems: "center",
@@ -494,7 +495,7 @@ const styles = StyleSheet.create({
   gameOverText: {
     color: "#ef4444",
     fontSize: 20,
-    fontWeight: "bold",
+    fontFamily: "Oxanium-Bold",
     marginBottom: 8,
   },
   header: {
@@ -504,7 +505,7 @@ const styles = StyleSheet.create({
   highScoreText: {
     color: "#fbbf24",
     fontSize: 16,
-    fontWeight: "bold",
+    fontFamily: "Oxanium-Bold",
     marginTop: 8,
   },
   playAgainButton: {
@@ -551,6 +552,7 @@ const styles = StyleSheet.create({
   },
   showingText: {
     color: "#fbbf24",
+    fontFamily: "Oxanium-Regular",
   },
   soundButton: {
     alignItems: "center",
@@ -577,17 +579,19 @@ const styles = StyleSheet.create({
   statusText: {
     color: "#a0a0a0",
     fontSize: 16,
+    fontFamily: "Oxanium-Regular",
     textAlign: "center",
   },
   subtitle: {
     color: "#a0a0a0",
     fontSize: 16,
+    fontFamily: "Oxanium-Medium",
     marginTop: 5,
   },
   title: {
     color: "white",
     fontSize: 48,
-    fontWeight: "bold",
+    fontFamily: "Oxanium-Bold",
     letterSpacing: 4,
   },
   topLeft: {
@@ -602,5 +606,6 @@ const styles = StyleSheet.create({
   },
   waitingText: {
     color: "#22c55e",
+    fontFamily: "Oxanium-Regular",
   },
 })
