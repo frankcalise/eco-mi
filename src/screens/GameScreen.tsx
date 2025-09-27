@@ -7,11 +7,10 @@ import {
   Dimensions,
   StatusBar,
   Vibration,
-  Platform,
 } from "react-native"
-import { Audio } from "expo-av"
 import { Ionicons } from "@expo/vector-icons"
 
+import { useAudioTones } from "@/hooks/useAudioTones"
 import { saveString, loadString } from "@/utils/storage"
 
 type GameState = "idle" | "showing" | "waiting" | "gameover"
@@ -60,83 +59,22 @@ export function GameScreen() {
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [highScore, setHighScore] = useState(0)
 
-  const soundObjects = useRef<{ [key: string]: Audio.Sound }>({})
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const audioContextRef = useRef<AudioContext | null>(null)
-  const oscillatorRef = useRef<OscillatorNode | null>(null)
-  const gainNodeRef = useRef<GainNode | null>(null)
+
+  // Use our new audio hook
+  const { initialize, cleanup, playSound, startContinuousSound, stopContinuousSound } =
+    useAudioTones(colorMap, soundEnabled)
 
   // Initialize audio and load high score
   useEffect(() => {
-    if (Platform.OS === "web") {
-      initializeWebAudio()
-    } else {
-      initializeAudio()
-    }
+    initialize()
     loadHighScore()
 
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
-      if (Platform.OS === "web") {
-        cleanupWebAudio()
-      } else {
-        cleanupAudio()
-      }
+      cleanup()
     }
-  }, [])
-
-  const initializeWebAudio = () => {
-    try {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
-    } catch (error) {
-      console.log("Web Audio API not supported:", error)
-    }
-  }
-
-  const cleanupWebAudio = () => {
-    if (audioContextRef.current) {
-      audioContextRef.current.close()
-    }
-  }
-
-  const initializeAudio = async () => {
-    try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        staysActiveInBackground: false,
-        playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
-      })
-
-      // Create sound objects for each color
-      for (const color of colors) {
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: generateToneUri(colorMap[color].sound) },
-          { shouldPlay: false, isLooping: true },
-        )
-        soundObjects.current[color] = sound
-      }
-    } catch (error) {
-      console.log("Audio initialization failed:", error)
-    }
-  }
-
-  const cleanupAudio = async () => {
-    for (const sound of Object.values(soundObjects.current)) {
-      try {
-        await sound.unloadAsync()
-      } catch (error) {
-        console.log("Error unloading sound:", error)
-      }
-    }
-  }
-
-  const generateToneUri = (frequency: number): string => {
-    // For web, we'll use Web Audio API directly, so this won't be used
-    // For native, you'd want to use pre-generated audio files
-    return ""
-  }
+  }, [initialize, cleanup])
 
   const loadHighScore = async () => {
     try {
@@ -157,158 +95,20 @@ export function GameScreen() {
     }
   }
 
-  const playSound = useCallback(
-    async (color: Color, duration: number = 600) => {
-      if (!soundEnabled) return
-
-      if (Platform.OS === "web") {
-        playWebSound(colorMap[color].sound, duration)
-        return
-      }
-
-      if (!soundObjects.current[color]) return
-
-      try {
-        const sound = soundObjects.current[color]
-        await sound.setPositionAsync(0)
-        await sound.playAsync()
-
-        setTimeout(async () => {
-          try {
-            await sound.pauseAsync()
-          } catch (error) {
-            console.log("Error stopping sound:", error)
-          }
-        }, duration)
-      } catch (error) {
-        console.log("Error playing sound:", error)
-      }
-    },
-    [soundEnabled],
-  )
-
-  const playWebSound = (frequency: number, duration: number = 600) => {
-    if (!audioContextRef.current) return
-
-    try {
-      const oscillator = audioContextRef.current.createOscillator()
-      const gainNode = audioContextRef.current.createGain()
-
-      oscillator.connect(gainNode)
-      gainNode.connect(audioContextRef.current.destination)
-
-      oscillator.frequency.setValueAtTime(frequency, audioContextRef.current.currentTime)
-      oscillator.type = "sine"
-
-      gainNode.gain.setValueAtTime(0.3, audioContextRef.current.currentTime)
-      gainNode.gain.exponentialRampToValueAtTime(
-        0.01,
-        audioContextRef.current.currentTime + duration / 1000,
-      )
-
-      oscillator.start(audioContextRef.current.currentTime)
-      oscillator.stop(audioContextRef.current.currentTime + duration / 1000)
-    } catch (error) {
-      console.log("Error playing web sound:", error)
-    }
-  }
-
-  const startContinuousSound = useCallback(
-    async (color: Color) => {
-      if (!soundEnabled) return
-
-      if (Platform.OS === "web") {
-        startContinuousWebSound(colorMap[color].sound)
-        return
-      }
-
-      if (!soundObjects.current[color]) return
-
-      try {
-        const sound = soundObjects.current[color]
-        await sound.setPositionAsync(0)
-        await sound.playAsync()
-      } catch (error) {
-        console.log("Error starting continuous sound:", error)
-      }
-    },
-    [soundEnabled],
-  )
-
-  const startContinuousWebSound = (frequency: number) => {
-    if (!audioContextRef.current) return
-
-    // Stop any existing sound
-    stopContinuousWebSound()
-
-    try {
-      const oscillator = audioContextRef.current.createOscillator()
-      const gainNode = audioContextRef.current.createGain()
-
-      oscillator.connect(gainNode)
-      gainNode.connect(audioContextRef.current.destination)
-
-      oscillator.frequency.setValueAtTime(frequency, audioContextRef.current.currentTime)
-      oscillator.type = "sine"
-
-      gainNode.gain.setValueAtTime(0.3, audioContextRef.current.currentTime)
-
-      oscillator.start(audioContextRef.current.currentTime)
-
-      oscillatorRef.current = oscillator
-      gainNodeRef.current = gainNode
-    } catch (error) {
-      console.log("Error starting continuous web sound:", error)
-    }
-  }
-
-  const stopContinuousSound = useCallback(async (color: Color) => {
-    if (Platform.OS === "web") {
-      stopContinuousWebSound()
-      return
-    }
-
-    if (!soundObjects.current[color]) return
-
-    try {
-      const sound = soundObjects.current[color]
-      await sound.pauseAsync()
-    } catch (error) {
-      console.log("Error stopping continuous sound:", error)
-    }
-  }, [])
-
-  const stopContinuousWebSound = () => {
-    if (oscillatorRef.current && gainNodeRef.current && audioContextRef.current) {
-      try {
-        gainNodeRef.current.gain.exponentialRampToValueAtTime(
-          0.01,
-          audioContextRef.current.currentTime + 0.1,
-        )
-        oscillatorRef.current.stop(audioContextRef.current.currentTime + 0.1)
-      } catch (error) {
-        // Oscillator might already be stopped
-      }
-      oscillatorRef.current = null
-      gainNodeRef.current = null
-    }
-  }
-
   const flashButton = useCallback(
     (color: Color, duration: number = 600) => {
       setActiveButton(color)
-      if (Platform.OS === "web") {
-        playWebSound(colorMap[color].sound, duration)
-      } else {
-        playSound(color, duration)
-        Vibration.vibrate(100)
-      }
+      playSound(color, duration)
+      Vibration.vibrate(100)
 
-      timeoutRef.current = setTimeout(() => {
+      // Cast the timeout ID to NodeJS.Timeout
+      const timeout = setTimeout(() => {
         setActiveButton(null)
-      }, duration)
+      }, duration) as unknown as NodeJS.Timeout
+
+      timeoutRef.current = timeout
     },
-    [playSound, playWebSound],
+    [playSound],
   )
 
   const showSequence = useCallback(
@@ -357,17 +157,13 @@ export function GameScreen() {
     setActiveButton(null)
   }, [])
 
-  const handleButtonPress = useCallback(
+  const handleButtonTouch = useCallback(
     (color: Color) => {
       if (gameState !== "waiting") return
 
       setActiveButton(color)
-      if (Platform.OS === "web") {
-        startContinuousWebSound(colorMap[color].sound)
-      } else {
-        startContinuousSound(color)
-        Vibration.vibrate(50)
-      }
+      startContinuousSound(color)
+      Vibration.vibrate(50)
     },
     [gameState, startContinuousSound],
   )
@@ -377,11 +173,7 @@ export function GameScreen() {
       if (gameState !== "waiting") return
 
       setActiveButton(null)
-      if (Platform.OS === "web") {
-        stopContinuousWebSound()
-      } else {
-        stopContinuousSound(color)
-      }
+      stopContinuousSound(color)
 
       const newPlayerSequence = [...playerSequence, color]
       setPlayerSequence(newPlayerSequence)
@@ -429,7 +221,6 @@ export function GameScreen() {
       level,
       showSequence,
       stopContinuousSound,
-      stopContinuousWebSound,
     ],
   )
 
@@ -493,7 +284,7 @@ export function GameScreen() {
             <TouchableOpacity
               key={color}
               style={[getButtonStyle(color), getButtonPosition(color)]}
-              onPressIn={() => handleButtonPress(color)}
+              onPressIn={() => handleButtonTouch(color)}
               onPressOut={() => handleButtonRelease(color)}
               disabled={gameState !== "waiting"}
               activeOpacity={0.8}
