@@ -1,9 +1,13 @@
-import { Platform } from "react-native"
+import { useRef, useCallback } from "react"
+import { AudioContext, GainNode, OscillatorNode } from "react-native-audio-api"
 
-// The platform-specific implementation will be loaded automatically
-// This file serves as the default implementation for non-web platforms
 
-// Define common types for the hook
+// Fast, click-free envelope (tweak to taste)
+const ATTACK_S = 0.01;         // 10 ms fade-in
+const RELEASE_S = 0.02;        // 20 ms fade-out
+const TARGET_GAIN = 0.3;       // peak volume (0..1)
+const EPSILON = 0.0001;        // never ramp to exactly 0 with exponential ramps
+
 export type Color = "red" | "blue" | "green" | "yellow"
 
 export interface ColorMap {
@@ -15,7 +19,7 @@ export interface ColorMap {
   }
 }
 
-export interface AudioTonesHook {
+interface AudioTonesHook {
   /**
    * Initialize audio system
    */
@@ -54,28 +58,214 @@ export interface AudioTonesHook {
 }
 
 /**
- * Hook to handle platform-specific audio implementation for tone generation
- * This hook is used as a default implementation for native platforms
- * The platform-specific implementation (.web.tsx or .native.tsx) will be used automatically
- * based on React Native's platform-specific file resolution
- *
+ * Native implementation of audio tones using react-native-audio-api
  * @param colorMap Color mapping with frequency information
  * @param soundEnabled Whether sound is enabled
  */
-export function useAudioTones(_colorMap: ColorMap, _soundEnabled: boolean): AudioTonesHook {
-  // This implementation is just a placeholder for non-web and non-native platforms
-  // In practice, one of the platform-specific implementations will be used instead
-  const noop = async () => {
-    console.warn("Audio implementation not available for this platform")
-  }
+export function useAudioTones(colorMap: ColorMap, soundEnabled: boolean): AudioTonesHook {
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const oscillatorRef = useRef<OscillatorNode | null>(null)
+  const gainNodeRef = useRef<GainNode | null>(null)
+
+  const initialize = useCallback(async () => {
+    try {
+      audioContextRef.current = new AudioContext()
+      // Some platforms may require a user gesture first; resume just in case
+      // @ts-ignore
+      await audioContextRef.current?.resume?.()
+    } catch (error) {
+      console.log("Audio initialization failed:", error)
+    }
+  }, [])
+
+  const cleanup = useCallback(async () => {
+    if (oscillatorRef.current) {
+      try {
+        oscillatorRef.current.stop()
+        oscillatorRef.current.disconnect()
+      } catch (error) {
+        // ignore
+      }
+      oscillatorRef.current = null
+    }
+    if (gainNodeRef.current) {
+      try {
+        gainNodeRef.current.disconnect()
+      } catch (error) {
+        // ignore
+      }
+      gainNodeRef.current = null
+    }
+    if (audioContextRef.current) {
+      try {
+        await audioContextRef.current.close()
+      } catch (error) {
+        // ignore
+      }
+      audioContextRef.current = null
+    }
+  }, [])
+
+  const playSound = useCallback(
+    async (color: Color, duration: number = 600) => {
+      if (!soundEnabled || !audioContextRef.current) return
+
+      try {
+        const ctx = audioContextRef.current
+        // @ts-ignore
+        await ctx?.resume?.()
+
+        const frequency = colorMap[color].sound
+        const now = ctx.currentTime
+        const durationSeconds = duration / 1000
+
+        const oscillator = ctx.createOscillator()
+        const gain = ctx.createGain()
+
+        oscillator.connect(gain)
+        gain.connect(ctx.destination)
+
+        oscillator.frequency.setValueAtTime(frequency, now)
+        oscillator.type = "sine"
+
+        // Click-free one-shot envelope
+        gain.gain.setValueAtTime(EPSILON, now)
+        gain.gain.exponentialRampToValueAtTime(TARGET_GAIN, now + ATTACK_S)
+        gain.gain.exponentialRampToValueAtTime(EPSILON, now + durationSeconds - RELEASE_S)
+
+        oscillator.start(now)
+        oscillator.stop(now + durationSeconds)
+
+        setTimeout(() => {
+          try { oscillator.disconnect() } catch { }
+          try { gain.disconnect() } catch { }
+        }, duration + 10)
+      } catch (error) {
+        console.log("Error playing sound:", error)
+      }
+    },
+    [colorMap, soundEnabled],
+  )
+
+  const startContinuousSound = useCallback(
+    async (color: Color) => {
+      if (!soundEnabled || !audioContextRef.current) return
+
+      try {
+        const ctx = audioContextRef.current
+        // @ts-ignore
+        await ctx?.resume?.()
+
+        const frequency = colorMap[color].sound
+        const now = ctx.currentTime
+
+        // If we’re already sounding, just retune and ramp to target
+        if (oscillatorRef.current && gainNodeRef.current) {
+          const osc = oscillatorRef.current
+          const gain = gainNodeRef.current
+
+          // Retune smoothly
+          osc.frequency.cancelScheduledValues(now)
+          osc.frequency.setValueAtTime(osc.frequency.value, now)
+          osc.frequency.linearRampToValueAtTime(frequency, now + 0.01)
+
+          // Smooth attack to target (re-press behavior)
+          gain.gain.cancelScheduledValues(now)
+          gain.gain.setValueAtTime(Math.max(gain.gain.value, EPSILON), now)
+          gain.gain.linearRampToValueAtTime(TARGET_GAIN, now + ATTACK_S)
+          return
+        }
+
+        // Create fresh nodes
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+
+        osc.type = "sine"
+        osc.frequency.setValueAtTime(frequency, now)
+
+        // Start silent, then attack
+        gain.gain.setValueAtTime(EPSILON, now)
+        gain.gain.exponentialRampToValueAtTime(TARGET_GAIN, now + ATTACK_S)
+
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(now)
+
+        oscillatorRef.current = osc
+        gainNodeRef.current = gain
+      } catch (error) {
+        console.log("Error starting continuous sound:", error)
+      }
+    },
+    [colorMap, soundEnabled],
+  )
+
+  const stopContinuousSound = useCallback(async (_color: Color) => {
+    const ctx = audioContextRef.current
+    const osc = oscillatorRef.current
+    const gain = gainNodeRef.current
+    if (!ctx || !osc || !gain) return
+
+    try {
+      const now = ctx.currentTime
+
+      // Cancel any pending ramps, then release to near-zero
+      gain.gain.cancelScheduledValues(now)
+      gain.gain.setValueAtTime(Math.max(gain.gain.value, EPSILON), now)
+      // Fast, click-free release
+      gain.gain.exponentialRampToValueAtTime(EPSILON, now + RELEASE_S)
+
+      // Stop just after the release
+      osc.stop(now + RELEASE_S + 0.005)
+
+      // Cleanup after fade completes
+      setTimeout(() => {
+        try { osc.disconnect() } catch { }
+        try { gain.disconnect() } catch { }
+        oscillatorRef.current = null
+        gainNodeRef.current = null
+      }, Math.ceil((RELEASE_S + 0.02) * 1000))
+    } catch {
+      oscillatorRef.current = null
+      gainNodeRef.current = null
+    }
+  }, [])
+
+  const stopContinuousSoundWithFade = useCallback(async (_color: Color, fadeDuration: number = 200) => {
+    const ctx = audioContextRef.current
+    const osc = oscillatorRef.current
+    const gain = gainNodeRef.current
+    if (!ctx || !osc || !gain) return
+
+    try {
+      const now = ctx.currentTime
+      const fadeS = Math.max(fadeDuration / 1000, 0.005)
+
+      gain.gain.cancelScheduledValues(now)
+      gain.gain.setValueAtTime(Math.max(gain.gain.value, EPSILON), now)
+      gain.gain.exponentialRampToValueAtTime(EPSILON, now + fadeS)
+
+      osc.stop(now + fadeS + 0.005)
+
+      setTimeout(() => {
+        try { osc.disconnect() } catch { }
+        try { gain.disconnect() } catch { }
+        oscillatorRef.current = null
+        gainNodeRef.current = null
+      }, Math.ceil((fadeS + 0.02) * 1000))
+    } catch {
+      oscillatorRef.current = null
+      gainNodeRef.current = null
+    }
+  }, [])
 
   return {
-    initialize: noop,
-    cleanup: noop,
-    playSound: async () => noop(),
-    startContinuousSound: async () => noop(),
-    stopContinuousSound: async () => noop(),
-    stopContinuousSoundWithFade: async () => noop(),
+    initialize,
+    cleanup,
+    playSound,
+    startContinuousSound,
+    stopContinuousSound,
+    stopContinuousSoundWithFade,
   }
 }
 
