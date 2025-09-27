@@ -4,7 +4,7 @@ import { ExpoConfig, ConfigContext } from "@expo/config"
  * Use ts-node here so we can use TypeScript for our Config Plugins
  * and not have to compile them to JavaScript
  */
-require("ts-node/register")
+require("tsx/cjs")
 
 /**
  * @param config ExpoConfig coming from the static config app.json if it exists
@@ -13,8 +13,6 @@ require("ts-node/register")
  * https://docs.expo.dev/workflow/configuration/#configuration-resolution-rules
  */
 module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
-  const existingPlugins = config.plugins ?? []
-
   return {
     ...config,
     ios: {
@@ -34,6 +32,5 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
         ],
       },
     },
-    plugins: [...existingPlugins, require("./plugins/withSplashScreen").withSplashScreen],
   }
 }

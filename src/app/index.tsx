@@ -1,5 +1,5 @@
-import { WelcomeScreen } from "@/screens/WelcomeScreen"
+import { GameScreen } from "@/screens/GameScreen"
 
-export default function Index() {
-  return <WelcomeScreen />
+export default function IndexRoute() {
+  return <GameScreen />
 }

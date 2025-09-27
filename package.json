@@ -12,8 +12,7 @@
     "serve:web": "npx serve dist",
     "prebuild:clean": "npx expo prebuild --clean",
     "compile": "tsc --noEmit -p . --pretty",
-    "lint": "eslint . --fix",
-    "lint:check": "eslint .",
+    "lint": "./scripts/tsc-lint-format",
     "align-deps": "npx expo install --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -83,7 +82,7 @@
     "reactotron-react-native": "^5.0.5",
     "reactotron-react-native-mmkv": "^0.2.6",
     "ts-jest": "^29.1.1",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "typescript": "~5.8.3"
   },
   "engines": {

@@ -45,11 +45,11 @@ module.exports = {
             importNames: ["SafeAreaView"],
             message: "Use the SafeAreaView from 'react-native-safe-area-context' instead.",
           },
-          {
-            name: "react-native",
-            importNames: ["Text", "Button", "TextInput"],
-            message: "Use the custom wrapper component from '@/components'.",
-          },
+          // {
+          //   name: "react-native",
+          //   importNames: ["Text", "Button", "TextInput"],
+          //   message: "Use the custom wrapper component from '@/components'.",
+          // },
         ],
       },
     ],
