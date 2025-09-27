@@ -6,9 +6,11 @@ import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-c
 import { initI18n } from "@/i18n"
 import { ThemeProvider } from "@/theme/context"
 import { loadDateFnsLocale } from "@/utils/formatDate"
+import { useWebFonts } from "@/hooks/useWebFonts"
 
 export default function Root() {
   const [isI18nInitialized, setIsI18nInitialized] = useState(false)
+  const { loaded: isFontsLoaded } = useWebFonts()
 
   useEffect(() => {
     initI18n()
@@ -17,7 +19,7 @@ export default function Root() {
   }, [])
 
   const loaded = isI18nInitialized
-  if (!loaded) {
+  if (!loaded || !isFontsLoaded) {
     return null
   }
 
