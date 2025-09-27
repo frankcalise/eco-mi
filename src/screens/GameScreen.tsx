@@ -170,7 +170,7 @@ export function GameScreen() {
 
       // Record the start time of the button press
       buttonPressStartTime.current = Date.now()
-      
+
       setActiveButton(color)
       startContinuousSound(color)
       Vibration.vibrate(50)
@@ -190,8 +190,8 @@ export function GameScreen() {
       if (gameState !== "waiting") return
 
       const currentTime = Date.now()
-      const pressDuration = buttonPressStartTime.current 
-        ? currentTime - buttonPressStartTime.current 
+      const pressDuration = buttonPressStartTime.current
+        ? currentTime - buttonPressStartTime.current
         : 0
 
       // Clear the minimum duration timeout since we're handling the release
@@ -204,11 +204,10 @@ export function GameScreen() {
       // the sound for the remaining time
       if (pressDuration < MIN_TONE_DURATION) {
         const remainingTime = MIN_TONE_DURATION - pressDuration
-        
+
         // Stop the continuous sound with fade-out and play a fixed duration sound for the remaining time
         stopContinuousSoundWithFade(color, 100) // Quick fade-out
-        playSound(color, remainingTime)
-        
+
         // Keep the button active for the remaining time
         setTimeout(() => {
           setActiveButton(null)
@@ -295,6 +294,8 @@ export function GameScreen() {
         return []
     }
   }
+
+
 
   return (
     <View style={styles.container}>
