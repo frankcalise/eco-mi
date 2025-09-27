@@ -18,6 +18,9 @@ type Color = "red" | "blue" | "green" | "yellow"
 
 const colors: Color[] = ["red", "blue", "green", "yellow"]
 
+// Minimum tone duration to match computer sequence duration
+const MIN_TONE_DURATION = 600
+
 const colorMap = {
   red: {
     color: "#ef4444",
@@ -60,9 +63,11 @@ export function GameScreen() {
   const [highScore, setHighScore] = useState(0)
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const buttonPressStartTime = useRef<number | null>(null)
+  const minimumDurationTimeout = useRef<NodeJS.Timeout | null>(null)
 
   // Use our new audio hook
-  const { initialize, cleanup, playSound, startContinuousSound, stopContinuousSound } =
+  const { initialize, cleanup, playSound, startContinuousSound, stopContinuousSound, stopContinuousSoundWithFade } =
     useAudioTones(colorMap, soundEnabled)
 
   // Initialize audio and load high score
@@ -96,7 +101,7 @@ export function GameScreen() {
   }
 
   const flashButton = useCallback(
-    (color: Color, duration: number = 600) => {
+    (color: Color, duration: number = MIN_TONE_DURATION) => {
       setActiveButton(color)
       playSound(color, duration)
       Vibration.vibrate(100)
@@ -154,16 +159,28 @@ export function GameScreen() {
     setLevel(1)
     setScore(0)
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    if (minimumDurationTimeout.current) clearTimeout(minimumDurationTimeout.current)
     setActiveButton(null)
+    buttonPressStartTime.current = null
   }, [])
 
   const handleButtonTouch = useCallback(
     (color: Color) => {
       if (gameState !== "waiting") return
 
+      // Record the start time of the button press
+      buttonPressStartTime.current = Date.now()
+      
       setActiveButton(color)
       startContinuousSound(color)
       Vibration.vibrate(50)
+
+      // Set up a timeout to ensure minimum duration is met
+      // This will be cleared if the user holds the button longer
+      minimumDurationTimeout.current = setTimeout(() => {
+        // If we reach here, the user released the button before minimum duration
+        // The sound should continue playing until minimum duration is complete
+      }, MIN_TONE_DURATION) as unknown as NodeJS.Timeout
     },
     [gameState, startContinuousSound],
   )
@@ -172,8 +189,35 @@ export function GameScreen() {
     (color: Color) => {
       if (gameState !== "waiting") return
 
-      setActiveButton(null)
-      stopContinuousSound(color)
+      const currentTime = Date.now()
+      const pressDuration = buttonPressStartTime.current 
+        ? currentTime - buttonPressStartTime.current 
+        : 0
+
+      // Clear the minimum duration timeout since we're handling the release
+      if (minimumDurationTimeout.current) {
+        clearTimeout(minimumDurationTimeout.current)
+        minimumDurationTimeout.current = null
+      }
+
+      // If the press was shorter than minimum duration, we need to continue playing
+      // the sound for the remaining time
+      if (pressDuration < MIN_TONE_DURATION) {
+        const remainingTime = MIN_TONE_DURATION - pressDuration
+        
+        // Stop the continuous sound with fade-out and play a fixed duration sound for the remaining time
+        stopContinuousSoundWithFade(color, 100) // Quick fade-out
+        playSound(color, remainingTime)
+        
+        // Keep the button active for the remaining time
+        setTimeout(() => {
+          setActiveButton(null)
+        }, remainingTime)
+      } else {
+        // The press was long enough, we can stop with fade-out
+        setActiveButton(null)
+        stopContinuousSoundWithFade(color, 200) // Slightly longer fade-out for held buttons
+      }
 
       const newPlayerSequence = [...playerSequence, color]
       setPlayerSequence(newPlayerSequence)
@@ -220,7 +264,8 @@ export function GameScreen() {
       highScore,
       level,
       showSequence,
-      stopContinuousSound,
+      stopContinuousSoundWithFade,
+      playSound,
     ],
   )
 

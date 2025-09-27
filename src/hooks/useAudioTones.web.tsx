@@ -78,6 +78,25 @@ export function useAudioTones(colorMap: ColorMap, soundEnabled: boolean): AudioT
     }
   }, [])
 
+  const stopContinuousSoundWithFade = useCallback(async (_color: Color, fadeDuration: number = 200) => {
+    if (oscillatorRef.current && gainNodeRef.current && audioContextRef.current) {
+      try {
+        const currentTime = audioContextRef.current.currentTime
+        const fadeTime = fadeDuration / 1000 // Convert to seconds
+        
+        gainNodeRef.current.gain.exponentialRampToValueAtTime(
+          0.01,
+          currentTime + fadeTime,
+        )
+        oscillatorRef.current.stop(currentTime + fadeTime)
+      } catch (_error) {
+        // Oscillator might already be stopped
+      }
+      oscillatorRef.current = null
+      gainNodeRef.current = null
+    }
+  }, [])
+
   const startContinuousSound = useCallback(
     async (color: Color) => {
       if (!soundEnabled || !audioContextRef.current) return
@@ -118,6 +137,7 @@ export function useAudioTones(colorMap: ColorMap, soundEnabled: boolean): AudioT
     playSound,
     startContinuousSound,
     stopContinuousSound,
+    stopContinuousSoundWithFade,
   }
 }
 

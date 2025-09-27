@@ -44,6 +44,13 @@ export interface AudioTonesHook {
    * @param color The color associated with the sound
    */
   stopContinuousSound: (color: Color) => Promise<void>
+
+  /**
+   * Stop a continuous sound with fade-out effect
+   * @param color The color associated with the sound
+   * @param fadeDuration How long the fade-out should take in milliseconds
+   */
+  stopContinuousSoundWithFade: (color: Color, fadeDuration?: number) => Promise<void>
 }
 
 /**
@@ -68,6 +75,7 @@ export function useAudioTones(_colorMap: ColorMap, _soundEnabled: boolean): Audi
     playSound: async () => noop(),
     startContinuousSound: async () => noop(),
     stopContinuousSound: async () => noop(),
+    stopContinuousSoundWithFade: async () => noop(),
   }
 }
 

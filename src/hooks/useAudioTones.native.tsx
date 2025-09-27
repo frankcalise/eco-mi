@@ -102,12 +102,38 @@ export function useAudioTones(colorMap: ColorMap, soundEnabled: boolean): AudioT
     }
   }, [])
 
+  const stopContinuousSoundWithFade = useCallback(async (color: Color, fadeDuration: number = 200) => {
+    if (!soundObjects.current[color]) return
+
+    try {
+      const sound = soundObjects.current[color]
+      const fadeSteps = 10 // Number of volume steps for smooth fade
+      const stepDuration = fadeDuration / fadeSteps
+      const volumeStep = 1.0 / fadeSteps
+
+      // Gradually reduce volume
+      for (let i = fadeSteps; i > 0; i--) {
+        const volume = i * volumeStep
+        await sound.setVolumeAsync(volume)
+        await new Promise(resolve => setTimeout(resolve, stepDuration))
+      }
+
+      // Stop the sound after fade is complete
+      await sound.pauseAsync()
+      // Reset volume for next time
+      await sound.setVolumeAsync(1.0)
+    } catch (error) {
+      console.log("Error stopping continuous sound with fade:", error)
+    }
+  }, [])
+
   return {
     initialize,
     cleanup,
     playSound,
     startContinuousSound,
     stopContinuousSound,
+    stopContinuousSoundWithFade,
   }
 }
 
