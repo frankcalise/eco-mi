@@ -1,19 +1,768 @@
-import { FC } from "react"
-import { Text, TextStyle, View } from "react-native"
+import React, { useState, useEffect, useRef, useCallback } from "react"
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  StatusBar,
+  Vibration,
+  Platform,
+} from "react-native"
+import { Audio } from "expo-av"
+import { Ionicons } from "@expo/vector-icons"
+import { saveString, loadString } from "@/utils/storage"
 
-import { $styles } from "@/theme/styles"
+type GameState = "idle" | "showing" | "waiting" | "gameover"
+type Color = "red" | "blue" | "green" | "yellow"
 
-export const GameScreen: FC = function WelcomeScreen() {
+const colors: Color[] = ["red", "blue", "green", "yellow"]
+
+const colorMap = {
+  red: {
+    color: "#ef4444",
+    activeColor: "#fca5a5",
+    sound: 220,
+    position: "topLeft" as const,
+  },
+  blue: {
+    color: "#3b82f6",
+    activeColor: "#93c5fd",
+    sound: 277,
+    position: "topRight" as const,
+  },
+  green: {
+    color: "#22c55e",
+    activeColor: "#86efac",
+    sound: 330,
+    position: "bottomLeft" as const,
+  },
+  yellow: {
+    color: "#eab308",
+    activeColor: "#fde047",
+    sound: 415,
+    position: "bottomRight" as const,
+  },
+}
+
+const { width, height } = Dimensions.get("window")
+const gameSize = Math.min(width * 0.8, height * 0.5)
+const buttonSize = gameSize * 0.4
+
+export function GameScreen() {
+  const [sequence, setSequence] = useState<Color[]>([])
+  const [playerSequence, setPlayerSequence] = useState<Color[]>([])
+  const [gameState, setGameState] = useState<GameState>("idle")
+  const [level, setLevel] = useState(1)
+  const [score, setScore] = useState(0)
+  const [activeButton, setActiveButton] = useState<Color | null>(null)
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const [highScore, setHighScore] = useState(0)
+
+  const soundObjects = useRef<{ [key: string]: Audio.Sound }>({})
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const oscillatorRef = useRef<OscillatorNode | null>(null)
+  const gainNodeRef = useRef<GainNode | null>(null)
+
+  // Initialize audio and load high score
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      initializeWebAudio()
+    } else {
+      initializeAudio()
+    }
+    loadHighScore()
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      if (Platform.OS === "web") {
+        cleanupWebAudio()
+      } else {
+        cleanupAudio()
+      }
+    }
+  }, [])
+
+  const initializeWebAudio = () => {
+    try {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
+    } catch (error) {
+      console.log("Web Audio API not supported:", error)
+    }
+  }
+
+  const cleanupWebAudio = () => {
+    if (audioContextRef.current) {
+      audioContextRef.current.close()
+    }
+  }
+
+  const initializeAudio = async () => {
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        staysActiveInBackground: false,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      })
+
+      // Create sound objects for each color
+      for (const color of colors) {
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: generateToneUri(colorMap[color].sound) },
+          { shouldPlay: false, isLooping: true },
+        )
+        soundObjects.current[color] = sound
+      }
+    } catch (error) {
+      console.log("Audio initialization failed:", error)
+    }
+  }
+
+  const cleanupAudio = async () => {
+    for (const sound of Object.values(soundObjects.current)) {
+      try {
+        await sound.unloadAsync()
+      } catch (error) {
+        console.log("Error unloading sound:", error)
+      }
+    }
+  }
+
+  const generateToneUri = (frequency: number): string => {
+    // For web, we'll use Web Audio API directly, so this won't be used
+    // For native, you'd want to use pre-generated audio files
+    return ""
+  }
+
+  const loadHighScore = async () => {
+    try {
+      const savedHighScore = loadString("simon-high-score")
+      if (savedHighScore) {
+        setHighScore(parseInt(savedHighScore, 10))
+      }
+    } catch (error) {
+      console.log("Error loading high score:", error)
+    }
+  }
+
+  const saveHighScore = async (score: number) => {
+    try {
+      saveString("simon-high-score", score.toString())
+    } catch (error) {
+      console.log("Error saving high score:", error)
+    }
+  }
+
+  const playSound = useCallback(
+    async (color: Color, duration: number = 600) => {
+      if (!soundEnabled) return
+
+      if (Platform.OS === "web") {
+        playWebSound(colorMap[color].sound, duration)
+        return
+      }
+
+      if (!soundObjects.current[color]) return
+
+      try {
+        const sound = soundObjects.current[color]
+        await sound.setPositionAsync(0)
+        await sound.playAsync()
+
+        setTimeout(async () => {
+          try {
+            await sound.pauseAsync()
+          } catch (error) {
+            console.log("Error stopping sound:", error)
+          }
+        }, duration)
+      } catch (error) {
+        console.log("Error playing sound:", error)
+      }
+    },
+    [soundEnabled],
+  )
+
+  const playWebSound = (frequency: number, duration: number = 600) => {
+    if (!audioContextRef.current) return
+
+    try {
+      const oscillator = audioContextRef.current.createOscillator()
+      const gainNode = audioContextRef.current.createGain()
+
+      oscillator.connect(gainNode)
+      gainNode.connect(audioContextRef.current.destination)
+
+      oscillator.frequency.setValueAtTime(frequency, audioContextRef.current.currentTime)
+      oscillator.type = "sine"
+
+      gainNode.gain.setValueAtTime(0.3, audioContextRef.current.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.01,
+        audioContextRef.current.currentTime + duration / 1000,
+      )
+
+      oscillator.start(audioContextRef.current.currentTime)
+      oscillator.stop(audioContextRef.current.currentTime + duration / 1000)
+    } catch (error) {
+      console.log("Error playing web sound:", error)
+    }
+  }
+
+  const startContinuousSound = useCallback(
+    async (color: Color) => {
+      if (!soundEnabled) return
+
+      if (Platform.OS === "web") {
+        startContinuousWebSound(colorMap[color].sound)
+        return
+      }
+
+      if (!soundObjects.current[color]) return
+
+      try {
+        const sound = soundObjects.current[color]
+        await sound.setPositionAsync(0)
+        await sound.playAsync()
+      } catch (error) {
+        console.log("Error starting continuous sound:", error)
+      }
+    },
+    [soundEnabled],
+  )
+
+  const startContinuousWebSound = (frequency: number) => {
+    if (!audioContextRef.current) return
+
+    // Stop any existing sound
+    stopContinuousWebSound()
+
+    try {
+      const oscillator = audioContextRef.current.createOscillator()
+      const gainNode = audioContextRef.current.createGain()
+
+      oscillator.connect(gainNode)
+      gainNode.connect(audioContextRef.current.destination)
+
+      oscillator.frequency.setValueAtTime(frequency, audioContextRef.current.currentTime)
+      oscillator.type = "sine"
+
+      gainNode.gain.setValueAtTime(0.3, audioContextRef.current.currentTime)
+
+      oscillator.start(audioContextRef.current.currentTime)
+
+      oscillatorRef.current = oscillator
+      gainNodeRef.current = gainNode
+    } catch (error) {
+      console.log("Error starting continuous web sound:", error)
+    }
+  }
+
+  const stopContinuousSound = useCallback(async (color: Color) => {
+    if (Platform.OS === "web") {
+      stopContinuousWebSound()
+      return
+    }
+
+    if (!soundObjects.current[color]) return
+
+    try {
+      const sound = soundObjects.current[color]
+      await sound.pauseAsync()
+    } catch (error) {
+      console.log("Error stopping continuous sound:", error)
+    }
+  }, [])
+
+  const stopContinuousWebSound = () => {
+    if (oscillatorRef.current && gainNodeRef.current && audioContextRef.current) {
+      try {
+        gainNodeRef.current.gain.exponentialRampToValueAtTime(
+          0.01,
+          audioContextRef.current.currentTime + 0.1,
+        )
+        oscillatorRef.current.stop(audioContextRef.current.currentTime + 0.1)
+      } catch (error) {
+        // Oscillator might already be stopped
+      }
+      oscillatorRef.current = null
+      gainNodeRef.current = null
+    }
+  }
+
+  const flashButton = useCallback(
+    (color: Color, duration: number = 600) => {
+      setActiveButton(color)
+      if (Platform.OS === "web") {
+        playWebSound(colorMap[color].sound, duration)
+      } else {
+        playSound(color, duration)
+        Vibration.vibrate(100)
+      }
+
+      timeoutRef.current = setTimeout(() => {
+        setActiveButton(null)
+      }, duration)
+    },
+    [playSound, playWebSound],
+  )
+
+  const showSequence = useCallback(
+    (seq: Color[]) => {
+      setGameState("showing")
+
+      seq.forEach((color, index) => {
+        setTimeout(
+          () => {
+            flashButton(color)
+
+            if (index === seq.length - 1) {
+              setTimeout(() => {
+                setGameState("waiting")
+              }, 700)
+            }
+          },
+          (index + 1) * 800,
+        )
+      })
+    },
+    [flashButton],
+  )
+
+  const startGame = useCallback(() => {
+    setSequence([])
+    setPlayerSequence([])
+    setLevel(1)
+    setScore(0)
+    setGameState("idle")
+
+    setTimeout(() => {
+      const newSequence = [colors[Math.floor(Math.random() * colors.length)]]
+      setSequence(newSequence)
+      showSequence(newSequence)
+    }, 500)
+  }, [showSequence])
+
+  const resetGame = useCallback(() => {
+    setGameState("idle")
+    setSequence([])
+    setPlayerSequence([])
+    setLevel(1)
+    setScore(0)
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    setActiveButton(null)
+  }, [])
+
+  const handleButtonPress = useCallback(
+    (color: Color) => {
+      if (gameState !== "waiting") return
+
+      setActiveButton(color)
+      if (Platform.OS === "web") {
+        startContinuousWebSound(colorMap[color].sound)
+      } else {
+        startContinuousSound(color)
+        Vibration.vibrate(50)
+      }
+    },
+    [gameState, startContinuousSound],
+  )
+
+  const handleButtonRelease = useCallback(
+    (color: Color) => {
+      if (gameState !== "waiting") return
+
+      setActiveButton(null)
+      if (Platform.OS === "web") {
+        stopContinuousWebSound()
+      } else {
+        stopContinuousSound(color)
+      }
+
+      const newPlayerSequence = [...playerSequence, color]
+      setPlayerSequence(newPlayerSequence)
+
+      // Check if the player's move is correct
+      if (color !== sequence[newPlayerSequence.length - 1]) {
+        // Wrong move - game over
+        setGameState("gameover")
+        Vibration.vibrate([0, 200, 100, 200])
+
+        // Update high score
+        if (score > highScore) {
+          setHighScore(score)
+          saveHighScore(score)
+        }
+        return
+      }
+
+      // Check if player completed the sequence
+      if (newPlayerSequence.length === sequence.length) {
+        // Player completed the sequence correctly
+        const newScore = score + newPlayerSequence.length * 10
+        const newLevel = level + 1
+
+        setScore(newScore)
+        setLevel(newLevel)
+        setPlayerSequence([])
+
+        // Add new color to sequence and show it
+        setTimeout(() => {
+          const newSequence = [...sequence]
+          const randomColor = colors[Math.floor(Math.random() * colors.length)]
+          newSequence.push(randomColor)
+          setSequence(newSequence)
+          showSequence(newSequence)
+        }, 1000)
+      }
+    },
+    [
+      gameState,
+      playerSequence,
+      sequence,
+      score,
+      highScore,
+      level,
+      showSequence,
+      stopContinuousSound,
+      stopContinuousWebSound,
+    ],
+  )
+
+  const getButtonStyle = (color: Color) => {
+    const baseStyle = [styles.gameButton]
+    const colorStyle = { backgroundColor: colorMap[color].color }
+    const activeStyle =
+      activeButton === color
+        ? { backgroundColor: colorMap[color].activeColor, transform: [{ scale: 1.05 }] }
+        : {}
+
+    return [baseStyle, colorStyle, activeStyle]
+  }
+
+  const getButtonPosition = (color: Color) => {
+    const position = colorMap[color].position
+    switch (position) {
+      case "topLeft":
+        return [styles.topLeft]
+      case "topRight":
+        return [styles.topRight]
+      case "bottomLeft":
+        return [styles.bottomLeft]
+      case "bottomRight":
+        return [styles.bottomRight]
+      default:
+        return []
+    }
+  }
+
   return (
-    <View style={$styles.flex1}>
-      <Text style={$text}>Game Screen</Text>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#1a1a2e" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.title}>Eco Mi</Text>
+        <Text style={styles.subtitle}>Memory Challenge Game</Text>
+      </View>
+
+      {/* Score Display */}
+      <View style={styles.scoreContainer}>
+        <View style={styles.scoreBox}>
+          <Text style={styles.scoreLabel}>Level</Text>
+          <Text style={styles.scoreValue}>{level}</Text>
+        </View>
+        <View style={styles.scoreBox}>
+          <Text style={styles.scoreLabel}>Score</Text>
+          <Text style={styles.scoreValue}>{score}</Text>
+        </View>
+        <View style={styles.scoreBox}>
+          <Text style={styles.scoreLabel}>Best</Text>
+          <Text style={styles.scoreValue}>{highScore}</Text>
+        </View>
+      </View>
+
+      {/* Game Board */}
+      <View style={styles.gameBoard}>
+        <View style={styles.gameContainer}>
+          {colors.map((color) => (
+            <TouchableOpacity
+              key={color}
+              style={[getButtonStyle(color), getButtonPosition(color)]}
+              onPressIn={() => handleButtonPress(color)}
+              onPressOut={() => handleButtonRelease(color)}
+              disabled={gameState !== "waiting"}
+              activeOpacity={0.8}
+            >
+              {activeButton === color && <View style={styles.activeIndicator} />}
+            </TouchableOpacity>
+          ))}
+
+          {/* Center Circle */}
+          <View style={styles.centerCircle}>
+            <Text style={styles.centerText}>Eco Mi</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Controls */}
+      <View style={styles.controlsContainer}>
+        {gameState === "idle" && (
+          <TouchableOpacity style={styles.startButton} onPress={startGame}>
+            <Ionicons name="play" size={24} color="white" />
+            <Text style={styles.buttonText}>Start Game</Text>
+          </TouchableOpacity>
+        )}
+
+        {gameState === "gameover" && (
+          <TouchableOpacity style={styles.playAgainButton} onPress={startGame}>
+            <Ionicons name="refresh" size={24} color="white" />
+            <Text style={styles.buttonText}>Play Again</Text>
+          </TouchableOpacity>
+        )}
+
+        {(gameState === "showing" || gameState === "waiting") && (
+          <TouchableOpacity style={styles.resetButton} onPress={resetGame}>
+            <Ionicons name="stop" size={24} color="white" />
+            <Text style={styles.buttonText}>Reset</Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity style={styles.soundButton} onPress={() => setSoundEnabled(!soundEnabled)}>
+          <Ionicons name={soundEnabled ? "volume-high" : "volume-mute"} size={24} color="white" />
+          <Text style={styles.buttonText}>Sound</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Game Status */}
+      <View style={styles.statusContainer}>
+        {gameState === "idle" && <Text style={styles.statusText}>Press Start Game to begin!</Text>}
+        {gameState === "showing" && (
+          <Text style={[styles.statusText, styles.showingText]}>Watch the sequence...</Text>
+        )}
+        {gameState === "waiting" && (
+          <Text style={[styles.statusText, styles.waitingText]}>Repeat the sequence!</Text>
+        )}
+        {gameState === "gameover" && (
+          <View style={styles.gameOverContainer}>
+            <Text style={styles.gameOverText}>Game Over!</Text>
+            <Text style={styles.statusText}>
+              You reached level {level} with {score} points
+            </Text>
+            {score === highScore && score > 0 && (
+              <Text style={styles.highScoreText}>🎉 New High Score! 🎉</Text>
+            )}
+          </View>
+        )}
+      </View>
     </View>
   )
 }
 
-const $text: TextStyle = {
-  color: "white",
-  fontSize: 20,
-  textAlign: "center",
-  margin: 10,
-}
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#1a1a2e",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 48,
+    fontWeight: "bold",
+    color: "white",
+    letterSpacing: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#a0a0a0",
+    marginTop: 5,
+  },
+  scoreContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "80%",
+    marginBottom: 30,
+  },
+  scoreBox: {
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    alignItems: "center",
+    minWidth: 80,
+  },
+  scoreLabel: {
+    color: "#a0a0a0",
+    fontSize: 12,
+    marginBottom: 5,
+  },
+  scoreValue: {
+    color: "white",
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+  gameBoard: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 30,
+  },
+  gameContainer: {
+    width: gameSize,
+    height: gameSize,
+    position: "relative",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    borderRadius: gameSize / 2,
+    borderWidth: 4,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+  },
+  gameButton: {
+    position: "absolute",
+    width: buttonSize,
+    height: buttonSize,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  topLeft: {
+    top: gameSize * 0.05,
+    left: gameSize * 0.05,
+    borderTopLeftRadius: buttonSize / 2,
+  },
+  topRight: {
+    top: gameSize * 0.05,
+    right: gameSize * 0.05,
+    borderTopRightRadius: buttonSize / 2,
+  },
+  bottomLeft: {
+    bottom: gameSize * 0.05,
+    left: gameSize * 0.05,
+    borderBottomLeftRadius: buttonSize / 2,
+  },
+  bottomRight: {
+    bottom: gameSize * 0.05,
+    right: gameSize * 0.05,
+    borderBottomRightRadius: buttonSize / 2,
+  },
+  centerCircle: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    width: 80,
+    height: 80,
+    backgroundColor: "black",
+    borderRadius: 40,
+    borderWidth: 4,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    transform: [{ translateX: -40 }, { translateY: -40 }],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  centerText: {
+    color: "white",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  activeIndicator: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    width: 16,
+    height: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderRadius: 8,
+    transform: [{ translateX: -8 }, { translateY: -8 }],
+  },
+  controlsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  startButton: {
+    backgroundColor: "#22c55e",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  playAgainButton: {
+    backgroundColor: "#3b82f6",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  resetButton: {
+    backgroundColor: "#ef4444",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  soundButton: {
+    backgroundColor: "#6b7280",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  statusContainer: {
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  statusText: {
+    color: "#a0a0a0",
+    fontSize: 16,
+    textAlign: "center",
+  },
+  showingText: {
+    color: "#fbbf24",
+  },
+  waitingText: {
+    color: "#22c55e",
+  },
+  gameOverContainer: {
+    alignItems: "center",
+  },
+  gameOverText: {
+    color: "#ef4444",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  highScoreText: {
+    color: "#fbbf24",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginTop: 8,
+  },
+})
