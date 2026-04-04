@@ -38,8 +38,8 @@
   - Existing manual memoization is harmless (compiler skips already-memoized code) — remove gradually during refactors, not all at once
   - If specific files cause compiler bailouts (e.g., reanimated worklets), add `"use no memo"` directive to opt out per-file
 
-- [ ] **Remove manual memoization from `GameScreen.tsx` during refactor**
-  When extracting `useSimonGame()`, do not carry over `useCallback` wrappers — write plain functions. The compiler handles it. This simplifies the hook code and eliminates the stale closure bugs caused by incorrect dependency arrays.
+- [x] **Remove manual memoization from `GameScreen.tsx` during refactor**
+  When extracting `useGameEngine()`, do not carry over `useCallback` wrappers — write plain functions. The compiler handles it. This simplifies the hook code and eliminates the stale closure bugs caused by incorrect dependency arrays.
   - Blocked by: React Compiler enabled
 
 ### 0.2 Cleanup
@@ -59,8 +59,8 @@
 
 ### 1.1 Code Architecture
 
-- [ ] **Extract `useSimonGame()` hook from `GameScreen.tsx`**
-  Move all game state (`sequence`, `playerSequence`, `gameState`, `score`, `level`, `highScore`), timer refs, and game logic (`startGame`, `showSequence`, `handleButtonTouch`, `handleButtonRelease`, `resetGame`) into `src/hooks/useSimonGame.ts`. GameScreen becomes presentational only.
+- [x] **Extract `useGameEngine()` hook from `GameScreen.tsx`**
+  Move all game state (`sequence`, `playerSequence`, `gameState`, `score`, `level`, `highScore`), timer refs, and game logic (`startGame`, `showSequence`, `handleButtonTouch`, `handleButtonRelease`, `resetGame`) into `src/hooks/useGameEngine.ts`. GameScreen becomes presentational only.
   - Fix orphaned `setTimeout` refs — track all timer IDs and clear on reset/unmount
   - Fix stale closure in `handleButtonRelease` (memoized deps issue)
   - Fix `Dimensions.get("window")` at module scope — use `useWindowDimensions()` instead
@@ -72,7 +72,7 @@
   - `MIN_TONE_DURATION`: base 600ms, decreasing with level
   - `SEQUENCE_INTERVAL`: `Math.max(300, 800 - level * 30)`
   - `INPUT_TIMEOUT` (if adding time pressure later): `sequence.length * 2000`
-  - Export as functions of level so `useSimonGame()` consumes them
+  - Export as functions of level so `useGameEngine()` consumes them
   - Ref: VISION.md > Phase 1 #3
 
 - [ ] **Add `testID` props to all interactive and state-displaying elements**
@@ -166,7 +166,7 @@
   - Blocked by: PostHog account created (ACCOUNTS.md checklist)
 
 - [ ] **Instrument core analytics events**
-  Add PostHog event tracking calls to `useSimonGame` and `GameOverOverlay`:
+  Add PostHog event tracking calls to `useGameEngine` and `GameOverOverlay`:
   - `game_started`, `game_completed`, `game_over`
   - `ad_shown`, `ad_rewarded_watched`
   - `iap_initiated`, `iap_completed`
@@ -176,7 +176,7 @@
 
 ### 1.5 Testing (v1.0 scope)
 
-- [ ] **Write unit tests for `useSimonGame()` hook**
+- [ ] **Write unit tests for `useGameEngine()` hook**
   Test with `@testing-library/react-hooks` (already installed via RTL):
   - State transitions: idle → showing → waiting → gameover
   - Score calculation: `sequence.length * 10` per round

@@ -94,7 +94,7 @@ Critical polish + monetization. The minimum bar for a store-worthy game that gen
 
 | # | Feature | Notes |
 |---|---|---|
-| 1 | Extract `useSimonGame()` hook | Move all game state and logic out of `GameScreen.tsx`. Fix timer bugs (orphaned `setTimeout` refs, stale closures). |
+| 1 | Extract `useGameEngine()` hook | Move all game state and logic out of `GameScreen.tsx`. Fix timer bugs (orphaned `setTimeout` refs, stale closures). |
 | 2 | Wire up Oxanium font | Already bundled in `assets/fonts/`. Apply to all game text for a cohesive sci-fi/gaming identity. |
 | 3 | Speed ramp | `interval = max(300, 800 - level * 30)`. Sequences play faster as level increases. |
 | 4 | Game-over overlay | Modal with score summary, high score badge, Play Again and Share buttons. Primary monetization touchpoint. |
@@ -455,7 +455,7 @@ Single-screen Expo Router app scaffolded from Ignite v11.1.3. All game logic liv
 ├──────────────────────────────────────────────┤
 │              Game Logic                       │
 │  ┌────────────────────────────────────────┐  │
-│  │         useSimonGame(config)           │  │
+│  │         useGameEngine(config)           │  │
 │  │  State machine · Timer management      │  │
 │  │  Sequence generation · Score tracking  │  │
 │  └────────────────────────────────────────┘  │
@@ -523,7 +523,7 @@ Keep game-specific logic (Simon state machine, audio frequencies, color maps) se
 
 | Layer | Tool | What It Covers | CI Cost |
 |---|---|---|---|
-| **Unit** | Jest + `jest-expo` | `useSimonGame()` hook — state transitions, scoring, speed ramp, sequence validation, timer cleanup | Fast, no device |
+| **Unit** | Jest + `jest-expo` | `useGameEngine()` hook — state transitions, scoring, speed ramp, sequence validation, timer cleanup | Fast, no device |
 | **Component** | Jest + React Testing Library | Screen rendering, button props, overlay visibility, testID presence | Fast, no device |
 | **E2E (native)** | Maestro | Full game flows on simulator — tap interactions, audio/haptic triggers, real touch targets | macOS runner or Maestro Cloud |
 | **E2E (web)** | Playwright | Fast logic flow coverage — can inspect DOM state directly, cheaper CI than simulators | Any CI runner |
@@ -535,7 +535,7 @@ Maestro is the primary confidence layer for a game. Playwright on the Expo web b
 The game sequence is random, which makes E2E tests impossible unless we control it. A seeded RNG mode solves this:
 
 ```typescript
-// In useSimonGame()
+// In useGameEngine()
 const seed = process.env.EXPO_PUBLIC_TEST_SEED
 const nextColor = seed
   ? colors[seededRandom(seed, sequence.length) % colors.length]
@@ -979,7 +979,7 @@ App Launch
   → Check RevenueCat → refresh entitlements → update MMKV cache
 
 Player Action
-  → useSimonGame() → update React state
+  → useGameEngine() → update React state
                    → persist to MMKV (scores, stats)
                    → check achievement conditions
 
@@ -1054,12 +1054,12 @@ src/
 │   ├── stats.tsx              Stats dashboard (Phase 3)
 │   └── achievements.tsx       Achievement badges (Phase 3)
 ├── hooks/
-│   ├── useSimonGame.ts        Extracted game state machine + logic (Phase 1)
+│   ├── useGameEngine.ts        Extracted game state machine + logic (Phase 1)
 │   ├── useAudioTones.tsx      + sound pack support (Phase 4)
 │   ├── useAds.ts              Ad loading, frequency cap, display (Phase 2)
 │   └── usePurchases.ts        RevenueCat entitlement checks (Phase 2)
 ├── screens/
-│   └── GameScreen.tsx         Presentational only — delegates to useSimonGame()
+│   └── GameScreen.tsx         Presentational only — delegates to useGameEngine()
 ├── config/
 │   ├── achievements.ts        Achievement definitions and conditions (Phase 3)
 │   └── difficulty.ts          Speed ramp curves, mode configs (Phase 1)
