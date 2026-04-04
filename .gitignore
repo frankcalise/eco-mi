@@ -81,6 +81,9 @@ npm-debug.*
 *.key
 *.mobileprovision
 *.orig.*
+.env
+.env.*
+!.env.example
 web-build/
 
 # Configurations
