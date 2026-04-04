@@ -27,24 +27,23 @@ export default function Root() {
     return null
   }
 
-  const content = (
-    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <ThemeProvider>
-        <KeyboardProvider>
-          <Slot />
-        </KeyboardProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
-  )
-
-  if (!POSTHOG_KEY) return content
-
-  return (
+  const inner = POSTHOG_KEY ? (
     <PostHogProvider
       apiKey={POSTHOG_KEY}
       options={{ host: "https://us.i.posthog.com" }}
+      autocapture={{ captureScreens: false }}
     >
-      {content}
+      <Slot />
     </PostHogProvider>
+  ) : (
+    <Slot />
+  )
+
+  return (
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <ThemeProvider>
+        <KeyboardProvider>{inner}</KeyboardProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   )
 }
