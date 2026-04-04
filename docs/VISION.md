@@ -436,6 +436,7 @@ Single-screen Expo Router app scaffolded from Ignite v11.1.3. All game logic liv
 | Animations | `react-native-reanimated` installed but unused | Replace with `react-native-ease` |
 | Compiler | N/A | React Compiler via `babel-preset-expo@55` — auto-memoization, no manual `useMemo`/`useCallback` |
 | i18n | `i18next` scaffolded, English only | Low priority |
+| Native | CNG — `ios/` and `android/` gitignored, generated via `npx expo prebuild` | Solid |
 | Builds | EAS configured (dev, preview, production profiles) | Solid |
 
 ### Target Architecture (Post-Phase 2)
