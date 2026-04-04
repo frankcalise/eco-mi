@@ -19,7 +19,7 @@
 
 ### 0.1 Expo SDK Upgrade
 
-- [ ] **Upgrade from Expo SDK 53 → SDK 55**
+- [x] **Upgrade from Expo SDK 53 → SDK 55**
   SDK 55 ships RN 0.84, React 19.2, and `babel-preset-expo` with React Compiler built in. This is a 2-version jump (53 → 54 → 55). Recommended approach:
   - Read the SDK 54 and SDK 55 changelogs for breaking changes
   - Bump `expo` version: `npx expo install expo@latest`
@@ -30,7 +30,7 @@
   - Run `bun run test` to verify existing tests pass
   - Potential friction: `react-native-reanimated` Babel plugin ordering with React Compiler — compiler must run first. Since we're not using reanimated for game code, this should be low risk, but verify navigation transitions still work.
 
-- [ ] **Enable React Compiler**
+- [x] **Enable React Compiler**
   `babel-preset-expo@55` includes `babel-plugin-react-compiler@^1.0.0`. To enable:
   - Add `experiments.reactCompiler: true` to `app.config.ts` (or the Babel config, depending on SDK 55's API — check Expo docs)
   - Verify the app builds and runs without errors
@@ -44,10 +44,10 @@
 
 ### 0.2 Cleanup
 
-- [ ] **Remove unnecessary permissions from audio plugin config**
+- [x] **Remove unnecessary permissions from audio plugin config**
   Current `app.json` requests microphone permission and foreground service — not needed for oscillator playback. Strip `iosMicrophonePermission`, `androidForegroundService`, and `FOREGROUND_SERVICE` permissions from the `react-native-audio-api` plugin config.
 
-- [ ] **Clean up unused boilerplate dependencies**
+- [x] **Clean up unused boilerplate dependencies**
   Remove `apisauce` from `package.json` (unused). Evaluate `react-native-keyboard-controller` — only used as `<KeyboardProvider>` in layout, unnecessary for a single-screen game. Check if SDK 55 upgrade makes any other deps obsolete.
 
 - [ ] **Add `.catch()` to `initI18n` in `_layout.tsx`**
@@ -111,7 +111,7 @@
 
 ### 1.3 Monetization
 
-- [ ] **Convert `app.json` to `app.config.ts`**
+- [x] **Convert `app.json` to `app.config.ts`**
   Required for reading env vars at build time (AdMob App IDs, PostHog key). Move all config from static `app.json` to dynamic `app.config.ts`. Read `ADMOB_APP_ID_IOS`, `ADMOB_APP_ID_ANDROID` from `process.env`.
   - Ref: ACCOUNTS.md > Security > AdMob App IDs in `app.json`
   - Blocked by: `.env` file created with placeholder values
