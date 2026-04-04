@@ -67,8 +67,14 @@ export function GameScreen() {
   const minimumDurationTimeout = useRef<NodeJS.Timeout | null>(null)
 
   // Use our new audio hook
-  const { initialize, cleanup, playSound, startContinuousSound, stopContinuousSound, stopContinuousSoundWithFade } =
-    useAudioTones(colorMap, soundEnabled)
+  const {
+    initialize,
+    cleanup,
+    playSound,
+    startContinuousSound,
+    stopContinuousSound,
+    stopContinuousSoundWithFade,
+  } = useAudioTones(colorMap, soundEnabled)
 
   // Initialize audio and load high score
   useEffect(() => {
@@ -295,8 +301,6 @@ export function GameScreen() {
     }
   }
 
-
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1a1a2e" />
@@ -423,9 +427,9 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "white",
+    fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Oxanium-SemiBold",
   },
   centerCircle: {
     alignItems: "center",
@@ -443,8 +447,8 @@ const styles = StyleSheet.create({
   },
   centerText: {
     color: "white",
-    fontSize: 10,
     fontFamily: "Oxanium-Regular",
+    fontSize: 10,
   },
   container: {
     alignItems: "center",
@@ -494,8 +498,8 @@ const styles = StyleSheet.create({
   },
   gameOverText: {
     color: "#ef4444",
-    fontSize: 20,
     fontFamily: "Oxanium-Bold",
+    fontSize: 20,
     marginBottom: 8,
   },
   header: {
@@ -504,8 +508,8 @@ const styles = StyleSheet.create({
   },
   highScoreText: {
     color: "#fbbf24",
-    fontSize: 16,
     fontFamily: "Oxanium-Bold",
+    fontSize: 16,
     marginTop: 8,
   },
   playAgainButton: {
@@ -578,20 +582,20 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: "#a0a0a0",
-    fontSize: 16,
     fontFamily: "Oxanium-Regular",
+    fontSize: 16,
     textAlign: "center",
   },
   subtitle: {
     color: "#a0a0a0",
-    fontSize: 16,
     fontFamily: "Oxanium-Medium",
+    fontSize: 16,
     marginTop: 5,
   },
   title: {
     color: "white",
-    fontSize: 48,
     fontFamily: "Oxanium-Bold",
+    fontSize: 48,
     letterSpacing: 4,
   },
   topLeft: {

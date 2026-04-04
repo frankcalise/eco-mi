@@ -1,12 +1,11 @@
 import { useRef, useCallback } from "react"
 import { AudioContext, GainNode, OscillatorNode } from "react-native-audio-api"
 
-
 // Fast, click-free envelope (tweak to taste)
-const ATTACK_S = 0.01;         // 10 ms fade-in
-const RELEASE_S = 0.02;        // 20 ms fade-out
-const TARGET_GAIN = 0.3;       // peak volume (0..1)
-const EPSILON = 0.0001;        // never ramp to exactly 0 with exponential ramps
+const ATTACK_S = 0.01 // 10 ms fade-in
+const RELEASE_S = 0.02 // 20 ms fade-out
+const TARGET_GAIN = 0.3 // peak volume (0..1)
+const EPSILON = 0.0001 // never ramp to exactly 0 with exponential ramps
 
 export type Color = "red" | "blue" | "green" | "yellow"
 
@@ -137,8 +136,12 @@ export function useAudioTones(colorMap: ColorMap, soundEnabled: boolean): AudioT
         oscillator.stop(now + durationSeconds)
 
         setTimeout(() => {
-          try { oscillator.disconnect() } catch { }
-          try { gain.disconnect() } catch { }
+          try {
+            oscillator.disconnect()
+          } catch {}
+          try {
+            gain.disconnect()
+          } catch {}
         }, duration + 10)
       } catch (error) {
         console.log("Error playing sound:", error)
@@ -219,45 +222,62 @@ export function useAudioTones(colorMap: ColorMap, soundEnabled: boolean): AudioT
       osc.stop(now + RELEASE_S + 0.005)
 
       // Cleanup after fade completes
-      setTimeout(() => {
-        try { osc.disconnect() } catch { }
-        try { gain.disconnect() } catch { }
-        oscillatorRef.current = null
-        gainNodeRef.current = null
-      }, Math.ceil((RELEASE_S + 0.02) * 1000))
+      setTimeout(
+        () => {
+          try {
+            osc.disconnect()
+          } catch {}
+          try {
+            gain.disconnect()
+          } catch {}
+          oscillatorRef.current = null
+          gainNodeRef.current = null
+        },
+        Math.ceil((RELEASE_S + 0.02) * 1000),
+      )
     } catch {
       oscillatorRef.current = null
       gainNodeRef.current = null
     }
   }, [])
 
-  const stopContinuousSoundWithFade = useCallback(async (_color: Color, fadeDuration: number = 200) => {
-    const ctx = audioContextRef.current
-    const osc = oscillatorRef.current
-    const gain = gainNodeRef.current
-    if (!ctx || !osc || !gain) return
+  const stopContinuousSoundWithFade = useCallback(
+    async (_color: Color, fadeDuration: number = 200) => {
+      const ctx = audioContextRef.current
+      const osc = oscillatorRef.current
+      const gain = gainNodeRef.current
+      if (!ctx || !osc || !gain) return
 
-    try {
-      const now = ctx.currentTime
-      const fadeS = Math.max(fadeDuration / 1000, 0.005)
+      try {
+        const now = ctx.currentTime
+        const fadeS = Math.max(fadeDuration / 1000, 0.005)
 
-      gain.gain.cancelScheduledValues(now)
-      gain.gain.setValueAtTime(Math.max(gain.gain.value, EPSILON), now)
-      gain.gain.exponentialRampToValueAtTime(EPSILON, now + fadeS)
+        gain.gain.cancelScheduledValues(now)
+        gain.gain.setValueAtTime(Math.max(gain.gain.value, EPSILON), now)
+        gain.gain.exponentialRampToValueAtTime(EPSILON, now + fadeS)
 
-      osc.stop(now + fadeS + 0.005)
+        osc.stop(now + fadeS + 0.005)
 
-      setTimeout(() => {
-        try { osc.disconnect() } catch { }
-        try { gain.disconnect() } catch { }
+        setTimeout(
+          () => {
+            try {
+              osc.disconnect()
+            } catch {}
+            try {
+              gain.disconnect()
+            } catch {}
+            oscillatorRef.current = null
+            gainNodeRef.current = null
+          },
+          Math.ceil((fadeS + 0.02) * 1000),
+        )
+      } catch {
         oscillatorRef.current = null
         gainNodeRef.current = null
-      }, Math.ceil((fadeS + 0.02) * 1000))
-    } catch {
-      oscillatorRef.current = null
-      gainNodeRef.current = null
-    }
-  }, [])
+      }
+    },
+    [],
+  )
 
   return {
     initialize,
