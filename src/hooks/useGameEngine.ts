@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from "react"
 
-import { Vibration } from "react-native"
+import * as Haptics from "expo-haptics"
 
 import { getToneDuration, getSequenceInterval } from "@/config/difficulty"
 import { useAudioTones } from "@/hooks/useAudioTones"
+import { recordGameResult } from "@/hooks/useStats"
 import { saveString, loadString } from "@/utils/storage"
 
 export type GameState = "idle" | "showing" | "waiting" | "gameover"
+export type GameMode = "classic" | "daily" | "timed" | "reverse" | "chaos"
 export type Color = "red" | "blue" | "green" | "yellow"
 
 export const colors: Color[] = ["red", "blue", "green", "yellow"]
@@ -38,8 +40,13 @@ export const colorMap = {
   },
 }
 
+interface UseGameEngineOptions {
+  mode?: GameMode
+}
+
 interface UseGameEngineReturn {
   gameState: GameState
+  mode: GameMode
   score: number
   level: number
   highScore: number
@@ -48,15 +55,40 @@ interface UseGameEngineReturn {
   sequence: Color[]
   playerSequence: Color[]
   isNewHighScore: boolean
+  continuedThisGame: boolean
+  timeRemaining: number | null
+  sequencesCompleted: number
+  buttonPositions: Color[]
 
   startGame: () => void
   resetGame: () => void
+  continueGame: () => void
   handleButtonTouch: (color: Color) => void
   handleButtonRelease: (color: Color) => void
   toggleSound: () => void
+  setMode: (mode: GameMode) => void
 }
 
 const HIGH_SCORE_KEY = "simon-high-score"
+const DAILY_HIGH_SCORE_PREFIX = "ecomi:daily:"
+const DAILY_STREAK_KEY = "ecomi:daily:currentStreak"
+const DAILY_LAST_PLAYED_KEY = "ecomi:daily:lastPlayed"
+
+function getDailySeed(): number {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, "0")
+  const day = String(now.getDate()).padStart(2, "0")
+  return parseInt(`${year}${month}${day}`, 10)
+}
+
+function getTodayKey(): string {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, "0")
+  const day = String(now.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
 
 /**
  * Mulberry32 seeded PRNG — deterministic random from a 32-bit seed.
@@ -77,7 +109,8 @@ function getTestSeed(): number | null {
   return raw ? parseInt(raw, 10) : null
 }
 
-export function useGameEngine(): UseGameEngineReturn {
+export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineReturn {
+  const [mode, setMode] = useState<GameMode>(options?.mode ?? "classic")
   const [sequence, setSequence] = useState<Color[]>([])
   const [playerSequence, setPlayerSequence] = useState<Color[]>([])
   const [gameState, setGameState] = useState<GameState>("idle")
@@ -87,7 +120,13 @@ export function useGameEngine(): UseGameEngineReturn {
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [highScore, setHighScore] = useState(0)
   const [isNewHighScore, setIsNewHighScore] = useState(false)
+  const [continuedThisGame, setContinuedThisGame] = useState(false)
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
+  const [sequencesCompleted, setSequencesCompleted] = useState(0)
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [buttonPositions, setButtonPositions] = useState<Color[]>([...colors])
 
+  const scoreRef = useRef(0)
   const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
   const buttonPressStartTime = useRef<number | null>(null)
   const testSeed = getTestSeed()
@@ -136,7 +175,34 @@ export function useGameEngine(): UseGameEngineReturn {
     saveString(HIGH_SCORE_KEY, newScore.toString())
   }
 
+  function saveDailyResult(finalScore: number) {
+    const todayKey = getTodayKey()
+    const bestKey = `${DAILY_HIGH_SCORE_PREFIX}${todayKey}:bestScore`
+    const currentBest = parseInt(loadString(bestKey) ?? "0", 10)
+    if (finalScore > currentBest) {
+      saveString(bestKey, finalScore.toString())
+    }
+
+    const lastPlayed = loadString(DAILY_LAST_PLAYED_KEY) ?? ""
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`
+
+    if (lastPlayed === yesterdayKey) {
+      const streak = parseInt(loadString(DAILY_STREAK_KEY) ?? "1", 10)
+      saveString(DAILY_STREAK_KEY, (streak + 1).toString())
+    } else if (lastPlayed !== todayKey) {
+      saveString(DAILY_STREAK_KEY, "1")
+    }
+
+    saveString(DAILY_LAST_PLAYED_KEY, todayKey)
+  }
+
   // --- Init + cleanup ---
+
+  useEffect(() => {
+    scoreRef.current = score
+  }, [score])
 
   useEffect(() => {
     initialize()
@@ -144,6 +210,7 @@ export function useGameEngine(): UseGameEngineReturn {
 
     return () => {
       clearAllTimeouts()
+      stopTimer()
       cleanup()
     }
   }, [])
@@ -153,7 +220,7 @@ export function useGameEngine(): UseGameEngineReturn {
   function flashButton(color: Color, duration: number) {
     setActiveButton(color)
     playSound(color, duration)
-    Vibration.vibrate(100)
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
 
     addTimeout(() => {
       setActiveButton(null)
@@ -178,9 +245,54 @@ export function useGameEngine(): UseGameEngineReturn {
     })
   }
 
+  function stopTimer() {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current)
+      timerIntervalRef.current = null
+    }
+    setTimeRemaining(null)
+  }
+
+  function startTimer(durationSec: number) {
+    stopTimer()
+    setTimeRemaining(durationSec)
+    const startTime = Date.now()
+    timerIntervalRef.current = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000)
+      const remaining = durationSec - elapsed
+      if (remaining <= 0) {
+        stopTimer()
+        setGameState("gameover")
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+
+        const currentScore = scoreRef.current
+        if (currentScore > highScore) {
+          setHighScore(currentScore)
+          setIsNewHighScore(true)
+          saveHighScore(currentScore)
+        }
+        recordGameResult(currentScore)
+      } else {
+        setTimeRemaining(remaining)
+      }
+    }, 1000)
+  }
+
+  function shuffleButtonPositions() {
+    const shuffled = [...colors]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    setButtonPositions(shuffled)
+  }
+
   function startGame() {
     clearAllTimeouts()
-    if (testSeed !== null) {
+    stopTimer()
+    if (mode === "daily") {
+      seededRng.current = mulberry32(getDailySeed())
+    } else if (testSeed !== null) {
       seededRng.current = mulberry32(testSeed)
     }
     setSequence([])
@@ -189,6 +301,13 @@ export function useGameEngine(): UseGameEngineReturn {
     setScore(0)
     setGameState("idle")
     setIsNewHighScore(false)
+    setContinuedThisGame(false)
+    setSequencesCompleted(0)
+    setButtonPositions([...colors])
+
+    if (mode === "timed") {
+      startTimer(60)
+    }
 
     addTimeout(() => {
       const newSequence = [colors[getNextColorIndex(0)]]
@@ -199,6 +318,7 @@ export function useGameEngine(): UseGameEngineReturn {
 
   function resetGame() {
     clearAllTimeouts()
+    stopTimer()
     setGameState("idle")
     setSequence([])
     setPlayerSequence([])
@@ -206,7 +326,22 @@ export function useGameEngine(): UseGameEngineReturn {
     setScore(0)
     setActiveButton(null)
     setIsNewHighScore(false)
+    setContinuedThisGame(false)
+    setSequencesCompleted(0)
+    setButtonPositions([...colors])
     buttonPressStartTime.current = null
+  }
+
+  function continueGame() {
+    if (gameState !== "gameover") return
+    clearAllTimeouts()
+    setContinuedThisGame(true)
+    setPlayerSequence([])
+    setActiveButton(null)
+
+    addTimeout(() => {
+      showSequence(sequence, level)
+    }, 500)
   }
 
   function handleButtonTouch(color: Color) {
@@ -216,7 +351,7 @@ export function useGameEngine(): UseGameEngineReturn {
     buttonPressStartTime.current = Date.now()
     setActiveButton(color)
     startContinuousSound(color)
-    Vibration.vibrate(50)
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 
     addTimeout(() => {
       // Ensures minimum duration — cleared on release if held longer
@@ -247,15 +382,36 @@ export function useGameEngine(): UseGameEngineReturn {
     const newPlayerSequence = [...playerSequence, color]
     setPlayerSequence(newPlayerSequence)
 
-    // Wrong move — game over
-    if (color !== sequence[newPlayerSequence.length - 1]) {
+    // Wrong move — check for expected color based on mode
+    const expectedIndex = mode === "reverse"
+      ? sequence.length - 1 - (newPlayerSequence.length - 1)
+      : newPlayerSequence.length - 1
+    const expectedColor = sequence[expectedIndex]
+
+    if (color !== expectedColor) {
+      if (mode === "timed") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+        setPlayerSequence([])
+        addTimeout(() => {
+          showSequence(sequence, level)
+        }, 500)
+        return
+      }
+
       setGameState("gameover")
-      Vibration.vibrate([0, 200, 100, 200])
+      stopTimer()
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 
       if (score > highScore) {
         setHighScore(score)
         setIsNewHighScore(true)
         saveHighScore(score)
+      }
+
+      recordGameResult(score)
+
+      if (mode === "daily") {
+        saveDailyResult(score)
       }
       return
     }
@@ -268,6 +424,14 @@ export function useGameEngine(): UseGameEngineReturn {
       setScore(newScore)
       setLevel(newLevel)
       setPlayerSequence([])
+
+      if (mode === "timed") {
+        setSequencesCompleted((prev) => prev + 1)
+      }
+
+      if (mode === "chaos") {
+        shuffleButtonPositions()
+      }
 
       addTimeout(() => {
         const newSequence = [...sequence]
@@ -284,6 +448,7 @@ export function useGameEngine(): UseGameEngineReturn {
 
   return {
     gameState,
+    mode,
     score,
     level,
     highScore,
@@ -292,11 +457,17 @@ export function useGameEngine(): UseGameEngineReturn {
     sequence,
     playerSequence,
     isNewHighScore,
+    continuedThisGame,
+    timeRemaining,
+    sequencesCompleted,
+    buttonPositions,
 
     startGame,
     resetGame,
+    continueGame,
     handleButtonTouch,
     handleButtonRelease,
     toggleSound,
+    setMode,
   }
 }

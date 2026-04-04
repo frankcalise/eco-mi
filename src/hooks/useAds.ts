@@ -3,6 +3,8 @@ import { Platform } from "react-native"
 
 import {
   InterstitialAd,
+  RewardedAd,
+  RewardedAdEventType,
   AdEventType,
   TestIds,
 } from "react-native-google-mobile-ads"
@@ -11,6 +13,8 @@ import { loadString, saveString } from "@/utils/storage"
 
 const INTERSTITIAL_IOS = process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_IOS ?? ""
 const INTERSTITIAL_ANDROID = process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ANDROID ?? ""
+const REWARDED_IOS = process.env.EXPO_PUBLIC_ADMOB_REWARDED_IOS ?? ""
+const REWARDED_ANDROID = process.env.EXPO_PUBLIC_ADMOB_REWARDED_ANDROID ?? ""
 
 const LAST_INTERSTITIAL_KEY = "ecomi:ads:lastInterstitialTime"
 const SESSION_COUNT_KEY = "ecomi:ads:sessionCount"
@@ -30,8 +34,19 @@ function getInterstitialAdUnitId(): string {
   })
 }
 
+function getRewardedAdUnitId(): string {
+  if (__DEV__) return TestIds.REWARDED
+  return Platform.select({
+    ios: REWARDED_IOS,
+    android: REWARDED_ANDROID,
+    default: TestIds.REWARDED,
+  })
+}
+
 type UseAdsReturn = {
   showInterstitial: (roundsPlayed: number, removeAds: boolean) => Promise<boolean>
+  showRewarded: () => Promise<boolean>
+  rewardedReady: boolean
   incrementGamesPlayed: () => void
   incrementSessionCount: () => void
   adShownThisSession: boolean
@@ -39,14 +54,19 @@ type UseAdsReturn = {
 
 export function useAds(): UseAdsReturn {
   const [adShownThisSession, setAdShownThisSession] = useState(false)
+  const [rewardedReady, setRewardedReady] = useState(false)
   const interstitialRef = useRef<InterstitialAd | null>(null)
+  const rewardedRef = useRef<RewardedAd | null>(null)
   const loadedRef = useRef(false)
+  const rewardedLoadedRef = useRef(false)
   const gamesThisSessionRef = useRef(0)
 
   useEffect(() => {
     loadInterstitial()
+    loadRewarded()
     return () => {
       interstitialRef.current = null
+      rewardedRef.current = null
     }
   }, [])
 
@@ -71,6 +91,48 @@ export function useAds(): UseAdsReturn {
     })
 
     interstitial.load()
+  }
+
+  function loadRewarded() {
+    const adUnitId = getRewardedAdUnitId()
+    if (!adUnitId) return
+
+    const rewarded = RewardedAd.createForAdRequest(adUnitId)
+    rewardedRef.current = rewarded
+
+    rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
+      rewardedLoadedRef.current = true
+      setRewardedReady(true)
+    })
+
+    rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
+      // Reward is granted via the promise in showRewarded
+    })
+
+    rewarded.addAdEventListener(AdEventType.CLOSED, () => {
+      rewardedLoadedRef.current = false
+      setRewardedReady(false)
+      loadRewarded()
+    })
+
+    rewarded.addAdEventListener(AdEventType.ERROR, () => {
+      rewardedLoadedRef.current = false
+      setRewardedReady(false)
+    })
+
+    rewarded.load()
+  }
+
+  async function showRewarded(): Promise<boolean> {
+    if (!rewardedLoadedRef.current || !rewardedRef.current) return false
+
+    try {
+      rewardedRef.current.show()
+      setAdShownThisSession(true)
+      return true
+    } catch {
+      return false
+    }
   }
 
   function shouldShowInterstitial(roundsPlayed: number, removeAds: boolean): boolean {
@@ -122,6 +184,8 @@ export function useAds(): UseAdsReturn {
 
   return {
     showInterstitial,
+    showRewarded,
+    rewardedReady,
     incrementGamesPlayed,
     incrementSessionCount,
     adShownThisSession,

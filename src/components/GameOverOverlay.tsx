@@ -1,6 +1,8 @@
 import { View, Text, Pressable, StyleSheet } from "react-native"
 
 import { Ionicons } from "@expo/vector-icons"
+import LottieView from "lottie-react-native"
+import { useTranslation } from "react-i18next"
 
 type GameOverOverlayProps = {
   visible: boolean
@@ -9,7 +11,9 @@ type GameOverOverlayProps = {
   highScore: number
   isNewHighScore: boolean
   showRemoveAds?: boolean
+  showContinue?: boolean
   onPlayAgain: () => void
+  onContinue?: () => void
   onShare?: () => void
   onRemoveAds?: () => void
 }
@@ -21,57 +25,76 @@ export function GameOverOverlay({
   highScore,
   isNewHighScore,
   showRemoveAds,
+  showContinue,
   onPlayAgain,
+  onContinue,
   onShare,
   onRemoveAds,
 }: GameOverOverlayProps) {
+  const { t } = useTranslation()
+
   if (!visible) return null
 
   return (
     <View testID="overlay-game-over" style={styles.backdrop}>
       <View style={styles.card}>
-        <Text style={styles.title}>Game Over</Text>
+        <Text style={styles.title}>{t("game:gameOver")}</Text>
 
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Score</Text>
+            <Text style={styles.statLabel}>{t("game:score")}</Text>
             <Text style={styles.statValue}>{score}</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Level</Text>
+            <Text style={styles.statLabel}>{t("game:level")}</Text>
             <Text style={styles.statValue}>{level}</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Best</Text>
+            <Text style={styles.statLabel}>{t("game:best")}</Text>
             <Text style={styles.statValue}>{highScore}</Text>
           </View>
         </View>
 
         {isNewHighScore && (
-          <View style={styles.badgeContainer}>
-            <Ionicons name="trophy" size={20} color="#fbbf24" />
-            <Text style={styles.badgeText}>New High Score!</Text>
+          <View style={styles.celebrationContainer}>
+            <LottieView
+              source={require("../../assets/animations/trophy.json")}
+              autoPlay
+              loop={false}
+              style={styles.lottie}
+            />
+            <View style={styles.badgeContainer}>
+              <Ionicons name="trophy" size={20} color="#fbbf24" />
+              <Text style={styles.badgeText}>{t("game:newHighScore")}</Text>
+            </View>
           </View>
         )}
 
         <View style={styles.actions}>
           <Pressable testID="btn-play-again" style={styles.playAgainButton} onPress={onPlayAgain}>
             <Ionicons name="refresh" size={20} color="white" />
-            <Text style={styles.buttonText}>Play Again</Text>
+            <Text style={styles.buttonText}>{t("game:playAgain")}</Text>
           </Pressable>
 
           {onShare && (
             <Pressable testID="btn-share" style={styles.shareButton} onPress={onShare}>
               <Ionicons name="share-outline" size={20} color="white" />
-              <Text style={styles.buttonText}>Share</Text>
+              <Text style={styles.buttonText}>{t("game:share")}</Text>
             </Pressable>
           )}
         </View>
 
+        {showContinue && onContinue && (
+          <Pressable testID="btn-continue" style={styles.continueButton} onPress={onContinue}>
+            <Ionicons name="play-forward" size={18} color="white" />
+            <Text style={styles.continueText}>{t("game:continue")}</Text>
+          </Pressable>
+        )}
+
         {showRemoveAds && onRemoveAds && (
           <Pressable testID="btn-remove-ads" style={styles.removeAdsButton} onPress={onRemoveAds}>
             <Ionicons name="close-circle-outline" size={18} color="#fbbf24" />
-            <Text style={styles.removeAdsText}>Remove Ads</Text>
+            <Text style={styles.removeAdsText}>{t("game:removeAds")}</Text>
           </Pressable>
         )}
       </View>
@@ -92,11 +115,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 100,
   },
+  celebrationContainer: {
+    alignItems: "center",
+    marginTop: 12,
+  },
+  lottie: {
+    height: 80,
+    width: 80,
+  },
   badgeContainer: {
     alignItems: "center",
     flexDirection: "row",
     gap: 6,
-    marginTop: 12,
+    marginTop: 4,
   },
   badgeText: {
     color: "#fbbf24",
@@ -107,6 +138,21 @@ const styles = StyleSheet.create({
     color: "white",
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
+  },
+  continueButton: {
+    alignItems: "center",
+    backgroundColor: "#8b5cf6",
+    borderRadius: 8,
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  continueText: {
+    color: "white",
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 14,
   },
   card: {
     alignItems: "center",

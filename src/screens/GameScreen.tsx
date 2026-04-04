@@ -2,15 +2,20 @@ import { useEffect, useRef } from "react"
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, useWindowDimensions } from "react-native"
 
 import { Ionicons } from "@expo/vector-icons"
+import * as Sharing from "expo-sharing"
+import { useTranslation } from "react-i18next"
 
 import { GameButton } from "@/components/GameButton"
 import { GameOverOverlay } from "@/components/GameOverOverlay"
+import { ReviewPrompt } from "@/components/ReviewPrompt"
 import { useAds } from "@/hooks/useAds"
 import { useGameEngine, colors } from "@/hooks/useGameEngine"
 import { usePurchases } from "@/hooks/usePurchases"
+import { useStoreReview } from "@/hooks/useStoreReview"
 import { useAnalytics } from "@/utils/analytics"
 
 export function GameScreen() {
+  const { t } = useTranslation()
   const { width, height } = useWindowDimensions()
   const gameSize = Math.min(width * 0.8, height * 0.5)
   const buttonSize = gameSize * 0.4
@@ -23,17 +28,29 @@ export function GameScreen() {
     activeButton,
     soundEnabled,
     isNewHighScore,
+    continuedThisGame,
+    sequence,
+    playerSequence,
     startGame,
     resetGame,
+    continueGame,
     handleButtonTouch,
     handleButtonRelease,
     toggleSound,
   } = useGameEngine()
 
-  const { showInterstitial, incrementGamesPlayed, incrementSessionCount, adShownThisSession } =
-    useAds()
+  const {
+    showInterstitial,
+    showRewarded,
+    rewardedReady,
+    incrementGamesPlayed,
+    incrementSessionCount,
+    adShownThisSession,
+  } = useAds()
   const { removeAds, purchaseRemoveAds } = usePurchases()
   const analytics = useAnalytics()
+  const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
+    useStoreReview()
   const sessionCounted = useRef(false)
 
   // Count session on first mount
@@ -53,6 +70,7 @@ export function GameScreen() {
 
       if (isNewHighScore) {
         analytics.trackGameCompleted(score, level, true)
+        triggerReviewCheck("new_high_score", adShownThisSession)
       }
 
       showInterstitial(level, removeAds).then((shown) => {
@@ -67,6 +85,31 @@ export function GameScreen() {
   function handleStartGame() {
     analytics.trackGameStarted()
     startGame()
+  }
+
+  async function handleContinue() {
+    const shown = await showRewarded()
+    if (shown) {
+      analytics.trackAdRewardedWatched("continue")
+      continueGame()
+    }
+  }
+
+  function handleReviewResponse(response: "love_it" | "not_really") {
+    analytics.trackReviewPromptShown(reviewTrigger)
+    analytics.trackReviewPromptResponse(response)
+  }
+
+  async function handleShare() {
+    analytics.trackShareTapped(score, level)
+    const message = t("game:shareMessage", { level, score })
+    const isAvailable = await Sharing.isAvailableAsync()
+    if (isAvailable) {
+      await Sharing.shareAsync("https://ecomi.app", {
+        dialogTitle: message,
+        mimeType: "text/plain",
+      })
+    }
   }
 
   async function handleRemoveAds() {
@@ -93,22 +136,22 @@ export function GameScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Eco Mi</Text>
-        <Text style={styles.subtitle}>Memory Challenge Game</Text>
+        <Text style={styles.title}>{t("game:title")}</Text>
+        <Text style={styles.subtitle}>{t("game:subtitle")}</Text>
       </View>
 
       {/* Score Display */}
       <View style={styles.scoreContainer}>
         <View style={styles.scoreBox}>
-          <Text style={styles.scoreLabel}>Level</Text>
+          <Text style={styles.scoreLabel}>{t("game:level")}</Text>
           <Text testID="text-level" style={styles.scoreValue}>{level}</Text>
         </View>
         <View style={styles.scoreBox}>
-          <Text style={styles.scoreLabel}>Score</Text>
+          <Text style={styles.scoreLabel}>{t("game:score")}</Text>
           <Text testID="text-score" style={styles.scoreValue}>{score}</Text>
         </View>
         <View style={styles.scoreBox}>
-          <Text style={styles.scoreLabel}>Best</Text>
+          <Text style={styles.scoreLabel}>{t("game:best")}</Text>
           <Text testID="text-high-score" style={styles.scoreValue}>{highScore}</Text>
         </View>
       </View>
@@ -131,7 +174,7 @@ export function GameScreen() {
 
           {/* Center Circle */}
           <View style={styles.centerCircle}>
-            <Text style={styles.centerText}>Eco Mi</Text>
+            <Text style={styles.centerText}>{t("game:title")}</Text>
           </View>
         </View>
       </View>
@@ -141,7 +184,7 @@ export function GameScreen() {
         {gameState === "idle" && (
           <TouchableOpacity testID="btn-start" style={styles.startButton} onPress={handleStartGame}>
             <Ionicons name="play" size={24} color="white" />
-            <Text style={styles.buttonText}>Start Game</Text>
+            <Text style={styles.buttonText}>{t("game:startGame")}</Text>
           </TouchableOpacity>
         )}
 
@@ -149,24 +192,37 @@ export function GameScreen() {
         {(gameState === "showing" || gameState === "waiting") && (
           <TouchableOpacity style={styles.resetButton} onPress={resetGame}>
             <Ionicons name="stop" size={24} color="white" />
-            <Text style={styles.buttonText}>Reset</Text>
+            <Text style={styles.buttonText}>{t("game:reset")}</Text>
           </TouchableOpacity>
         )}
 
         <TouchableOpacity testID="btn-sound-toggle" style={styles.soundButton} onPress={toggleSound}>
           <Ionicons name={soundEnabled ? "volume-high" : "volume-mute"} size={24} color="white" />
-          <Text style={styles.buttonText}>Sound</Text>
+          <Text style={styles.buttonText}>{t("game:sound")}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Game Status */}
       <View style={styles.statusContainer}>
-        {gameState === "idle" && <Text style={styles.statusText}>Press Start Game to begin!</Text>}
+        {gameState === "idle" && <Text style={styles.statusText}>{t("game:pressStart")}</Text>}
         {gameState === "showing" && (
-          <Text style={[styles.statusText, styles.showingText]}>Watch the sequence...</Text>
+          <Text style={[styles.statusText, styles.showingText]}>{t("game:watchSequence")}</Text>
         )}
         {gameState === "waiting" && (
-          <Text style={[styles.statusText, styles.waitingText]}>Repeat the sequence!</Text>
+          <>
+            <Text style={[styles.statusText, styles.waitingText]}>{t("game:repeatSequence")}</Text>
+            <View style={styles.progressRow}>
+              {sequence.map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.progressDot,
+                    i < playerSequence.length && styles.progressDotFilled,
+                  ]}
+                />
+              ))}
+            </View>
+          </>
         )}
       </View>
 
@@ -177,8 +233,17 @@ export function GameScreen() {
         highScore={highScore}
         isNewHighScore={isNewHighScore}
         showRemoveAds={!removeAds && adShownThisSession}
+        showContinue={rewardedReady && !continuedThisGame}
         onPlayAgain={handleStartGame}
+        onContinue={handleContinue}
+        onShare={handleShare}
         onRemoveAds={handleRemoveAds}
+      />
+
+      <ReviewPrompt
+        visible={showReviewPrompt}
+        onDismiss={dismissReviewPrompt}
+        onResponse={handleReviewResponse}
       />
     </View>
   )
@@ -267,6 +332,21 @@ const styles = StyleSheet.create({
     color: "white",
     fontFamily: "Oxanium-Bold",
     fontSize: 24,
+  },
+  progressDot: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 5,
+    height: 10,
+    width: 10,
+  },
+  progressDotFilled: {
+    backgroundColor: "#22c55e",
+  },
+  progressRow: {
+    flexDirection: "row",
+    gap: 6,
+    justifyContent: "center",
+    marginTop: 8,
   },
   showingText: {
     color: "#fbbf24",
