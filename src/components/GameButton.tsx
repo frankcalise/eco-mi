@@ -1,4 +1,6 @@
-import { View, Pressable, StyleSheet } from "react-native"
+import { Pressable, StyleSheet } from "react-native"
+
+import { EaseView } from "react-native-ease"
 
 import { colorMap, type Color } from "@/hooks/useGameEngine"
 
@@ -35,21 +37,30 @@ export function GameButton({
     backgroundColor: isActive ? info.activeColor : info.color,
     width: buttonSize,
     height: buttonSize,
-    ...(isActive ? { transform: [{ scale: 1.05 as const }] } : {}),
   }
 
   const positionStyle = getPositionStyle(position, buttonSize, gameSize)
 
   return (
-    <Pressable
-      testID={`btn-${color}${isActive ? "-active" : ""}`}
-      style={[styles.button, buttonStyle, positionStyle]}
-      disabled={disabled}
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}
+    <EaseView
+      animate={{
+        scale: isActive ? 1.08 : 1,
+        opacity: isActive ? 1 : 0.85,
+      }}
+      transition={{
+        default: { type: "spring", stiffness: 300, damping: 20, mass: 0.8 },
+        opacity: { type: "timing", duration: 150, easing: "easeOut" },
+      }}
+      style={[styles.button, positionStyle, { width: buttonSize, height: buttonSize }]}
     >
-      {isActive && <View style={styles.activeIndicator} />}
-    </Pressable>
+      <Pressable
+        testID={`btn-${color}${isActive ? "-active" : ""}`}
+        style={[styles.pressable, buttonStyle]}
+        disabled={disabled}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+      />
+    </EaseView>
   )
 }
 
@@ -72,20 +83,13 @@ function getPositionStyle(
 }
 
 const styles = StyleSheet.create({
-  activeIndicator: {
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    borderRadius: 8,
-    height: 16,
-    left: "50%",
-    position: "absolute",
-    top: "50%",
-    transform: [{ translateX: -8 }, { translateY: -8 }],
-    width: 16,
-  },
   button: {
+    position: "absolute",
+  },
+  pressable: {
     borderRadius: 20,
     elevation: 8,
-    position: "absolute",
+    flex: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,

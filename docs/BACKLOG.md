@@ -13,6 +13,17 @@
 
 ---
 
+## Bugs
+
+- [ ] **Audio pops/clicks when tapping game buttons**
+  Audible pop artifact on button press, especially on quick taps. Likely related to the oscillator start/stop envelope in `src/hooks/useAudioTones.tsx`. The attack ramp (`ATTACK_S = 0.01`) may be too short on some devices, or the continuous sound start/stop cycle creates a discontinuity when rapidly re-triggering. Investigate:
+  - Whether the gain node value is non-zero when a new oscillator starts (creating a click)
+  - Whether the single oscillator ref causes a race when tapping a new button before the previous fade-out completes
+  - Whether `expo-haptics` vibration timing interferes with audio playback
+  - Test with longer attack/release ramps and see if the pop goes away
+
+---
+
 ## Phase 0 — Tech Debt & Foundation
 
 > Do these first. The SDK upgrade and React Compiler change how we write all new code — no manual memoization needed.
