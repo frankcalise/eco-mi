@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { Slot } from "expo-router"
+import { PostHogProvider } from "posthog-react-native"
 import { KeyboardProvider } from "react-native-keyboard-controller"
 import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context"
 
@@ -8,14 +9,17 @@ import { initI18n } from "@/i18n"
 import { ThemeProvider } from "@/theme/context"
 import { loadDateFnsLocale } from "@/utils/formatDate"
 
+const POSTHOG_KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY ?? ""
+
 export default function Root() {
   const [isI18nInitialized, setIsI18nInitialized] = useState(false)
   const { loaded: isFontsLoaded } = useWebFonts()
 
   useEffect(() => {
     initI18n()
-      .then(() => setIsI18nInitialized(true))
       .then(() => loadDateFnsLocale())
+      .catch((err) => console.error("i18n init failed:", err))
+      .finally(() => setIsI18nInitialized(true))
   }, [])
 
   const loaded = isI18nInitialized
@@ -23,7 +27,7 @@ export default function Root() {
     return null
   }
 
-  return (
+  const content = (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <ThemeProvider>
         <KeyboardProvider>
@@ -31,5 +35,16 @@ export default function Root() {
         </KeyboardProvider>
       </ThemeProvider>
     </SafeAreaProvider>
+  )
+
+  if (!POSTHOG_KEY) return content
+
+  return (
+    <PostHogProvider
+      apiKey={POSTHOG_KEY}
+      options={{ host: "https://us.i.posthog.com" }}
+    >
+      {content}
+    </PostHogProvider>
   )
 }

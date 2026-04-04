@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react"
 
 import { Vibration } from "react-native"
 
+import { getToneDuration, getSequenceInterval } from "@/config/difficulty"
 import { useAudioTones } from "@/hooks/useAudioTones"
 import { saveString, loadString } from "@/utils/storage"
 
@@ -9,8 +10,6 @@ export type GameState = "idle" | "showing" | "waiting" | "gameover"
 export type Color = "red" | "blue" | "green" | "yellow"
 
 export const colors: Color[] = ["red", "blue", "green", "yellow"]
-
-export const MIN_TONE_DURATION = 600
 
 export const colorMap = {
   red: {
@@ -59,6 +58,25 @@ interface UseGameEngineReturn {
 
 const HIGH_SCORE_KEY = "simon-high-score"
 
+/**
+ * Mulberry32 seeded PRNG — deterministic random from a 32-bit seed.
+ * Returns a float in [0, 1).
+ */
+function mulberry32(seed: number): () => number {
+  let state = seed | 0
+  return () => {
+    state = (state + 0x6d2b79f5) | 0
+    let t = Math.imul(state ^ (state >>> 15), 1 | state)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function getTestSeed(): number | null {
+  const raw = process.env.EXPO_PUBLIC_TEST_SEED
+  return raw ? parseInt(raw, 10) : null
+}
+
 export function useGameEngine(): UseGameEngineReturn {
   const [sequence, setSequence] = useState<Color[]>([])
   const [playerSequence, setPlayerSequence] = useState<Color[]>([])
@@ -72,6 +90,8 @@ export function useGameEngine(): UseGameEngineReturn {
 
   const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
   const buttonPressStartTime = useRef<number | null>(null)
+  const testSeed = getTestSeed()
+  const seededRng = useRef(testSeed !== null ? mulberry32(testSeed) : null)
 
   const { initialize, cleanup, playSound, startContinuousSound, stopContinuousSoundWithFade } =
     useAudioTones(colorMap, soundEnabled)
@@ -92,6 +112,15 @@ export function useGameEngine(): UseGameEngineReturn {
       clearTimeout(id)
     }
     timeoutsRef.current.clear()
+  }
+
+  // --- Sequence generation (seeded or random) ---
+
+  function getNextColorIndex(_sequencePosition: number): number {
+    if (seededRng.current) {
+      return Math.floor(seededRng.current() * colors.length)
+    }
+    return Math.floor(Math.random() * colors.length)
   }
 
   // --- Persistence ---
@@ -121,7 +150,7 @@ export function useGameEngine(): UseGameEngineReturn {
 
   // --- Game logic ---
 
-  function flashButton(color: Color, duration: number = MIN_TONE_DURATION) {
+  function flashButton(color: Color, duration: number) {
     setActiveButton(color)
     playSound(color, duration)
     Vibration.vibrate(100)
@@ -131,24 +160,29 @@ export function useGameEngine(): UseGameEngineReturn {
     }, duration)
   }
 
-  function showSequence(seq: Color[]) {
+  function showSequence(seq: Color[], currentLevel: number) {
     setGameState("showing")
+    const toneDuration = getToneDuration(currentLevel)
+    const interval = getSequenceInterval(currentLevel)
 
     seq.forEach((color, index) => {
       addTimeout(() => {
-        flashButton(color)
+        flashButton(color, toneDuration)
 
         if (index === seq.length - 1) {
           addTimeout(() => {
             setGameState("waiting")
-          }, 700)
+          }, toneDuration + 100)
         }
-      }, (index + 1) * 800)
+      }, (index + 1) * interval)
     })
   }
 
   function startGame() {
     clearAllTimeouts()
+    if (testSeed !== null) {
+      seededRng.current = mulberry32(testSeed)
+    }
     setSequence([])
     setPlayerSequence([])
     setLevel(1)
@@ -157,9 +191,9 @@ export function useGameEngine(): UseGameEngineReturn {
     setIsNewHighScore(false)
 
     addTimeout(() => {
-      const newSequence = [colors[Math.floor(Math.random() * colors.length)]]
+      const newSequence = [colors[getNextColorIndex(0)]]
       setSequence(newSequence)
-      showSequence(newSequence)
+      showSequence(newSequence, 1)
     }, 500)
   }
 
@@ -177,6 +211,7 @@ export function useGameEngine(): UseGameEngineReturn {
 
   function handleButtonTouch(color: Color) {
     if (gameState !== "waiting") return
+    const toneDuration = getToneDuration(level)
 
     buttonPressStartTime.current = Date.now()
     setActiveButton(color)
@@ -185,19 +220,20 @@ export function useGameEngine(): UseGameEngineReturn {
 
     addTimeout(() => {
       // Ensures minimum duration — cleared on release if held longer
-    }, MIN_TONE_DURATION)
+    }, toneDuration)
   }
 
   function handleButtonRelease(color: Color) {
     if (gameState !== "waiting") return
+    const toneDuration = getToneDuration(level)
 
     const currentTime = Date.now()
     const pressDuration = buttonPressStartTime.current
       ? currentTime - buttonPressStartTime.current
       : 0
 
-    if (pressDuration < MIN_TONE_DURATION) {
-      const remainingTime = MIN_TONE_DURATION - pressDuration
+    if (pressDuration < toneDuration) {
+      const remainingTime = toneDuration - pressDuration
       stopContinuousSoundWithFade(color, 100)
 
       addTimeout(() => {
@@ -235,10 +271,9 @@ export function useGameEngine(): UseGameEngineReturn {
 
       addTimeout(() => {
         const newSequence = [...sequence]
-        const randomColor = colors[Math.floor(Math.random() * colors.length)]
-        newSequence.push(randomColor)
+        newSequence.push(colors[getNextColorIndex(newSequence.length)])
         setSequence(newSequence)
-        showSequence(newSequence)
+        showSequence(newSequence, newLevel)
       }, 1000)
     }
   }

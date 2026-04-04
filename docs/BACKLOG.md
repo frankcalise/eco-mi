@@ -50,7 +50,7 @@
 - [x] **Clean up unused boilerplate dependencies**
   Remove `apisauce` from `package.json` (unused). Evaluate `react-native-keyboard-controller` — only used as `<KeyboardProvider>` in layout, unnecessary for a single-screen game. Check if SDK 55 upgrade makes any other deps obsolete.
 
-- [ ] **Add `.catch()` to `initI18n` in `_layout.tsx`**
+- [x] **Add `.catch()` to `initI18n` in `_layout.tsx`**
   Currently no error handler — if i18n init fails, the app renders `null` forever (white screen). Add `.catch()` or `.finally()` to ensure the app renders even in degraded state.
 
 ---
@@ -67,7 +67,7 @@
   - Return a clean API: `{ gameState, score, level, highScore, sequence, activeButton, startGame, resetGame, handleButtonTouch, handleButtonRelease }`
   - Ref: VISION.md > Phase 1 #1, Technical Architecture > Target Architecture
 
-- [ ] **Create `src/config/difficulty.ts`**
+- [x] **Create `src/config/difficulty.ts`**
   Extract timing constants and speed ramp formula:
   - `MIN_TONE_DURATION`: base 600ms, decreasing with level
   - `SEQUENCE_INTERVAL`: `Math.max(300, 800 - level * 30)`
@@ -75,7 +75,7 @@
   - Export as functions of level so `useGameEngine()` consumes them
   - Ref: VISION.md > Phase 1 #3
 
-- [ ] **Add `testID` props to all interactive and state-displaying elements**
+- [x] **Add `testID` props to all interactive and state-displaying elements**
   Follow the testID convention table in VISION.md > Testing Strategy. This unblocks Maestro flows.
   - Game buttons: `btn-red`, `btn-blue`, `btn-green`, `btn-yellow` (with `-active` suffix when lit)
   - Controls: `btn-start`, `btn-play-again`, `btn-sound-toggle`
@@ -83,17 +83,17 @@
   - Overlays: `overlay-game-over`
   - Ref: VISION.md > Testing Strategy > TestID Conventions
 
-- [ ] **Add seeded RNG for deterministic test mode**
+- [x] **Add seeded RNG for deterministic test mode**
   When `EXPO_PUBLIC_TEST_SEED` env var is set, use a seeded PRNG (e.g., mulberry32) for sequence generation instead of `Math.random()`. Zero impact on production.
   - Ref: VISION.md > Testing Strategy > Deterministic Test Mode
 
 ### 1.2 Visual Polish (v1.0 scope)
 
-- [ ] **Wire up Oxanium font across all game UI**
+- [x] **Wire up Oxanium font across all game UI**
   Fonts are already bundled in `assets/fonts/`. Update `src/theme/typography.ts` to replace SpaceGrotesk with Oxanium as the primary font. Apply `fontFamily` to all text styles in GameScreen.
   - Ref: VISION.md > Phase 1 #2
 
-- [ ] **Build `GameOverOverlay` component**
+- [x] **Build `GameOverOverlay` component**
   New `src/components/GameOverOverlay.tsx`. Modal overlay shown when `gameState === "gameover"`:
   - Score, level reached, high score comparison
   - "New High Score!" badge when applicable
@@ -102,7 +102,7 @@
   - This is the primary surface for ads and IAP prompts later
   - Ref: VISION.md > Phase 1 #4
 
-- [ ] **Extract `GameButton` component**
+- [x] **Extract `GameButton` component**
   New `src/components/GameButton.tsx`. Encapsulates a single game quadrant button:
   - Accepts `color`, `isActive`, `onPressIn`, `onPressOut`, `testID`
   - Static styling for now (animations added in Phase 2)
@@ -116,7 +116,7 @@
   - Ref: ACCOUNTS.md > Security > AdMob App IDs in `app.json`
   - Blocked by: `.env` file created with placeholder values
 
-- [ ] **Install and configure `react-native-purchases` (RevenueCat)**
+- [x] **Install and configure `react-native-purchases` (RevenueCat)**
   - `npx expo install react-native-purchases`
   - Add `"react-native-purchases"` to plugins in `app.config.ts`
   - Create `src/hooks/usePurchases.ts` — generic, reusable hook:
@@ -129,7 +129,7 @@
   - Ref: VISION.md > Phase 1 #5, ACCOUNTS.md > RevenueCat
   - Blocked by: `app.config.ts` conversion, RevenueCat account setup (ACCOUNTS.md checklist)
 
-- [ ] **Install and configure `react-native-google-mobile-ads`**
+- [x] **Install and configure `react-native-google-mobile-ads`**
   - `npx expo install react-native-google-mobile-ads`
   - Add plugin config to `app.config.ts` with env var App IDs
   - Install `expo-tracking-transparency` for ATT consent
@@ -159,13 +159,13 @@
 
 ### 1.4 Analytics
 
-- [ ] **Install and configure PostHog**
+- [x] **Install and configure PostHog**
   - `npx expo install posthog-react-native`
   - Add `PostHogProvider` to `src/app/_layout.tsx` with env var API key
   - Ref: VISION.md > Analytics > PostHog Setup, ACCOUNTS.md > PostHog
   - Blocked by: PostHog account created (ACCOUNTS.md checklist)
 
-- [ ] **Instrument core analytics events**
+- [x] **Instrument core analytics events**
   Add PostHog event tracking calls to `useGameEngine` and `GameOverOverlay`:
   - `game_started`, `game_completed`, `game_over`
   - `ad_shown`, `ad_rewarded_watched`
@@ -176,7 +176,7 @@
 
 ### 1.5 Testing (v1.0 scope)
 
-- [ ] **Write unit tests for `useGameEngine()` hook**
+- [x] **Write unit tests for `useGameEngine()` hook**
   Test with `@testing-library/react-hooks` (already installed via RTL):
   - State transitions: idle → showing → waiting → gameover
   - Score calculation: `sequence.length * 10` per round

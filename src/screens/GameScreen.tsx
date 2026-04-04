@@ -2,7 +2,9 @@ import { View, Text, TouchableOpacity, StyleSheet, StatusBar, useWindowDimension
 
 import { Ionicons } from "@expo/vector-icons"
 
-import { useGameEngine, colors, colorMap, Color } from "@/hooks/useGameEngine"
+import { GameButton } from "@/components/GameButton"
+import { GameOverOverlay } from "@/components/GameOverOverlay"
+import { useGameEngine, colors } from "@/hooks/useGameEngine"
 
 export function GameScreen() {
   const { width, height } = useWindowDimensions()
@@ -24,30 +26,14 @@ export function GameScreen() {
     toggleSound,
   } = useGameEngine()
 
-  const dynamicStyles = getDynamicStyles(gameSize, buttonSize)
-
-  function getButtonStyle(color: Color) {
-    const colorStyle = { backgroundColor: colorMap[color].color }
-    const activeStyle =
-      activeButton === color
-        ? { backgroundColor: colorMap[color].activeColor, transform: [{ scale: 1.05 as const }] }
-        : {}
-
-    return [dynamicStyles.gameButton, colorStyle, activeStyle]
-  }
-
-  function getButtonPosition(color: Color) {
-    const position = colorMap[color].position
-    switch (position) {
-      case "topLeft":
-        return dynamicStyles.topLeft
-      case "topRight":
-        return dynamicStyles.topRight
-      case "bottomLeft":
-        return dynamicStyles.bottomLeft
-      case "bottomRight":
-        return dynamicStyles.bottomRight
-    }
+  const gameContainerStyle = {
+    backgroundColor: "rgba(0, 0, 0, 0.5)" as const,
+    borderColor: "rgba(255, 255, 255, 0.2)" as const,
+    borderRadius: gameSize / 2,
+    borderWidth: 4,
+    height: gameSize,
+    position: "relative" as const,
+    width: gameSize,
   }
 
   return (
@@ -64,32 +50,32 @@ export function GameScreen() {
       <View style={styles.scoreContainer}>
         <View style={styles.scoreBox}>
           <Text style={styles.scoreLabel}>Level</Text>
-          <Text style={styles.scoreValue}>{level}</Text>
+          <Text testID="text-level" style={styles.scoreValue}>{level}</Text>
         </View>
         <View style={styles.scoreBox}>
           <Text style={styles.scoreLabel}>Score</Text>
-          <Text style={styles.scoreValue}>{score}</Text>
+          <Text testID="text-score" style={styles.scoreValue}>{score}</Text>
         </View>
         <View style={styles.scoreBox}>
           <Text style={styles.scoreLabel}>Best</Text>
-          <Text style={styles.scoreValue}>{highScore}</Text>
+          <Text testID="text-high-score" style={styles.scoreValue}>{highScore}</Text>
         </View>
       </View>
 
       {/* Game Board */}
       <View style={styles.gameBoard}>
-        <View style={dynamicStyles.gameContainer}>
+        <View style={gameContainerStyle}>
           {colors.map((color) => (
-            <TouchableOpacity
+            <GameButton
               key={color}
-              style={[getButtonStyle(color), getButtonPosition(color)]}
+              color={color}
+              isActive={activeButton === color}
+              disabled={gameState !== "waiting"}
+              buttonSize={buttonSize}
+              gameSize={gameSize}
               onPressIn={() => handleButtonTouch(color)}
               onPressOut={() => handleButtonRelease(color)}
-              disabled={gameState !== "waiting"}
-              activeOpacity={0.8}
-            >
-              {activeButton === color && <View style={styles.activeIndicator} />}
-            </TouchableOpacity>
+            />
           ))}
 
           {/* Center Circle */}
@@ -102,18 +88,12 @@ export function GameScreen() {
       {/* Controls */}
       <View style={styles.controlsContainer}>
         {gameState === "idle" && (
-          <TouchableOpacity style={styles.startButton} onPress={startGame}>
+          <TouchableOpacity testID="btn-start" style={styles.startButton} onPress={startGame}>
             <Ionicons name="play" size={24} color="white" />
             <Text style={styles.buttonText}>Start Game</Text>
           </TouchableOpacity>
         )}
 
-        {gameState === "gameover" && (
-          <TouchableOpacity style={styles.playAgainButton} onPress={startGame}>
-            <Ionicons name="refresh" size={24} color="white" />
-            <Text style={styles.buttonText}>Play Again</Text>
-          </TouchableOpacity>
-        )}
 
         {(gameState === "showing" || gameState === "waiting") && (
           <TouchableOpacity style={styles.resetButton} onPress={resetGame}>
@@ -122,7 +102,7 @@ export function GameScreen() {
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity style={styles.soundButton} onPress={toggleSound}>
+        <TouchableOpacity testID="btn-sound-toggle" style={styles.soundButton} onPress={toggleSound}>
           <Ionicons name={soundEnabled ? "volume-high" : "volume-mute"} size={24} color="white" />
           <Text style={styles.buttonText}>Sound</Text>
         </TouchableOpacity>
@@ -137,76 +117,21 @@ export function GameScreen() {
         {gameState === "waiting" && (
           <Text style={[styles.statusText, styles.waitingText]}>Repeat the sequence!</Text>
         )}
-        {gameState === "gameover" && (
-          <View style={styles.gameOverContainer}>
-            <Text style={styles.gameOverText}>Game Over!</Text>
-            <Text style={styles.statusText}>
-              You reached level {level} with {score} points
-            </Text>
-            {isNewHighScore && <Text style={styles.highScoreText}>New High Score!</Text>}
-          </View>
-        )}
       </View>
+
+      <GameOverOverlay
+        visible={gameState === "gameover"}
+        score={score}
+        level={level}
+        highScore={highScore}
+        isNewHighScore={isNewHighScore}
+        onPlayAgain={startGame}
+      />
     </View>
   )
 }
 
-function getDynamicStyles(gameSize: number, buttonSize: number) {
-  return StyleSheet.create({
-    bottomLeft: {
-      borderBottomLeftRadius: buttonSize / 2,
-      bottom: gameSize * 0.05,
-      left: gameSize * 0.05,
-    },
-    bottomRight: {
-      borderBottomRightRadius: buttonSize / 2,
-      bottom: gameSize * 0.05,
-      right: gameSize * 0.05,
-    },
-    gameButton: {
-      borderRadius: 20,
-      elevation: 8,
-      height: buttonSize,
-      position: "absolute",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 4.65,
-      width: buttonSize,
-    },
-    gameContainer: {
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
-      borderColor: "rgba(255, 255, 255, 0.2)",
-      borderRadius: gameSize / 2,
-      borderWidth: 4,
-      height: gameSize,
-      position: "relative",
-      width: gameSize,
-    },
-    topLeft: {
-      borderTopLeftRadius: buttonSize / 2,
-      left: gameSize * 0.05,
-      top: gameSize * 0.05,
-    },
-    topRight: {
-      borderTopRightRadius: buttonSize / 2,
-      right: gameSize * 0.05,
-      top: gameSize * 0.05,
-    },
-  })
-}
-
 const styles = StyleSheet.create({
-  activeIndicator: {
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    borderRadius: 8,
-    height: 16,
-    left: "50%",
-    position: "absolute",
-    top: "50%",
-    transform: [{ translateX: -8 }, { translateY: -8 }],
-    width: 16,
-  },
   buttonText: {
     color: "white",
     fontFamily: "Oxanium-SemiBold",
@@ -252,33 +177,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 30,
   },
-  gameOverContainer: {
-    alignItems: "center",
-  },
-  gameOverText: {
-    color: "#ef4444",
-    fontFamily: "Oxanium-Bold",
-    fontSize: 20,
-    marginBottom: 8,
-  },
   header: {
     alignItems: "center",
     marginBottom: 20,
-  },
-  highScoreText: {
-    color: "#fbbf24",
-    fontFamily: "Oxanium-Bold",
-    fontSize: 16,
-    marginTop: 8,
-  },
-  playAgainButton: {
-    alignItems: "center",
-    backgroundColor: "#3b82f6",
-    borderRadius: 8,
-    flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
   },
   resetButton: {
     alignItems: "center",
@@ -305,13 +206,14 @@ const styles = StyleSheet.create({
   },
   scoreLabel: {
     color: "#a0a0a0",
+    fontFamily: "Oxanium-Regular",
     fontSize: 12,
     marginBottom: 5,
   },
   scoreValue: {
     color: "white",
+    fontFamily: "Oxanium-Bold",
     fontSize: 24,
-    fontWeight: "bold",
   },
   showingText: {
     color: "#fbbf24",
