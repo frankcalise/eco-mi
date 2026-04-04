@@ -1,303 +1,52 @@
-import React, { useState, useEffect, useRef, useCallback } from "react"
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-  StatusBar,
-  Vibration,
-} from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar, useWindowDimensions } from "react-native"
+
 import { Ionicons } from "@expo/vector-icons"
 
-import { useAudioTones } from "@/hooks/useAudioTones"
-import { saveString, loadString } from "@/utils/storage"
-
-type GameState = "idle" | "showing" | "waiting" | "gameover"
-type Color = "red" | "blue" | "green" | "yellow"
-
-const colors: Color[] = ["red", "blue", "green", "yellow"]
-
-// Minimum tone duration to match computer sequence duration
-const MIN_TONE_DURATION = 600
-
-const colorMap = {
-  red: {
-    color: "#ef4444",
-    activeColor: "#fca5a5",
-    sound: 220,
-    position: "topLeft" as const,
-  },
-  blue: {
-    color: "#3b82f6",
-    activeColor: "#93c5fd",
-    sound: 277,
-    position: "topRight" as const,
-  },
-  green: {
-    color: "#22c55e",
-    activeColor: "#86efac",
-    sound: 330,
-    position: "bottomLeft" as const,
-  },
-  yellow: {
-    color: "#eab308",
-    activeColor: "#fde047",
-    sound: 415,
-    position: "bottomRight" as const,
-  },
-}
-
-const { width, height } = Dimensions.get("window")
-const gameSize = Math.min(width * 0.8, height * 0.5)
-const buttonSize = gameSize * 0.4
+import { useGameEngine, colors, colorMap, Color } from "@/hooks/useGameEngine"
 
 export function GameScreen() {
-  const [sequence, setSequence] = useState<Color[]>([])
-  const [playerSequence, setPlayerSequence] = useState<Color[]>([])
-  const [gameState, setGameState] = useState<GameState>("idle")
-  const [level, setLevel] = useState(1)
-  const [score, setScore] = useState(0)
-  const [activeButton, setActiveButton] = useState<Color | null>(null)
-  const [soundEnabled, setSoundEnabled] = useState(true)
-  const [highScore, setHighScore] = useState(0)
+  const { width, height } = useWindowDimensions()
+  const gameSize = Math.min(width * 0.8, height * 0.5)
+  const buttonSize = gameSize * 0.4
 
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const buttonPressStartTime = useRef<number | null>(null)
-  const minimumDurationTimeout = useRef<NodeJS.Timeout | null>(null)
-
-  // Use our new audio hook
   const {
-    initialize,
-    cleanup,
-    playSound,
-    startContinuousSound,
-    stopContinuousSound,
-    stopContinuousSoundWithFade,
-  } = useAudioTones(colorMap, soundEnabled)
+    gameState,
+    score,
+    level,
+    highScore,
+    activeButton,
+    soundEnabled,
+    isNewHighScore,
+    startGame,
+    resetGame,
+    handleButtonTouch,
+    handleButtonRelease,
+    toggleSound,
+  } = useGameEngine()
 
-  // Initialize audio and load high score
-  useEffect(() => {
-    initialize()
-    loadHighScore()
+  const dynamicStyles = getDynamicStyles(gameSize, buttonSize)
 
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-      cleanup()
-    }
-  }, [initialize, cleanup])
-
-  const loadHighScore = async () => {
-    try {
-      const savedHighScore = loadString("simon-high-score")
-      if (savedHighScore) {
-        setHighScore(parseInt(savedHighScore, 10))
-      }
-    } catch (error) {
-      console.log("Error loading high score:", error)
-    }
-  }
-
-  const saveHighScore = async (score: number) => {
-    try {
-      saveString("simon-high-score", score.toString())
-    } catch (error) {
-      console.log("Error saving high score:", error)
-    }
-  }
-
-  const flashButton = useCallback(
-    (color: Color, duration: number = MIN_TONE_DURATION) => {
-      setActiveButton(color)
-      playSound(color, duration)
-      Vibration.vibrate(100)
-
-      // Cast the timeout ID to NodeJS.Timeout
-      const timeout = setTimeout(() => {
-        setActiveButton(null)
-      }, duration) as unknown as NodeJS.Timeout
-
-      timeoutRef.current = timeout
-    },
-    [playSound],
-  )
-
-  const showSequence = useCallback(
-    (seq: Color[]) => {
-      setGameState("showing")
-
-      seq.forEach((color, index) => {
-        setTimeout(
-          () => {
-            flashButton(color)
-
-            if (index === seq.length - 1) {
-              setTimeout(() => {
-                setGameState("waiting")
-              }, 700)
-            }
-          },
-          (index + 1) * 800,
-        )
-      })
-    },
-    [flashButton],
-  )
-
-  const startGame = useCallback(() => {
-    setSequence([])
-    setPlayerSequence([])
-    setLevel(1)
-    setScore(0)
-    setGameState("idle")
-
-    setTimeout(() => {
-      const newSequence = [colors[Math.floor(Math.random() * colors.length)]]
-      setSequence(newSequence)
-      showSequence(newSequence)
-    }, 500)
-  }, [showSequence])
-
-  const resetGame = useCallback(() => {
-    setGameState("idle")
-    setSequence([])
-    setPlayerSequence([])
-    setLevel(1)
-    setScore(0)
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    if (minimumDurationTimeout.current) clearTimeout(minimumDurationTimeout.current)
-    setActiveButton(null)
-    buttonPressStartTime.current = null
-  }, [])
-
-  const handleButtonTouch = useCallback(
-    (color: Color) => {
-      if (gameState !== "waiting") return
-
-      // Record the start time of the button press
-      buttonPressStartTime.current = Date.now()
-
-      setActiveButton(color)
-      startContinuousSound(color)
-      Vibration.vibrate(50)
-
-      // Set up a timeout to ensure minimum duration is met
-      // This will be cleared if the user holds the button longer
-      minimumDurationTimeout.current = setTimeout(() => {
-        // If we reach here, the user released the button before minimum duration
-        // The sound should continue playing until minimum duration is complete
-      }, MIN_TONE_DURATION) as unknown as NodeJS.Timeout
-    },
-    [gameState, startContinuousSound],
-  )
-
-  const handleButtonRelease = useCallback(
-    (color: Color) => {
-      if (gameState !== "waiting") return
-
-      const currentTime = Date.now()
-      const pressDuration = buttonPressStartTime.current
-        ? currentTime - buttonPressStartTime.current
-        : 0
-
-      // Clear the minimum duration timeout since we're handling the release
-      if (minimumDurationTimeout.current) {
-        clearTimeout(minimumDurationTimeout.current)
-        minimumDurationTimeout.current = null
-      }
-
-      // If the press was shorter than minimum duration, we need to continue playing
-      // the sound for the remaining time
-      if (pressDuration < MIN_TONE_DURATION) {
-        const remainingTime = MIN_TONE_DURATION - pressDuration
-
-        // Stop the continuous sound with fade-out and play a fixed duration sound for the remaining time
-        stopContinuousSoundWithFade(color, 100) // Quick fade-out
-
-        // Keep the button active for the remaining time
-        setTimeout(() => {
-          setActiveButton(null)
-        }, remainingTime)
-      } else {
-        // The press was long enough, we can stop with fade-out
-        setActiveButton(null)
-        stopContinuousSoundWithFade(color, 200) // Slightly longer fade-out for held buttons
-      }
-
-      const newPlayerSequence = [...playerSequence, color]
-      setPlayerSequence(newPlayerSequence)
-
-      // Check if the player's move is correct
-      if (color !== sequence[newPlayerSequence.length - 1]) {
-        // Wrong move - game over
-        setGameState("gameover")
-        Vibration.vibrate([0, 200, 100, 200])
-
-        // Update high score
-        if (score > highScore) {
-          setHighScore(score)
-          saveHighScore(score)
-        }
-        return
-      }
-
-      // Check if player completed the sequence
-      if (newPlayerSequence.length === sequence.length) {
-        // Player completed the sequence correctly
-        const newScore = score + newPlayerSequence.length * 10
-        const newLevel = level + 1
-
-        setScore(newScore)
-        setLevel(newLevel)
-        setPlayerSequence([])
-
-        // Add new color to sequence and show it
-        setTimeout(() => {
-          const newSequence = [...sequence]
-          const randomColor = colors[Math.floor(Math.random() * colors.length)]
-          newSequence.push(randomColor)
-          setSequence(newSequence)
-          showSequence(newSequence)
-        }, 1000)
-      }
-    },
-    [
-      gameState,
-      playerSequence,
-      sequence,
-      score,
-      highScore,
-      level,
-      showSequence,
-      stopContinuousSoundWithFade,
-      playSound,
-    ],
-  )
-
-  const getButtonStyle = (color: Color) => {
-    const baseStyle = [styles.gameButton]
+  function getButtonStyle(color: Color) {
     const colorStyle = { backgroundColor: colorMap[color].color }
     const activeStyle =
       activeButton === color
-        ? { backgroundColor: colorMap[color].activeColor, transform: [{ scale: 1.05 }] }
+        ? { backgroundColor: colorMap[color].activeColor, transform: [{ scale: 1.05 as const }] }
         : {}
 
-    return [baseStyle, colorStyle, activeStyle]
+    return [dynamicStyles.gameButton, colorStyle, activeStyle]
   }
 
-  const getButtonPosition = (color: Color) => {
+  function getButtonPosition(color: Color) {
     const position = colorMap[color].position
     switch (position) {
       case "topLeft":
-        return [styles.topLeft]
+        return dynamicStyles.topLeft
       case "topRight":
-        return [styles.topRight]
+        return dynamicStyles.topRight
       case "bottomLeft":
-        return [styles.bottomLeft]
+        return dynamicStyles.bottomLeft
       case "bottomRight":
-        return [styles.bottomRight]
-      default:
-        return []
+        return dynamicStyles.bottomRight
     }
   }
 
@@ -329,7 +78,7 @@ export function GameScreen() {
 
       {/* Game Board */}
       <View style={styles.gameBoard}>
-        <View style={styles.gameContainer}>
+        <View style={dynamicStyles.gameContainer}>
           {colors.map((color) => (
             <TouchableOpacity
               key={color}
@@ -373,7 +122,7 @@ export function GameScreen() {
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity style={styles.soundButton} onPress={() => setSoundEnabled(!soundEnabled)}>
+        <TouchableOpacity style={styles.soundButton} onPress={toggleSound}>
           <Ionicons name={soundEnabled ? "volume-high" : "volume-mute"} size={24} color="white" />
           <Text style={styles.buttonText}>Sound</Text>
         </TouchableOpacity>
@@ -394,14 +143,57 @@ export function GameScreen() {
             <Text style={styles.statusText}>
               You reached level {level} with {score} points
             </Text>
-            {score === highScore && score > 0 && (
-              <Text style={styles.highScoreText}>🎉 New High Score! 🎉</Text>
-            )}
+            {isNewHighScore && <Text style={styles.highScoreText}>New High Score!</Text>}
           </View>
         )}
       </View>
     </View>
   )
+}
+
+function getDynamicStyles(gameSize: number, buttonSize: number) {
+  return StyleSheet.create({
+    bottomLeft: {
+      borderBottomLeftRadius: buttonSize / 2,
+      bottom: gameSize * 0.05,
+      left: gameSize * 0.05,
+    },
+    bottomRight: {
+      borderBottomRightRadius: buttonSize / 2,
+      bottom: gameSize * 0.05,
+      right: gameSize * 0.05,
+    },
+    gameButton: {
+      borderRadius: 20,
+      elevation: 8,
+      height: buttonSize,
+      position: "absolute",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4.65,
+      width: buttonSize,
+    },
+    gameContainer: {
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      borderColor: "rgba(255, 255, 255, 0.2)",
+      borderRadius: gameSize / 2,
+      borderWidth: 4,
+      height: gameSize,
+      position: "relative",
+      width: gameSize,
+    },
+    topLeft: {
+      borderTopLeftRadius: buttonSize / 2,
+      left: gameSize * 0.05,
+      top: gameSize * 0.05,
+    },
+    topRight: {
+      borderTopRightRadius: buttonSize / 2,
+      right: gameSize * 0.05,
+      top: gameSize * 0.05,
+    },
+  })
 }
 
 const styles = StyleSheet.create({
@@ -414,16 +206,6 @@ const styles = StyleSheet.create({
     top: "50%",
     transform: [{ translateX: -8 }, { translateY: -8 }],
     width: 16,
-  },
-  bottomLeft: {
-    borderBottomLeftRadius: buttonSize / 2,
-    bottom: gameSize * 0.05,
-    left: gameSize * 0.05,
-  },
-  bottomRight: {
-    borderBottomRightRadius: buttonSize / 2,
-    bottom: gameSize * 0.05,
-    right: gameSize * 0.05,
   },
   buttonText: {
     color: "white",
@@ -469,29 +251,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 30,
-  },
-  gameButton: {
-    borderRadius: 20,
-    elevation: 8,
-    height: buttonSize,
-    position: "absolute",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    width: buttonSize,
-  },
-  gameContainer: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: gameSize / 2,
-    borderWidth: 4,
-    height: gameSize,
-    position: "relative",
-    width: gameSize,
   },
   gameOverContainer: {
     alignItems: "center",
@@ -597,16 +356,6 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-Bold",
     fontSize: 48,
     letterSpacing: 4,
-  },
-  topLeft: {
-    borderTopLeftRadius: buttonSize / 2,
-    left: gameSize * 0.05,
-    top: gameSize * 0.05,
-  },
-  topRight: {
-    borderTopRightRadius: buttonSize / 2,
-    right: gameSize * 0.05,
-    top: gameSize * 0.05,
   },
   waitingText: {
     color: "#22c55e",
