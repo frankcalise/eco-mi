@@ -101,4 +101,4 @@ web-build/
 
 .eslintcache
 
-dist
+distbuild-*.aab

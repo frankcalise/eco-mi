@@ -42,6 +42,9 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
           },
         ],
       },
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
+      },
     },
     web: {
       favicon: "./assets/images/app-icon-web-favicon.png",
