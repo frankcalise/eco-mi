@@ -143,14 +143,14 @@
   - Ref: VISION.md > Phase 1 #6, #8, Ad Placement Rules, ACCOUNTS.md > Google AdMob
   - Blocked by: `app.config.ts` conversion, AdMob account setup (ACCOUNTS.md checklist)
 
-- [ ] **Implement Remove Ads IAP flow**
+- [x] **Implement Remove Ads IAP flow**
   - Add "Remove Ads" button to `GameOverOverlay`
   - Check `remove_ads` entitlement via `usePurchases` before showing any ad
   - After 3–5 interstitials shown, display one-time "Tired of ads?" conversion prompt
   - Track `iap_initiated` and `iap_completed` PostHog events
   - Ref: VISION.md > Phase 1 #7, Monetization Strategy > IAP Product Catalog
 
-- [ ] **Wire interstitial ads into game-over flow**
+- [x] **Wire interstitial ads into game-over flow**
   - After game over, check frequency cap → show interstitial if allowed → then show `GameOverOverlay`
   - Skip if game lasted < 3 rounds
   - Skip if Remove Ads purchased
