@@ -229,35 +229,35 @@
 
 ## Phase 2 — Visual Polish (v1.1)
 
-- [ ] **Install `react-native-ease` and animate game buttons**
+- [x] **Install `react-native-ease` and animate game buttons**
   - `npx expo install react-native-ease`
   - Update `GameButton.tsx` with glow, scale, and pulse animations on press and during computer sequence playback
   - Replace static `transform: [{ scale: 1.05 }]`
   - Ref: VISION.md > Phase 2 #1
 
-- [ ] **Install `lottie-react-native` and add high score celebration**
+- [x] **Install `lottie-react-native` and add high score celebration**
   - `npx expo install lottie-react-native`
   - Download a trophy/confetti animation from LottieFiles → `assets/animations/`
   - Trigger in `GameOverOverlay` when `isHighScore === true`
   - Ref: VISION.md > Phase 2 #2
 
-- [ ] **Install `expo-haptics` and replace `Vibration` API**
+- [x] **Install `expo-haptics` and replace `Vibration` API**
   - `npx expo install expo-haptics`
   - Different impact styles per color button (light/medium/heavy)
   - Success notification on round completion
   - Error notification on game over
   - Ref: VISION.md > Phase 2 #3
 
-- [ ] **Add sequence progress indicator**
+- [x] **Add sequence progress indicator**
   Show dots or a progress bar during the `waiting` state indicating how many steps the player has completed vs total sequence length.
   - Ref: VISION.md > Phase 2 #4
 
-- [ ] **Implement rewarded video "Continue" mechanic**
+- [x] **Implement rewarded video "Continue" mechanic**
   After game over, offer "Watch ad to continue" (one per game). On watch completion, replay the failed sequence and let the player retry.
   - Track `ad_rewarded_watched` PostHog event
   - Ref: VISION.md > Phase 2 #5
 
-- [ ] **Implement store review pre-prompt**
+- [x] **Implement store review pre-prompt**
   - Create `src/components/ReviewPrompt.tsx` (sentiment filter modal)
   - Create `src/hooks/useStoreReview.ts` (guard logic)
   - Install `expo-store-review`
@@ -273,15 +273,15 @@
 
 ## Phase 3 — Engagement (v1.2)
 
-- [ ] **Implement seeded daily challenges**
+- [x] **Implement seeded daily challenges**
   Date-based seed (`parseInt(format(new Date(), 'yyyyMMdd'))`) for deterministic sequence. Store daily best and streak in MMKV (`ecomi:daily:*` keys). Add mode selector to distinguish daily vs classic.
   - Ref: VISION.md > Phase 3 #1
 
-- [ ] **Build stats dashboard screen**
+- [x] **Build stats dashboard screen**
   New `src/app/stats.tsx`. Display: games played, best score, average level, current/longest streak. All from MMKV. Add navigation from game screen.
   - Ref: VISION.md > Phase 3 #2
 
-- [ ] **Implement achievement system**
+- [x] **Implement achievement system**
   - Create `src/config/achievements.ts` with achievement definitions and conditions
   - Store in MMKV (`ecomi:achievements` key)
   - Check conditions on game events (round complete, game over)
@@ -290,30 +290,30 @@
   - Track `achievement_unlocked` PostHog event
   - Ref: VISION.md > Phase 3 #3
 
-- [ ] **Implement score sharing**
+- [x] **Implement score sharing**
   - `npx expo install expo-sharing`
   - Generate branded score card (image or text) from game-over overlay
   - "I reached Level {{level}} with a score of {{score}} on Eco Mi!"
   - Track `share_tapped` PostHog event
   - Ref: VISION.md > Phase 3 #4
 
-- [ ] **Add Timed game mode**
+- [x] **Add Timed game mode**
   60-second countdown. Each completed sequence earns points. Wrong input replays same sequence (no game over). Score = total sequences completed.
   - Ref: VISION.md > Phase 3 #5
 
-- [ ] **Add Reverse game mode**
+- [x] **Add Reverse game mode**
   Player repeats the sequence in reverse order. Single index reversal in input validation.
   - Ref: VISION.md > Phase 3 #5
 
-- [ ] **Add Chaos game mode**
+- [x] **Add Chaos game mode**
   Button positions shuffle between rounds. Promote `colorMap` to state, shuffle after each successful round.
   - Ref: VISION.md > Phase 3 #5
 
-- [ ] **Extract game strings into i18n**
+- [x] **Extract game strings into i18n**
   Replace all hardcoded English strings in game UI with `useTranslation()` calls. Update `src/i18n/en.ts` with game-specific keys per the string table in VISION.md > Localization.
   - Ref: VISION.md > Phase 3 #6, Localization > What Needs to Happen
 
-- [ ] **Add Spanish and Portuguese translations**
+- [x] **Add Spanish and Portuguese translations**
   Create `src/i18n/es.ts` and `src/i18n/pt.ts`. ~30 strings each. Register in `src/i18n/index.ts` resources.
   - Blocked by: Strings extracted into i18n
   - Ref: VISION.md > Localization > Priority Languages

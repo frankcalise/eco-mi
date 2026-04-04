@@ -1,0 +1,72 @@
+const es = {
+  common: {
+    ok: "OK",
+    cancel: "Cancelar",
+    back: "Volver",
+  },
+  game: {
+    title: "Eco Mi",
+    subtitle: "Juego de Memoria",
+    startGame: "Iniciar Juego",
+    reset: "Reiniciar",
+    sound: "Sonido",
+    playAgain: "Jugar de Nuevo",
+    share: "Compartir",
+    gameOver: "Fin del Juego",
+    newHighScore: "Nuevo Record!",
+    score: "Puntos",
+    level: "Nivel",
+    best: "Mejor",
+    watchSequence: "Observa la secuencia...",
+    repeatSequence: "Repite la secuencia!",
+    pressStart: "Pulsa Iniciar Juego para empezar!",
+    continue: "Ver Anuncio para Continuar",
+    removeAds: "Eliminar Anuncios",
+    shareMessage: "Llegue al Nivel {{level}} con {{score}} puntos en Eco Mi! Puedes superarme?",
+    timeRemaining: "{{time}}s",
+    sequencesCompleted: "Secuencias: {{count}}",
+    modes: {
+      classic: "Clasico",
+      daily: "Diario",
+      timed: "Contrarreloj",
+      reverse: "Inverso",
+      chaos: "Caos",
+    },
+  },
+  stats: {
+    title: "Estadisticas",
+    gamesPlayed: "Partidas Jugadas",
+    bestScore: "Mejor Puntuacion",
+    averageScore: "Puntuacion Media",
+    totalScore: "Puntuacion Total",
+    currentStreak: "Racha Actual",
+    longestStreak: "Mejor Racha",
+    dayUnit: "dia",
+    daysUnit: "dias",
+  },
+  achievements: {
+    title: "Logros",
+    unlocked: "Desbloqueado!",
+  },
+  review: {
+    title: "Te gusta Eco Mi?",
+    subtitle: "Tu opinion nos ayuda a mejorar!",
+    loveIt: "Me encanta!",
+    notReally: "No mucho",
+  },
+  errorScreen: {
+    title: "Algo salio mal!",
+    friendlySubtitle:
+      "Ha ocurrido un error inesperado. Por favor, intenta reiniciar la aplicacion.",
+    reset: "REINICIAR APP",
+  },
+  emptyStateComponent: {
+    generic: {
+      heading: "Nada por aqui...",
+      content: "No se encontraron datos. Intenta pulsar el boton para actualizar.",
+      button: "Intentar de nuevo",
+    },
+  },
+}
+
+export default es
