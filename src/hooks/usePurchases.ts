@@ -18,6 +18,7 @@ type UsePurchasesReturn = {
   removeAds: boolean
   checkEntitlement: (entitlementId: string) => boolean
   purchasePackage: (pkg: PurchasesPackage) => Promise<boolean>
+  purchaseRemoveAds: () => Promise<boolean>
   restorePurchases: () => Promise<boolean>
 }
 
@@ -84,6 +85,23 @@ export function usePurchases(): UsePurchasesReturn {
     }
   }
 
+  async function purchaseRemoveAds(): Promise<boolean> {
+    try {
+      const offerings = await Purchases.getOfferings()
+      const pkg = offerings.current?.availablePackages.find(
+        (p) => p.product.identifier === "ecomi_remove_ads",
+      )
+      if (!pkg) {
+        console.warn("Remove Ads package not found in offerings")
+        return false
+      }
+      return purchasePackage(pkg)
+    } catch (err) {
+      console.warn("Failed to get offerings:", err)
+      return false
+    }
+  }
+
   async function restorePurchases(): Promise<boolean> {
     try {
       const info = await Purchases.restorePurchases()
@@ -101,6 +119,7 @@ export function usePurchases(): UsePurchasesReturn {
     removeAds,
     checkEntitlement,
     purchasePackage,
+    purchaseRemoveAds,
     restorePurchases,
   }
 }

@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, Modal } from "react-native"
+import { View, Text, Pressable, StyleSheet } from "react-native"
 
 import { Ionicons } from "@expo/vector-icons"
 
@@ -8,8 +8,10 @@ type GameOverOverlayProps = {
   level: number
   highScore: number
   isNewHighScore: boolean
+  showRemoveAds?: boolean
   onPlayAgain: () => void
   onShare?: () => void
+  onRemoveAds?: () => void
 }
 
 export function GameOverOverlay({
@@ -18,53 +20,62 @@ export function GameOverOverlay({
   level,
   highScore,
   isNewHighScore,
+  showRemoveAds,
   onPlayAgain,
   onShare,
+  onRemoveAds,
 }: GameOverOverlayProps) {
+  if (!visible) return null
+
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View testID="overlay-game-over" style={styles.backdrop}>
-        <View style={styles.card}>
-          <Text style={styles.title}>Game Over</Text>
+    <View testID="overlay-game-over" style={styles.backdrop}>
+      <View style={styles.card}>
+        <Text style={styles.title}>Game Over</Text>
 
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statLabel}>Score</Text>
-              <Text testID="text-score" style={styles.statValue}>{score}</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statLabel}>Level</Text>
-              <Text testID="text-level" style={styles.statValue}>{level}</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statLabel}>Best</Text>
-              <Text testID="text-high-score" style={styles.statValue}>{highScore}</Text>
-            </View>
+        <View style={styles.statsRow}>
+          <View style={styles.statBox}>
+            <Text style={styles.statLabel}>Score</Text>
+            <Text style={styles.statValue}>{score}</Text>
           </View>
-
-          {isNewHighScore && (
-            <View style={styles.badgeContainer}>
-              <Ionicons name="trophy" size={20} color="#fbbf24" />
-              <Text style={styles.badgeText}>New High Score!</Text>
-            </View>
-          )}
-
-          <View style={styles.actions}>
-            <Pressable testID="btn-play-again" style={styles.playAgainButton} onPress={onPlayAgain}>
-              <Ionicons name="refresh" size={20} color="white" />
-              <Text style={styles.buttonText}>Play Again</Text>
-            </Pressable>
-
-            {onShare && (
-              <Pressable testID="btn-share" style={styles.shareButton} onPress={onShare}>
-                <Ionicons name="share-outline" size={20} color="white" />
-                <Text style={styles.buttonText}>Share</Text>
-              </Pressable>
-            )}
+          <View style={styles.statBox}>
+            <Text style={styles.statLabel}>Level</Text>
+            <Text style={styles.statValue}>{level}</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statLabel}>Best</Text>
+            <Text style={styles.statValue}>{highScore}</Text>
           </View>
         </View>
+
+        {isNewHighScore && (
+          <View style={styles.badgeContainer}>
+            <Ionicons name="trophy" size={20} color="#fbbf24" />
+            <Text style={styles.badgeText}>New High Score!</Text>
+          </View>
+        )}
+
+        <View style={styles.actions}>
+          <Pressable testID="btn-play-again" style={styles.playAgainButton} onPress={onPlayAgain}>
+            <Ionicons name="refresh" size={20} color="white" />
+            <Text style={styles.buttonText}>Play Again</Text>
+          </Pressable>
+
+          {onShare && (
+            <Pressable testID="btn-share" style={styles.shareButton} onPress={onShare}>
+              <Ionicons name="share-outline" size={20} color="white" />
+              <Text style={styles.buttonText}>Share</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {showRemoveAds && onRemoveAds && (
+          <Pressable testID="btn-remove-ads" style={styles.removeAdsButton} onPress={onRemoveAds}>
+            <Ionicons name="close-circle-outline" size={18} color="#fbbf24" />
+            <Text style={styles.removeAdsText}>Remove Ads</Text>
+          </Pressable>
+        )}
       </View>
-    </Modal>
+    </View>
   )
 }
 
@@ -75,10 +86,11 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   backdrop: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.7)",
-    flex: 1,
     justifyContent: "center",
+    zIndex: 100,
   },
   badgeContainer: {
     alignItems: "center",
@@ -115,6 +127,18 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 20,
     paddingVertical: 12,
+  },
+  removeAdsButton: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 16,
+    paddingVertical: 8,
+  },
+  removeAdsText: {
+    color: "#fbbf24",
+    fontFamily: "Oxanium-Medium",
+    fontSize: 14,
   },
   shareButton: {
     alignItems: "center",

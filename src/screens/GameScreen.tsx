@@ -1,10 +1,14 @@
+import { useEffect, useRef } from "react"
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, useWindowDimensions } from "react-native"
 
 import { Ionicons } from "@expo/vector-icons"
 
 import { GameButton } from "@/components/GameButton"
 import { GameOverOverlay } from "@/components/GameOverOverlay"
+import { useAds } from "@/hooks/useAds"
 import { useGameEngine, colors } from "@/hooks/useGameEngine"
+import { usePurchases } from "@/hooks/usePurchases"
+import { useAnalytics } from "@/utils/analytics"
 
 export function GameScreen() {
   const { width, height } = useWindowDimensions()
@@ -25,6 +29,53 @@ export function GameScreen() {
     handleButtonRelease,
     toggleSound,
   } = useGameEngine()
+
+  const { showInterstitial, incrementGamesPlayed, incrementSessionCount, adShownThisSession } =
+    useAds()
+  const { removeAds, purchaseRemoveAds } = usePurchases()
+  const analytics = useAnalytics()
+  const sessionCounted = useRef(false)
+
+  // Count session on first mount
+  useEffect(() => {
+    if (!sessionCounted.current) {
+      incrementSessionCount()
+      sessionCounted.current = true
+    }
+  }, [])
+
+  // Track game over + show interstitial
+  const prevGameState = useRef(gameState)
+  useEffect(() => {
+    if (prevGameState.current !== "gameover" && gameState === "gameover") {
+      incrementGamesPlayed()
+      analytics.trackGameOver(score, level)
+
+      if (isNewHighScore) {
+        analytics.trackGameCompleted(score, level, true)
+      }
+
+      showInterstitial(level, removeAds).then((shown) => {
+        if (shown) {
+          analytics.trackAdShown("interstitial", "game_over")
+        }
+      })
+    }
+    prevGameState.current = gameState
+  }, [gameState])
+
+  function handleStartGame() {
+    analytics.trackGameStarted()
+    startGame()
+  }
+
+  async function handleRemoveAds() {
+    analytics.trackIapInitiated("ecomi_remove_ads")
+    const success = await purchaseRemoveAds()
+    if (success) {
+      analytics.trackIapCompleted("ecomi_remove_ads")
+    }
+  }
 
   const gameContainerStyle = {
     backgroundColor: "rgba(0, 0, 0, 0.5)" as const,
@@ -88,7 +139,7 @@ export function GameScreen() {
       {/* Controls */}
       <View style={styles.controlsContainer}>
         {gameState === "idle" && (
-          <TouchableOpacity testID="btn-start" style={styles.startButton} onPress={startGame}>
+          <TouchableOpacity testID="btn-start" style={styles.startButton} onPress={handleStartGame}>
             <Ionicons name="play" size={24} color="white" />
             <Text style={styles.buttonText}>Start Game</Text>
           </TouchableOpacity>
@@ -125,7 +176,9 @@ export function GameScreen() {
         level={level}
         highScore={highScore}
         isNewHighScore={isNewHighScore}
-        onPlayAgain={startGame}
+        showRemoveAds={!removeAds && adShownThisSession}
+        onPlayAgain={handleStartGame}
+        onRemoveAds={handleRemoveAds}
       />
     </View>
   )
