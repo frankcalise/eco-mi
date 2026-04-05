@@ -6,7 +6,9 @@ import * as Sharing from "expo-sharing"
 import { StatusBar } from "expo-status-bar"
 import { useTranslation } from "react-i18next"
 
+import { AnimatedCountdown } from "@/components/AnimatedCountdown"
 import { GameButton } from "@/components/GameButton"
+import { TimerRing } from "@/components/TimerRing"
 import { GameOverOverlay } from "@/components/GameOverOverlay"
 import { ReviewPrompt } from "@/components/ReviewPrompt"
 import { SOUND_PACKS } from "@/config/soundPacks"
@@ -59,6 +61,7 @@ export function GameScreen() {
     timeRemaining,
     sequencesCompleted,
     buttonPositions,
+    isShuffling,
   } = useGameEngine({ oscillatorType: soundPack.oscillatorType, theme })
 
   const {
@@ -187,9 +190,10 @@ export function GameScreen() {
               color={color}
               index={index}
               isActive={activeButton === color}
-              disabled={gameState !== "waiting"}
+              disabled={gameState !== "waiting" || isShuffling}
               buttonSize={buttonSize}
               gameSize={gameSize}
+              isShuffling={isShuffling}
               onPressIn={() => handleButtonTouch(color)}
               onPressOut={() => handleButtonRelease(color)}
               themeColor={theme.buttonColors[color].color}
@@ -198,14 +202,28 @@ export function GameScreen() {
           ))}
 
           {/* Center Circle */}
-          <View style={styles.centerCircle}>
-            {mode === "timed" && timeRemaining !== null && gameState !== "idle" ? (
-              <Text style={[styles.centerTimer, { color: timeRemaining <= 10 ? "#ef4444" : theme.textColor }]}>
-                {timeRemaining}
-              </Text>
-            ) : (
-              <Text style={[styles.centerText, { color: theme.textColor }]}>{t("game:title")}</Text>
+          <View style={styles.centerCircleWrapper}>
+            {mode === "timed" && timeRemaining !== null && gameState !== "idle" && (
+              <View style={styles.timerRingContainer}>
+                <TimerRing
+                  progress={timeRemaining / 60}
+                  size={96}
+                  strokeWidth={5}
+                  theme={theme}
+                />
+              </View>
             )}
+            <View style={styles.centerCircle}>
+              {mode === "timed" && timeRemaining !== null && gameState !== "idle" ? (
+                <AnimatedCountdown
+                  value={timeRemaining}
+                  color={timeRemaining <= 10 ? "#ef4444" : theme.textColor}
+                  style={styles.centerTimer}
+                />
+              ) : (
+                <Text style={[styles.centerText, { color: theme.textColor }]}>{t("game:title")}</Text>
+              )}
+            </View>
           </View>
         </View>
       </View>
@@ -359,11 +377,22 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     height: 80,
     justifyContent: "center",
+    width: 80,
+  },
+  centerCircleWrapper: {
+    alignItems: "center",
+    height: 96,
+    justifyContent: "center",
     left: "50%",
     position: "absolute",
     top: "50%",
-    transform: [{ translateX: -40 }, { translateY: -40 }],
-    width: 80,
+    transform: [{ translateX: -48 }, { translateY: -48 }],
+    width: 96,
+  },
+  timerRingContainer: {
+    left: 0,
+    position: "absolute",
+    top: 0,
   },
   centerTimer: {
     fontFamily: "Oxanium-Bold",
