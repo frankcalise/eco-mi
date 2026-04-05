@@ -4,24 +4,22 @@ import { EaseView } from "react-native-ease"
 
 import { colorMap, type Color } from "@/hooks/useGameEngine"
 
+type Position = "topLeft" | "topRight" | "bottomLeft" | "bottomRight"
+
+const POSITIONS: Position[] = ["topLeft", "topRight", "bottomLeft", "bottomRight"]
+
 type GameButtonProps = {
   color: Color
   isActive: boolean
   disabled: boolean
   buttonSize: number
   gameSize: number
+  index: number
   onPressIn: () => void
   onPressOut: () => void
   themeColor?: string
   themeActiveColor?: string
 }
-
-const positionMap = {
-  topLeft: "topLeft",
-  topRight: "topRight",
-  bottomLeft: "bottomLeft",
-  bottomRight: "bottomRight",
-} as const
 
 export function GameButton({
   color,
@@ -29,13 +27,14 @@ export function GameButton({
   disabled,
   buttonSize,
   gameSize,
+  index,
   onPressIn,
   onPressOut,
   themeColor,
   themeActiveColor,
 }: GameButtonProps) {
   const info = colorMap[color]
-  const position = info.position
+  const position = POSITIONS[index]
 
   const displayColor = themeColor ?? info.color
   const displayActiveColor = themeActiveColor ?? info.activeColor
@@ -72,7 +71,7 @@ export function GameButton({
 }
 
 function getPositionStyle(
-  position: keyof typeof positionMap,
+  position: Position,
   buttonSize: number,
   gameSize: number,
 ) {

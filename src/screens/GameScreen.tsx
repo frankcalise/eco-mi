@@ -180,10 +180,11 @@ export function GameScreen() {
       {/* Game Board */}
       <View style={styles.gameBoard}>
         <View style={gameContainerStyle}>
-          {buttonPositions.map((color) => (
+          {buttonPositions.map((color, index) => (
             <GameButton
               key={color}
               color={color}
+              index={index}
               isActive={activeButton === color}
               disabled={gameState !== "waiting"}
               buttonSize={buttonSize}
