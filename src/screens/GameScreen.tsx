@@ -8,10 +8,14 @@ import { useTranslation } from "react-i18next"
 import { GameButton } from "@/components/GameButton"
 import { GameOverOverlay } from "@/components/GameOverOverlay"
 import { ReviewPrompt } from "@/components/ReviewPrompt"
+import { SOUND_PACKS } from "@/config/soundPacks"
+import { themeIds, gameThemes } from "@/config/themes"
 import { useAds } from "@/hooks/useAds"
 import { useGameEngine, colors } from "@/hooks/useGameEngine"
+import { useSoundPack } from "@/hooks/useSoundPack"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useStoreReview } from "@/hooks/useStoreReview"
+import { useTheme } from "@/hooks/useTheme"
 import { useAnalytics } from "@/utils/analytics"
 
 export function GameScreen() {
@@ -19,6 +23,9 @@ export function GameScreen() {
   const { width, height } = useWindowDimensions()
   const gameSize = Math.min(width * 0.8, height * 0.5)
   const buttonSize = gameSize * 0.4
+
+  const { soundPack, setSoundPack } = useSoundPack()
+  const { theme, setTheme } = useTheme()
 
   const {
     gameState,
@@ -37,7 +44,7 @@ export function GameScreen() {
     handleButtonTouch,
     handleButtonRelease,
     toggleSound,
-  } = useGameEngine()
+  } = useGameEngine({ oscillatorType: soundPack.oscillatorType, theme })
 
   const {
     showInterstitial,
@@ -131,28 +138,28 @@ export function GameScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1a1a2e" />
+    <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.backgroundColor} />
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>{t("game:title")}</Text>
-        <Text style={styles.subtitle}>{t("game:subtitle")}</Text>
+        <Text style={[styles.title, { color: theme.textColor }]}>{t("game:title")}</Text>
+        <Text style={[styles.subtitle, { color: theme.secondaryTextColor }]}>{t("game:subtitle")}</Text>
       </View>
 
       {/* Score Display */}
       <View style={styles.scoreContainer}>
         <View style={styles.scoreBox}>
-          <Text style={styles.scoreLabel}>{t("game:level")}</Text>
-          <Text testID="text-level" style={styles.scoreValue}>{level}</Text>
+          <Text style={[styles.scoreLabel, { color: theme.secondaryTextColor }]}>{t("game:level")}</Text>
+          <Text testID="text-level" style={[styles.scoreValue, { color: theme.textColor }]}>{level}</Text>
         </View>
         <View style={styles.scoreBox}>
-          <Text style={styles.scoreLabel}>{t("game:score")}</Text>
-          <Text testID="text-score" style={styles.scoreValue}>{score}</Text>
+          <Text style={[styles.scoreLabel, { color: theme.secondaryTextColor }]}>{t("game:score")}</Text>
+          <Text testID="text-score" style={[styles.scoreValue, { color: theme.textColor }]}>{score}</Text>
         </View>
         <View style={styles.scoreBox}>
-          <Text style={styles.scoreLabel}>{t("game:best")}</Text>
-          <Text testID="text-high-score" style={styles.scoreValue}>{highScore}</Text>
+          <Text style={[styles.scoreLabel, { color: theme.secondaryTextColor }]}>{t("game:best")}</Text>
+          <Text testID="text-high-score" style={[styles.scoreValue, { color: theme.textColor }]}>{highScore}</Text>
         </View>
       </View>
 
@@ -169,12 +176,14 @@ export function GameScreen() {
               gameSize={gameSize}
               onPressIn={() => handleButtonTouch(color)}
               onPressOut={() => handleButtonRelease(color)}
+              themeColor={theme.buttonColors[color].color}
+              themeActiveColor={theme.buttonColors[color].activeColor}
             />
           ))}
 
           {/* Center Circle */}
           <View style={styles.centerCircle}>
-            <Text style={styles.centerText}>{t("game:title")}</Text>
+            <Text style={[styles.centerText, { color: theme.textColor }]}>{t("game:title")}</Text>
           </View>
         </View>
       </View>
@@ -182,10 +191,50 @@ export function GameScreen() {
       {/* Controls */}
       <View style={styles.controlsContainer}>
         {gameState === "idle" && (
-          <TouchableOpacity testID="btn-start" style={styles.startButton} onPress={handleStartGame}>
-            <Ionicons name="play" size={24} color="white" />
-            <Text style={styles.buttonText}>{t("game:startGame")}</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity testID="btn-start" style={styles.startButton} onPress={handleStartGame}>
+              <Ionicons name="play" size={24} color="white" />
+              <Text style={styles.buttonText}>{t("game:startGame")}</Text>
+            </TouchableOpacity>
+
+            <View style={styles.soundPackRow}>
+              {SOUND_PACKS.map((pack) => (
+                <TouchableOpacity
+                  key={pack.id}
+                  testID={`btn-sound-pack-${pack.id}`}
+                  style={[
+                    styles.soundPackButton,
+                    pack.id === soundPack.id && styles.soundPackButtonActive,
+                  ]}
+                  onPress={() => setSoundPack(pack.id)}
+                >
+                  <Text
+                    style={[
+                      styles.soundPackLabel,
+                      pack.id === soundPack.id && styles.soundPackLabelActive,
+                    ]}
+                  >
+                    {pack.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={styles.themeRow}>
+              {themeIds.map((id) => (
+                <TouchableOpacity
+                  key={id}
+                  testID={`btn-theme-${id}`}
+                  style={[
+                    styles.themeCircle,
+                    { backgroundColor: gameThemes[id].buttonColors.red.color },
+                    id === theme.id && styles.themeCircleSelected,
+                  ]}
+                  onPress={() => setTheme(id)}
+                />
+              ))}
+            </View>
+          </>
         )}
 
 
@@ -204,7 +253,7 @@ export function GameScreen() {
 
       {/* Game Status */}
       <View style={styles.statusContainer}>
-        {gameState === "idle" && <Text style={styles.statusText}>{t("game:pressStart")}</Text>}
+        {gameState === "idle" && <Text style={[styles.statusText, { color: theme.secondaryTextColor }]}>{t("game:pressStart")}</Text>}
         {gameState === "showing" && (
           <Text style={[styles.statusText, styles.showingText]}>{t("game:watchSequence")}</Text>
         )}
@@ -391,6 +440,47 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-Bold",
     fontSize: 48,
     letterSpacing: 4,
+  },
+  soundPackButton: {
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 6,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  soundPackButtonActive: {
+    backgroundColor: "rgba(34, 197, 94, 0.3)",
+    borderColor: "#22c55e",
+  },
+  soundPackLabel: {
+    color: "rgba(255, 255, 255, 0.5)",
+    fontFamily: "Oxanium-Regular",
+    fontSize: 12,
+  },
+  soundPackLabelActive: {
+    color: "#22c55e",
+  },
+  soundPackRow: {
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    width: "100%",
+  },
+  themeCircle: {
+    borderColor: "transparent",
+    borderRadius: 16,
+    borderWidth: 3,
+    height: 32,
+    width: 32,
+  },
+  themeCircleSelected: {
+    borderColor: "#ffffff",
+  },
+  themeRow: {
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "center",
+    width: "100%",
   },
   waitingText: {
     color: "#22c55e",

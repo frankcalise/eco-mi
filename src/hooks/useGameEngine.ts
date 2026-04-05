@@ -2,7 +2,10 @@ import { useState, useEffect, useRef } from "react"
 
 import * as Haptics from "expo-haptics"
 
+import type { OscillatorType } from "react-native-audio-api"
+
 import { getToneDuration, getSequenceInterval } from "@/config/difficulty"
+import { type GameTheme, gameThemes } from "@/config/themes"
 import { useAudioTones } from "@/hooks/useAudioTones"
 import { recordGameResult } from "@/hooks/useStats"
 import { saveString, loadString } from "@/utils/storage"
@@ -13,35 +16,55 @@ export type Color = "red" | "blue" | "green" | "yellow"
 
 export const colors: Color[] = ["red", "blue", "green", "yellow"]
 
-export const colorMap = {
-  red: {
-    color: "#ef4444",
-    activeColor: "#fca5a5",
-    sound: 220,
-    position: "topLeft" as const,
-  },
-  blue: {
-    color: "#3b82f6",
-    activeColor: "#93c5fd",
-    sound: 277,
-    position: "topRight" as const,
-  },
-  green: {
-    color: "#22c55e",
-    activeColor: "#86efac",
-    sound: 330,
-    position: "bottomLeft" as const,
-  },
-  yellow: {
-    color: "#eab308",
-    activeColor: "#fde047",
-    sound: 415,
-    position: "bottomRight" as const,
-  },
+const soundFrequencies: Record<Color, number> = {
+  red: 220,
+  blue: 277,
+  green: 330,
+  yellow: 415,
 }
+
+const buttonPositionMap: Record<Color, "topLeft" | "topRight" | "bottomLeft" | "bottomRight"> = {
+  red: "topLeft",
+  blue: "topRight",
+  green: "bottomLeft",
+  yellow: "bottomRight",
+}
+
+export function getColorMapForTheme(theme: GameTheme) {
+  return {
+    red: {
+      color: theme.buttonColors.red.color,
+      activeColor: theme.buttonColors.red.activeColor,
+      sound: soundFrequencies.red,
+      position: buttonPositionMap.red,
+    },
+    blue: {
+      color: theme.buttonColors.blue.color,
+      activeColor: theme.buttonColors.blue.activeColor,
+      sound: soundFrequencies.blue,
+      position: buttonPositionMap.blue,
+    },
+    green: {
+      color: theme.buttonColors.green.color,
+      activeColor: theme.buttonColors.green.activeColor,
+      sound: soundFrequencies.green,
+      position: buttonPositionMap.green,
+    },
+    yellow: {
+      color: theme.buttonColors.yellow.color,
+      activeColor: theme.buttonColors.yellow.activeColor,
+      sound: soundFrequencies.yellow,
+      position: buttonPositionMap.yellow,
+    },
+  }
+}
+
+export const colorMap = getColorMapForTheme(gameThemes.classic)
 
 interface UseGameEngineOptions {
   mode?: GameMode
+  oscillatorType?: OscillatorType
+  theme?: GameTheme
 }
 
 interface UseGameEngineReturn {
@@ -132,8 +155,10 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const testSeed = getTestSeed()
   const seededRng = useRef(testSeed !== null ? mulberry32(testSeed) : null)
 
+  const activeColorMap = options?.theme ? getColorMapForTheme(options.theme) : colorMap
+
   const { initialize, cleanup, playSound, startContinuousSound, stopContinuousSoundWithFade } =
-    useAudioTones(colorMap, soundEnabled)
+    useAudioTones(activeColorMap, soundEnabled, options?.oscillatorType)
 
   // --- Timeout management (fixes orphaned timer bug) ---
 

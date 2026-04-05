@@ -12,6 +12,8 @@ type GameButtonProps = {
   gameSize: number
   onPressIn: () => void
   onPressOut: () => void
+  themeColor?: string
+  themeActiveColor?: string
 }
 
 const positionMap = {
@@ -29,12 +31,17 @@ export function GameButton({
   gameSize,
   onPressIn,
   onPressOut,
+  themeColor,
+  themeActiveColor,
 }: GameButtonProps) {
   const info = colorMap[color]
   const position = info.position
 
+  const displayColor = themeColor ?? info.color
+  const displayActiveColor = themeActiveColor ?? info.activeColor
+
   const buttonStyle = {
-    backgroundColor: isActive ? info.activeColor : info.color,
+    backgroundColor: isActive ? displayActiveColor : displayColor,
     width: buttonSize,
     height: buttonSize,
   }
