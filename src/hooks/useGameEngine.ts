@@ -292,6 +292,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     stopTimer()
     setTimeRemaining(durationSec)
     const startTime = Date.now()
+    let lastSecond = durationSec
     timerIntervalRef.current = setInterval(() => {
       const elapsedMs = Date.now() - startTime
       const remaining = durationSec - elapsedMs / 1000
@@ -310,6 +311,21 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
         recordGameResult(currentScore)
       } else {
         setTimeRemaining(remaining)
+
+        const currentSecond = Math.ceil(remaining)
+        if (currentSecond < lastSecond && currentSecond <= 10) {
+          if (currentSecond <= 3) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
+            addTimeout(() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
+            }, 120)
+          } else if (currentSecond <= 5) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+          } else {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+          }
+          lastSecond = currentSecond
+        }
       }
     }, 100)
   }
