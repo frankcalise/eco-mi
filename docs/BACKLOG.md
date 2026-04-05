@@ -51,6 +51,9 @@
 - [x] **Timed mode: circular progress ring around center circle**
   Replace the plain center circle border with a circular progress ring that depletes as time runs out. The ring should animate smoothly from full (green) to empty (red) over 60 seconds. Could use `react-native-svg` (already installed) with an animated `strokeDashoffset` on a `Circle` element, driven by `react-native-ease` or a simple interpolation from `timeRemaining / 60`.
 
+- [ ] **Escalating haptic feedback for timed mode countdown**
+  Under 10s: light tick each second. Under 5s: medium. Under 3s: heavy double-pulse (heartbeat). Need to evaluate whether `expo-haptics` has enough granularity or if `react-native-nitro-haptics` is needed for finer control. Also need to ensure countdown haptics don't conflict with the existing button tap and sequence playback haptics — may need to suppress timer haptics during active input.
+
 - [ ] **Explore Expo UI adaptive/dynamic colors as a theme option**
   Investigate `expo-ui` adaptive colors (iOS dynamic colors, Android Material You). Could be a "System" theme that pulls the device's accent colors for the game buttons and UI chrome. Evaluate whether this works as the default theme (free, adapts to every user's device) or as a separate purchasable theme. Research: does `@expo/ui` expose adaptive color primitives that work cross-platform? What does it look like on Android Material You vs iOS?
   When the pastel theme is selected (light background), the status bar text/icons remain light — invisible against the light background. Use `expo-status-bar` to set `style="dark"` for pastel and `style="light"` for the other 3 themes. The theme config in `src/config/themes.ts` should include a `statusBarStyle` field (`"light" | "dark"`) per theme.
