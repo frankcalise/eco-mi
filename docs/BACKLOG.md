@@ -29,7 +29,7 @@
 
 ## Animation Polish
 
-- [ ] **Chaos mode: animated shuffle sequences (shell game style)**
+- [x] **Chaos mode: animated shuffle sequences (shell game style)**
   Instead of a single shuffle animation, build a pool of shuffle sequences that are randomly selected each round. At higher levels, chain multiple sequences together for harder visual tracking. Sequences:
   - **Clockwise orbit** — all 4 buttons rotate one position around the circle
   - **Counter-clockwise orbit** — reverse direction
@@ -42,10 +42,10 @@
   
   Use `react-native-ease` for smooth position transitions. At level 1-3, pick one sequence. At 4-6, chain two. At 7+, chain three with faster timing. The animation duration should compress at higher levels too — more chaos, less time to track.
 
-- [ ] **Timed mode: animated countdown number**
+- [x] **Timed mode: animated countdown number**
   Use `react-native-ease` to smoothly transition the countdown number in the center circle. Each tick should scale down the current number (shrink + fade) and scale up the new number (grow + appear). Gives the timer a fluid, non-jarring feel instead of a hard digit swap every second.
 
-- [ ] **Timed mode: circular progress ring around center circle**
+- [x] **Timed mode: circular progress ring around center circle**
   Replace the plain center circle border with a circular progress ring that depletes as time runs out. The ring should animate smoothly from full (green) to empty (red) over 60 seconds. Could use `react-native-svg` (already installed) with an animated `strokeDashoffset` on a `Circle` element, driven by `react-native-ease` or a simple interpolation from `timeRemaining / 60`.
 
 - [ ] **Explore Expo UI adaptive/dynamic colors as a theme option**
