@@ -2,7 +2,6 @@ import { renderHook, act } from "@testing-library/react-native"
 
 import { useGameEngine, colors } from "../useGameEngine"
 
-// Mock audio tones — the hook expects these functions
 jest.mock("@/hooks/useAudioTones", () => ({
   useAudioTones: () => ({
     initialize: jest.fn().mockResolvedValue(undefined),
@@ -11,6 +10,17 @@ jest.mock("@/hooks/useAudioTones", () => ({
     startContinuousSound: jest.fn(),
     stopContinuousSoundWithFade: jest.fn(),
   }),
+}))
+
+jest.mock("expo-haptics", () => ({
+  impactAsync: jest.fn(),
+  notificationAsync: jest.fn(),
+  ImpactFeedbackStyle: { Light: "light", Medium: "medium" },
+  NotificationFeedbackType: { Error: "error" },
+}))
+
+jest.mock("@/hooks/useStats", () => ({
+  recordGameResult: jest.fn(),
 }))
 
 jest.mock("@/utils/storage", () => ({
@@ -274,5 +284,198 @@ describe("useGameEngine - seeded RNG", () => {
     const seq2Color = result2.current.sequence[0]
 
     expect(seq1Color).toBe(seq2Color)
+  })
+})
+
+describe("useGameEngine - continueGame", () => {
+  /** Helper: start a game, wait for waiting state, then lose */
+  function startAndLose() {
+    const hook = renderHook(() => useGameEngine())
+
+    act(() => {
+      hook.result.current.startGame()
+    })
+    act(() => {
+      jest.advanceTimersByTime(500)
+    })
+
+    const correctColor = hook.result.current.sequence[0]
+    const wrongColor = colors.find((c) => c !== correctColor)!
+
+    // Wait for waiting state
+    act(() => {
+      jest.advanceTimersByTime(2000)
+    })
+
+    // Tap wrong
+    act(() => {
+      hook.result.current.handleButtonTouch(wrongColor)
+    })
+    act(() => {
+      jest.advanceTimersByTime(600)
+    })
+    act(() => {
+      hook.result.current.handleButtonRelease(wrongColor)
+    })
+
+    return hook
+  }
+
+  it("replays the sequence after continueGame", () => {
+    const { result } = startAndLose()
+
+    expect(result.current.gameState).toBe("gameover")
+    const sequenceBefore = [...result.current.sequence]
+
+    act(() => {
+      result.current.continueGame()
+    })
+
+    // continuedThisGame should be true
+    expect(result.current.continuedThisGame).toBe(true)
+    // Sequence should be preserved
+    expect(result.current.sequence).toEqual(sequenceBefore)
+    // Player sequence should be reset
+    expect(result.current.playerSequence).toEqual([])
+
+    // After delay, should transition to showing
+    act(() => {
+      jest.advanceTimersByTime(500)
+    })
+
+    expect(result.current.gameState).toBe("showing")
+  })
+
+  it("does nothing if called when not in gameover state", () => {
+    const { result } = renderHook(() => useGameEngine())
+
+    act(() => {
+      result.current.continueGame()
+    })
+
+    expect(result.current.gameState).toBe("idle")
+    expect(result.current.continuedThisGame).toBe(false)
+  })
+
+  it("resets continuedThisGame on new game", () => {
+    const { result } = startAndLose()
+
+    act(() => {
+      result.current.continueGame()
+    })
+
+    expect(result.current.continuedThisGame).toBe(true)
+
+    act(() => {
+      result.current.startGame()
+    })
+
+    expect(result.current.continuedThisGame).toBe(false)
+  })
+})
+
+describe("useGameEngine - isNewHighScore", () => {
+  it("sets isNewHighScore when score beats highScore", () => {
+    const { result } = renderHook(() => useGameEngine())
+
+    act(() => {
+      result.current.startGame()
+    })
+    act(() => {
+      jest.advanceTimersByTime(500)
+    })
+
+    const firstColor = result.current.sequence[0]
+
+    // Wait for waiting
+    act(() => {
+      jest.advanceTimersByTime(2000)
+    })
+
+    // Complete round 1 (score = 10)
+    act(() => {
+      result.current.handleButtonTouch(firstColor)
+    })
+    act(() => {
+      jest.advanceTimersByTime(600)
+    })
+    act(() => {
+      result.current.handleButtonRelease(firstColor)
+    })
+
+    expect(result.current.score).toBe(10)
+
+    // Wait for next sequence
+    act(() => {
+      jest.advanceTimersByTime(3000)
+    })
+
+    // Now lose on round 2
+    const wrongColor = colors.find((c) => c !== result.current.sequence[0])!
+
+    act(() => {
+      result.current.handleButtonTouch(wrongColor)
+    })
+    act(() => {
+      jest.advanceTimersByTime(600)
+    })
+    act(() => {
+      result.current.handleButtonRelease(wrongColor)
+    })
+
+    expect(result.current.gameState).toBe("gameover")
+    // Score (10) > highScore (0) so this is a new high score
+    expect(result.current.isNewHighScore).toBe(true)
+  })
+
+  it("resets isNewHighScore on startGame", () => {
+    const { result } = renderHook(() => useGameEngine())
+
+    act(() => {
+      result.current.startGame()
+    })
+    act(() => {
+      jest.advanceTimersByTime(500)
+    })
+
+    const firstColor = result.current.sequence[0]
+
+    act(() => {
+      jest.advanceTimersByTime(2000)
+    })
+
+    // Complete a round then lose
+    act(() => {
+      result.current.handleButtonTouch(firstColor)
+    })
+    act(() => {
+      jest.advanceTimersByTime(600)
+    })
+    act(() => {
+      result.current.handleButtonRelease(firstColor)
+    })
+    act(() => {
+      jest.advanceTimersByTime(3000)
+    })
+
+    const wrongColor = colors.find((c) => c !== result.current.sequence[0])!
+    act(() => {
+      result.current.handleButtonTouch(wrongColor)
+    })
+    act(() => {
+      jest.advanceTimersByTime(600)
+    })
+    act(() => {
+      result.current.handleButtonRelease(wrongColor)
+    })
+
+    expect(result.current.isNewHighScore).toBe(true)
+
+    // Start new game — should reset
+    act(() => {
+      result.current.startGame()
+    })
+
+    expect(result.current.isNewHighScore).toBe(false)
   })
 })
