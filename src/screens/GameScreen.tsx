@@ -57,6 +57,7 @@ export function GameScreen() {
     mode,
     timeRemaining,
     sequencesCompleted,
+    buttonPositions,
   } = useGameEngine({ oscillatorType: soundPack.oscillatorType, theme })
 
   const {
@@ -179,7 +180,7 @@ export function GameScreen() {
       {/* Game Board */}
       <View style={styles.gameBoard}>
         <View style={gameContainerStyle}>
-          {colors.map((color) => (
+          {buttonPositions.map((color) => (
             <GameButton
               key={color}
               color={color}
