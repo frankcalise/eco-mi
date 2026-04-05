@@ -301,21 +301,20 @@ export function GameScreen() {
           <Text style={[styles.statusText, styles.showingText]}>{t("game:watchSequence")}</Text>
         )}
         {gameState === "waiting" && (
-          <>
-            <Text style={[styles.statusText, styles.waitingText]}>{t("game:repeatSequence")}</Text>
-            <View style={styles.progressRow}>
-              {sequence.map((_, i) => (
-                <View
-                  key={i}
-                  style={[
-                    styles.progressDot,
-                    i < playerSequence.length && styles.progressDotFilled,
-                  ]}
-                />
-              ))}
-            </View>
-          </>
+          <Text style={[styles.statusText, styles.waitingText]}>{t("game:repeatSequence")}</Text>
         )}
+        <View style={styles.progressRow}>
+          {(gameState === "showing" || gameState === "waiting") &&
+            sequence.map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.progressDot,
+                  gameState === "waiting" && i < playerSequence.length && styles.progressDotFilled,
+                ]}
+              />
+            ))}
+        </View>
       </View>
 
       <GameOverOverlay
@@ -441,6 +440,7 @@ const styles = StyleSheet.create({
   progressRow: {
     flexDirection: "row",
     gap: 6,
+    height: 18,
     justifyContent: "center",
     marginTop: 8,
   },
