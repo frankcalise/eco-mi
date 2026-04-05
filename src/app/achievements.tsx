@@ -1,7 +1,6 @@
 import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native"
-
-import { Ionicons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
+import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
 
 import { ACHIEVEMENTS } from "@/config/achievements"
@@ -25,10 +24,7 @@ export default function AchievementsScreen() {
         {ACHIEVEMENTS.map((achievement) => {
           const unlocked = isUnlocked(achievement.id)
           return (
-            <View
-              key={achievement.id}
-              style={[styles.badge, unlocked && styles.badgeUnlocked]}
-            >
+            <View key={achievement.id} style={[styles.badge, unlocked && styles.badgeUnlocked]}>
               <Ionicons
                 name={achievement.icon as keyof typeof Ionicons.glyphMap}
                 size={28}

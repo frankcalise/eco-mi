@@ -1,7 +1,6 @@
 import { View, Text, Pressable, StyleSheet } from "react-native"
-
-import { Ionicons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
+import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
 
 import { useStats } from "@/hooks/useStats"
@@ -18,8 +17,14 @@ export default function StatsScreen() {
     { label: t("stats:bestScore"), value: stats.bestScore },
     { label: t("stats:averageScore"), value: stats.averageScore },
     { label: t("stats:totalScore"), value: stats.totalScore },
-    { label: t("stats:currentStreak"), value: `${stats.currentStreak} ${dayUnit(stats.currentStreak)}` },
-    { label: t("stats:longestStreak"), value: `${stats.longestStreak} ${dayUnit(stats.longestStreak)}` },
+    {
+      label: t("stats:currentStreak"),
+      value: `${stats.currentStreak} ${dayUnit(stats.currentStreak)}`,
+    },
+    {
+      label: t("stats:longestStreak"),
+      value: `${stats.longestStreak} ${dayUnit(stats.longestStreak)}`,
+    },
   ]
 
   return (

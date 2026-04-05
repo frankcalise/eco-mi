@@ -1,5 +1,4 @@
 import { Pressable, StyleSheet } from "react-native"
-
 import { EaseView } from "react-native-ease"
 
 import { colorMap, type Color } from "@/hooks/useGameEngine"

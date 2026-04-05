@@ -22,6 +22,7 @@ const pt = {
     pressStart: "Pressione Iniciar Jogo para comecar!",
     continue: "Assistir Anuncio para Continuar",
     removeAds: "Remover Anuncios",
+    home: "Inicio",
     shareMessage: "Cheguei ao Nivel {{level}} com {{score}} pontos no Eco Mi! Consegue me superar?",
     timeRemaining: "{{time}}s",
     sequencesCompleted: "Sequencias: {{count}}",
@@ -32,6 +33,18 @@ const pt = {
       reverse: "Reverso",
       chaos: "Caos",
     },
+    settings: "Configuracoes",
+    modeSelect: "Selecionar Modo",
+    modeDescriptions: {
+      classic: "Lembre e repita a sequencia",
+      daily: "Um novo desafio todo dia",
+      timed: "Complete sequencias em 60 segundos",
+      reverse: "Repita a sequencia ao contrario",
+      chaos: "Os botoes mudam a cada rodada",
+    },
+    soundPack: "Pacote de Som",
+    theme: "Tema",
+    soundToggle: "Som",
   },
   stats: {
     title: "Estatisticas",
@@ -56,8 +69,7 @@ const pt = {
   },
   errorScreen: {
     title: "Algo deu errado!",
-    friendlySubtitle:
-      "Ocorreu um erro inesperado. Por favor, tente reiniciar o aplicativo.",
+    friendlySubtitle: "Ocorreu um erro inesperado. Por favor, tente reiniciar o aplicativo.",
     reset: "REINICIAR APP",
   },
   emptyStateComponent: {

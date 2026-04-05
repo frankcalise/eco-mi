@@ -1,5 +1,4 @@
 import { View, Text, Pressable, Linking, StyleSheet } from "react-native"
-
 import * as StoreReview from "expo-store-review"
 import { useTranslation } from "react-i18next"
 
@@ -35,11 +34,7 @@ export function ReviewPrompt({ visible, onDismiss, onResponse }: ReviewPromptPro
         <Text style={styles.title}>{t("review:title")}</Text>
         <Text style={styles.subtitle}>{t("review:subtitle")}</Text>
         <View style={styles.buttons}>
-          <Pressable
-            testID="review-love-it"
-            style={styles.loveItButton}
-            onPress={handleLoveIt}
-          >
+          <Pressable testID="review-love-it" style={styles.loveItButton} onPress={handleLoveIt}>
             <Text style={styles.loveItText}>{t("review:loveIt")}</Text>
           </Pressable>
           <Pressable

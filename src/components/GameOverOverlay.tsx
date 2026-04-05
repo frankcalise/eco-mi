@@ -1,5 +1,4 @@
 import { View, Text, Pressable, StyleSheet } from "react-native"
-
 import { Ionicons } from "@expo/vector-icons"
 import LottieView from "lottie-react-native"
 import { useTranslation } from "react-i18next"
@@ -16,6 +15,7 @@ type GameOverOverlayProps = {
   onContinue?: () => void
   onShare?: () => void
   onRemoveAds?: () => void
+  onHome?: () => void
 }
 
 export function GameOverOverlay({
@@ -30,6 +30,7 @@ export function GameOverOverlay({
   onContinue,
   onShare,
   onRemoveAds,
+  onHome,
 }: GameOverOverlayProps) {
   const { t } = useTranslation()
 
@@ -38,6 +39,18 @@ export function GameOverOverlay({
   return (
     <View testID="overlay-game-over" style={styles.backdrop}>
       <View style={styles.card}>
+        {onHome && (
+          <Pressable
+            testID="btn-home"
+            style={styles.homeButton}
+            onPress={onHome}
+            accessibilityLabel={t("game:home")}
+            accessibilityRole="button"
+          >
+            <Ionicons name="close" size={24} color="#a0a0a0" />
+          </Pressable>
+        )}
+
         <Text style={styles.title}>{t("game:gameOver")}</Text>
 
         <View style={styles.statsRow}>
@@ -115,14 +128,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 100,
   },
-  celebrationContainer: {
-    alignItems: "center",
-    marginTop: 12,
-  },
-  lottie: {
-    height: 80,
-    width: 80,
-  },
   badgeContainer: {
     alignItems: "center",
     flexDirection: "row",
@@ -139,6 +144,21 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
   },
+  card: {
+    alignItems: "center",
+    backgroundColor: "#1a1a2e",
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: 16,
+    borderWidth: 1,
+    marginHorizontal: 32,
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    width: "85%",
+  },
+  celebrationContainer: {
+    alignItems: "center",
+    marginTop: 12,
+  },
   continueButton: {
     alignItems: "center",
     backgroundColor: "#8b5cf6",
@@ -154,16 +174,19 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-SemiBold",
     fontSize: 14,
   },
-  card: {
+  homeButton: {
     alignItems: "center",
-    backgroundColor: "#1a1a2e",
-    borderColor: "rgba(255, 255, 255, 0.15)",
-    borderRadius: 16,
-    borderWidth: 1,
-    marginHorizontal: 32,
-    paddingHorizontal: 24,
-    paddingVertical: 28,
-    width: "85%",
+    height: 44,
+    justifyContent: "center",
+    position: "absolute",
+    right: 8,
+    top: 8,
+    width: 44,
+    zIndex: 1,
+  },
+  lottie: {
+    height: 80,
+    width: 80,
   },
   playAgainButton: {
     alignItems: "center",

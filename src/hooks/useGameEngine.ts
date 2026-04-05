@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-
 import * as Haptics from "expo-haptics"
-
 import type { OscillatorType } from "react-native-audio-api"
 
 import { getToneDuration, getSequenceInterval } from "@/config/difficulty"
@@ -268,15 +266,18 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     const interval = getSequenceInterval(currentLevel)
 
     seq.forEach((color, index) => {
-      addTimeout(() => {
-        flashButton(color, toneDuration)
+      addTimeout(
+        () => {
+          flashButton(color, toneDuration)
 
-        if (index === seq.length - 1) {
-          addTimeout(() => {
-            setGameState("waiting")
-          }, toneDuration + 100)
-        }
-      }, (index + 1) * interval)
+          if (index === seq.length - 1) {
+            addTimeout(() => {
+              setGameState("waiting")
+            }, toneDuration + 100)
+          }
+        },
+        (index + 1) * interval,
+      )
     })
   }
 
@@ -436,9 +437,10 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     setPlayerSequence(newPlayerSequence)
 
     // Wrong move — check for expected color based on mode
-    const expectedIndex = mode === "reverse"
-      ? sequence.length - 1 - (newPlayerSequence.length - 1)
-      : newPlayerSequence.length - 1
+    const expectedIndex =
+      mode === "reverse"
+        ? sequence.length - 1 - (newPlayerSequence.length - 1)
+        : newPlayerSequence.length - 1
     const expectedColor = sequence[expectedIndex]
 
     if (color !== expectedColor) {

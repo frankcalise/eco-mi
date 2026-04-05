@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react"
 import { Platform } from "react-native"
-
 import {
   InterstitialAd,
   RewardedAd,
@@ -150,10 +149,7 @@ export function useAds(): UseAdsReturn {
     return true
   }
 
-  async function showInterstitial(
-    roundsPlayed: number,
-    removeAds: boolean,
-  ): Promise<boolean> {
+  async function showInterstitial(roundsPlayed: number, removeAds: boolean): Promise<boolean> {
     if (!shouldShowInterstitial(roundsPlayed, removeAds)) return false
     if (!loadedRef.current || !interstitialRef.current) return false
 

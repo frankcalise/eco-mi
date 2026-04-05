@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react"
 import { Platform } from "react-native"
-
 import Purchases, {
   type CustomerInfo,
   type PurchasesPackage,

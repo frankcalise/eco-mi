@@ -1,5 +1,4 @@
 import { useRef } from "react"
-
 import { AudioContext, GainNode, OscillatorNode } from "react-native-audio-api"
 import type { OscillatorType } from "react-native-audio-api"
 
@@ -21,12 +20,12 @@ export interface ColorMap {
 
 // Ascending arpeggio frequencies — the 4 game tones in a pleasing pattern
 const PREVIEW_NOTES = [
-  { freq: 220, delay: 0 },     // red
-  { freq: 277, delay: 0.15 },  // blue
-  { freq: 330, delay: 0.30 },  // green
-  { freq: 415, delay: 0.45 },  // yellow
-  { freq: 330, delay: 0.60 },  // green (resolve back down)
-  { freq: 415, delay: 0.70 },  // yellow (end on high)
+  { freq: 220, delay: 0 }, // red
+  { freq: 277, delay: 0.15 }, // blue
+  { freq: 330, delay: 0.3 }, // green
+  { freq: 415, delay: 0.45 }, // yellow
+  { freq: 330, delay: 0.6 }, // green (resolve back down)
+  { freq: 415, delay: 0.7 }, // yellow (end on high)
 ]
 const PREVIEW_NOTE_DURATION = 0.12
 
@@ -68,14 +67,17 @@ export function useAudioTones(
       sound.gain.gain.exponentialRampToValueAtTime(EPSILON, now + fadeS)
       sound.oscillator.stop(now + fadeS + 0.01)
 
-      setTimeout(() => {
-        try {
-          sound.oscillator.disconnect()
-        } catch {}
-        try {
-          sound.gain.disconnect()
-        } catch {}
-      }, Math.ceil((fadeS + 0.05) * 1000))
+      setTimeout(
+        () => {
+          try {
+            sound.oscillator.disconnect()
+          } catch {}
+          try {
+            sound.gain.disconnect()
+          } catch {}
+        },
+        Math.ceil((fadeS + 0.05) * 1000),
+      )
     } catch {
       try {
         sound.oscillator.disconnect()
@@ -185,10 +187,17 @@ export function useAudioTones(
       osc.start(noteStart)
       osc.stop(noteStart + PREVIEW_NOTE_DURATION + 0.01)
 
-      setTimeout(() => {
-        try { osc.disconnect() } catch {}
-        try { gain.disconnect() } catch {}
-      }, (note.delay + PREVIEW_NOTE_DURATION + 0.05) * 1000)
+      setTimeout(
+        () => {
+          try {
+            osc.disconnect()
+          } catch {}
+          try {
+            gain.disconnect()
+          } catch {}
+        },
+        (note.delay + PREVIEW_NOTE_DURATION + 0.05) * 1000,
+      )
     }
   }
 

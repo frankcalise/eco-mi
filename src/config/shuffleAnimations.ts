@@ -56,7 +56,7 @@ function verticalSwap(positions: Color[]): Color[] {
 
 function shellShuffle(positions: Color[]): Color[] {
   // 2-3 rapid sequential pair swaps applied in sequence
-  let result = [...positions]
+  const result = [...positions]
   // Swap 0 <-> 1
   ;[result[0], result[1]] = [result[1], result[0]]
   // Swap 2 <-> 3
@@ -93,10 +93,7 @@ export function getShuffleStepDelay(level: number): number {
  * - Levels 4-6: 2 chained sequences
  * - Levels 7+: 3 chained sequences
  */
-export function pickShuffleSequence(
-  level: number,
-  currentPositions: Color[],
-): Color[][] {
+export function pickShuffleSequence(level: number, currentPositions: Color[]): Color[][] {
   const chainLength = level <= 3 ? 1 : level <= 6 ? 2 : 3
 
   const steps: Color[][] = []

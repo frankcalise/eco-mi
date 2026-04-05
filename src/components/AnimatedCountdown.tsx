@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react"
 import { Text, View, StyleSheet, type TextStyle } from "react-native"
-
 import { EaseView } from "react-native-ease"
 
 type AnimatedCountdownProps = {
