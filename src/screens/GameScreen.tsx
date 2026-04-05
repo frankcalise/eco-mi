@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react"
-import { View, Text, TouchableOpacity, StyleSheet, StatusBar, useWindowDimensions } from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from "react-native"
 
 import { Ionicons } from "@expo/vector-icons"
 import * as Sharing from "expo-sharing"
+import { StatusBar } from "expo-status-bar"
 import { useTranslation } from "react-i18next"
 
 import { GameButton } from "@/components/GameButton"
@@ -153,7 +154,7 @@ export function GameScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.backgroundColor} />
+      <StatusBar style={theme.statusBarStyle} backgroundColor={theme.backgroundColor} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -219,29 +220,28 @@ export function GameScreen() {
             </TouchableOpacity>
 
             <View style={styles.soundPackRow}>
-              {SOUND_PACKS.map((pack) => (
-                <TouchableOpacity
-                  key={pack.id}
-                  testID={`btn-sound-pack-${pack.id}`}
-                  style={[
-                    styles.soundPackButton,
-                    pack.id === soundPack.id && styles.soundPackButtonActive,
-                  ]}
-                  onPress={() => {
-                    setSoundPack(pack.id)
-                    playPreview(pack.oscillatorType)
-                  }}
-                >
-                  <Text
+              {SOUND_PACKS.map((pack) => {
+                const isSelected = pack.id === soundPack.id
+                return (
+                  <TouchableOpacity
+                    key={pack.id}
+                    testID={`btn-sound-pack-${pack.id}`}
                     style={[
-                      styles.soundPackLabel,
-                      pack.id === soundPack.id && styles.soundPackLabelActive,
+                      styles.selectorButton,
+                      { borderColor: isSelected ? "#22c55e" : theme.borderColor },
+                      isSelected && styles.selectorButtonActive,
                     ]}
+                    onPress={() => {
+                      setSoundPack(pack.id)
+                      playPreview(pack.oscillatorType)
+                    }}
                   >
-                    {pack.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text style={{ color: isSelected ? "#22c55e" : theme.secondaryTextColor, fontFamily: "Oxanium-Regular", fontSize: 12 }}>
+                      {pack.name}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              })}
             </View>
 
             <View style={styles.themeRow}>
@@ -260,22 +260,26 @@ export function GameScreen() {
             </View>
 
             <View style={styles.modeRow}>
-              {GAME_MODES.map((m) => (
-                <TouchableOpacity
-                  key={m.id}
-                  testID={`btn-mode-${m.id}`}
-                  style={[
-                    styles.modeButton,
-                    mode === m.id && styles.modeButtonActive,
-                  ]}
-                  onPress={() => setMode(m.id)}
-                >
-                  <Ionicons name={m.icon} size={14} color={mode === m.id ? "#22c55e" : "rgba(255,255,255,0.5)"} />
-                  <Text style={[styles.modeLabel, mode === m.id && styles.modeLabelActive]}>
-                    {m.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {GAME_MODES.map((m) => {
+                const isSelected = mode === m.id
+                return (
+                  <TouchableOpacity
+                    key={m.id}
+                    testID={`btn-mode-${m.id}`}
+                    style={[
+                      styles.selectorButton,
+                      { borderColor: isSelected ? "#22c55e" : theme.borderColor, flexDirection: "row", gap: 4 },
+                      isSelected && styles.selectorButtonActive,
+                    ]}
+                    onPress={() => setMode(m.id)}
+                  >
+                    <Ionicons name={m.icon} size={14} color={isSelected ? "#22c55e" : theme.secondaryTextColor} />
+                    <Text style={{ color: isSelected ? "#22c55e" : theme.secondaryTextColor, fontFamily: "Oxanium-Regular", fontSize: 11 }}>
+                      {m.label}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              })}
             </View>
           </>
         )}
@@ -488,24 +492,14 @@ const styles = StyleSheet.create({
     fontSize: 48,
     letterSpacing: 4,
   },
-  soundPackButton: {
-    borderColor: "rgba(255, 255, 255, 0.2)",
+  selectorButton: {
     borderRadius: 6,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  soundPackButtonActive: {
-    backgroundColor: "rgba(34, 197, 94, 0.3)",
-    borderColor: "#22c55e",
-  },
-  soundPackLabel: {
-    color: "rgba(255, 255, 255, 0.5)",
-    fontFamily: "Oxanium-Regular",
-    fontSize: 12,
-  },
-  soundPackLabelActive: {
-    color: "#22c55e",
+  selectorButtonActive: {
+    backgroundColor: "rgba(34, 197, 94, 0.15)",
   },
   soundPackRow: {
     flexDirection: "row",
@@ -519,28 +513,6 @@ const styles = StyleSheet.create({
     gap: 6,
     justifyContent: "center",
     width: "100%",
-  },
-  modeButton: {
-    alignItems: "center",
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 6,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  modeButtonActive: {
-    backgroundColor: "rgba(34, 197, 94, 0.3)",
-    borderColor: "#22c55e",
-  },
-  modeLabel: {
-    color: "rgba(255, 255, 255, 0.5)",
-    fontFamily: "Oxanium-Regular",
-    fontSize: 11,
-  },
-  modeLabelActive: {
-    color: "#22c55e",
   },
   themeCircle: {
     borderColor: "transparent",

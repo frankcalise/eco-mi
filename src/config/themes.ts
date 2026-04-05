@@ -12,6 +12,9 @@ export interface GameTheme {
   backgroundColor: string
   textColor: string
   secondaryTextColor: string
+  statusBarStyle: "light" | "dark"
+  surfaceColor: string
+  borderColor: string
 }
 
 export const gameThemes: Record<string, GameTheme> = {
@@ -27,6 +30,9 @@ export const gameThemes: Record<string, GameTheme> = {
     backgroundColor: "#1a1a2e",
     textColor: "#ffffff",
     secondaryTextColor: "#a0a0a0",
+    statusBarStyle: "light",
+    surfaceColor: "rgba(0, 0, 0, 0.3)",
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   neon: {
     id: "neon",
@@ -40,6 +46,9 @@ export const gameThemes: Record<string, GameTheme> = {
     backgroundColor: "#0a0a0a",
     textColor: "#ffffff",
     secondaryTextColor: "#888888",
+    statusBarStyle: "light",
+    surfaceColor: "rgba(0, 0, 0, 0.3)",
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   retro: {
     id: "retro",
@@ -53,6 +62,9 @@ export const gameThemes: Record<string, GameTheme> = {
     backgroundColor: "#2c2c2c",
     textColor: "#f0e6d3",
     secondaryTextColor: "#998877",
+    statusBarStyle: "light",
+    surfaceColor: "rgba(0, 0, 0, 0.3)",
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   pastel: {
     id: "pastel",
@@ -66,6 +78,9 @@ export const gameThemes: Record<string, GameTheme> = {
     backgroundColor: "#f5f0ff",
     textColor: "#2d2d3f",
     secondaryTextColor: "#7a7a9a",
+    statusBarStyle: "dark",
+    surfaceColor: "rgba(0, 0, 0, 0.06)",
+    borderColor: "rgba(0, 0, 0, 0.15)",
   },
 }
 
