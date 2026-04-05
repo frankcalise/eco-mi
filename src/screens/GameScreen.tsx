@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react"
 import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from "react-native"
 
 import { Ionicons } from "@expo/vector-icons"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Sharing from "expo-sharing"
 import { StatusBar } from "expo-status-bar"
 import { useTranslation } from "react-i18next"
@@ -33,6 +34,7 @@ const GAME_MODES: { id: GameMode; label: string; icon: keyof typeof Ionicons.gly
 export function GameScreen() {
   const { t } = useTranslation()
   const { width, height } = useWindowDimensions()
+  const insets = useSafeAreaInsets()
   const gameSize = Math.min(width * 0.8, height * 0.5)
   const buttonSize = gameSize * 0.4
 
@@ -167,7 +169,7 @@ export function GameScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundColor, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <StatusBar style={theme.statusBarStyle} backgroundColor={theme.backgroundColor} />
 
       {/* Header */}
