@@ -25,7 +25,7 @@
 - [x] **Layout shift when status text toggles between "Watch" and "Repeat"**
   The progress indicator dots below "Repeat the sequence!" cause the status area to grow, pushing content down. When it switches back to "Watch the sequence..." (no dots), content shifts up. Fix by reserving consistent vertical space for the status + dots area regardless of state — either always render the dots row (invisible when not in `waiting` state) or use a fixed-height container.
 
-- [ ] **Game over overlay: no way to return to idle/home without playing again**
+- [x] **Game over overlay: no way to return to idle/home without playing again**
   After game over, tapping Play Again starts a new game. But if the player wants to switch modes, themes, or sounds, they have to play again and then hit Reset. Add a "Home" or "X" button on the overlay that returns to idle state without starting a game.
 
 - [x] **Status bar content color doesn't adapt to pastel theme**
@@ -58,8 +58,24 @@
   Investigate `expo-ui` adaptive colors (iOS dynamic colors, Android Material You). Could be a "System" theme that pulls the device's accent colors for the game buttons and UI chrome. Evaluate whether this works as the default theme (free, adapts to every user's device) or as a separate purchasable theme. Research: does `@expo/ui` expose adaptive color primitives that work cross-platform? What does it look like on Android Material You vs iOS?
   When the pastel theme is selected (light background), the status bar text/icons remain light — invisible against the light background. Use `expo-status-bar` to set `style="dark"` for pastel and `style="light"` for the other 3 themes. The theme config in `src/config/themes.ts` should include a `statusBarStyle` field (`"light" | "dark"`) per theme.
 
-- [ ] **Add game mode selector for demoing modes**
+- [x] **Add game mode selector for demoing modes**
   The game engine supports classic, daily, timed, reverse, and chaos modes but there's no UI to switch between them. Add a mode selector in the idle state (similar to the theme/sound pack selectors) so all modes can be demoed. Show the mode name and a brief description. Daily mode should show the current streak if available.
+
+- [ ] **Settings modal: animate button toggles on value change**
+  When toggling values in the settings modal (sound on/off, selecting a sound pack, selecting a theme), wrap the interactive elements in `EaseView` with a quick scale pulse + opacity fade on the outgoing selection and a pop-in on the incoming one. Same retro-confirm pattern as the mode selector pulse animation. Keep it subtle — 100–150ms timing transitions.
+
+- [ ] **Haptic feedback on mode select and settings interactions**
+  Add `expo-haptics` calls to the header action buttons and modal interactions:
+  - Light impact when opening mode selector or settings modals
+  - Medium impact when selecting a game mode (fires with the pulse animation)
+  - Light impact when toggling sound, changing sound pack, or changing theme in settings
+  Use `Haptics.impactAsync()` with the appropriate `ImpactFeedbackStyle`.
+
+- [ ] **Idle screen: neon sign title animation**
+  While in idle state, animate the "Eco Mi" title text to cycle through the active theme's 4 button colors (red → blue → green → yellow) with a smooth transition, simulating a glowing neon sign. Add a subtle scale breathe (1.0 → 1.02 → 1.0) using `EaseView` with a looping timing animation. The color cycle should use the current theme's `buttonColors` so it stays consistent across Classic, Neon, Retro, and Pastel themes. Stop the animation when the game starts (gameState !== "idle").
+
+- [ ] **Idle screen: one-shot retro chiptune jingle**
+  Compose a short (3–5 second) retro chiptune jingle using the existing `react-native-audio-api` oscillator engine. Play it once when the game returns to idle state (app launch, after game over → home, after reset). The jingle should use the currently selected sound pack's `oscillatorType` (sine, square, sawtooth, triangle) so it changes character with the player's choice. Respect the existing `soundEnabled` toggle — no sound when muted. Keep the melody simple: 6–10 notes in a major key, ascending pattern, classic arcade "ready!" feel.
 
 ---
 
