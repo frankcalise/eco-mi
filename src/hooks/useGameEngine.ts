@@ -463,21 +463,24 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
         setSequencesCompleted((prev) => prev + 1)
       }
 
-      if (mode === "chaos") {
-        shuffleButtonPositions()
-      }
-
-      // Brief delay so the last dot renders as filled before advancing
+      // Brief delay so the last dot renders as filled and button animation settles
       addTimeout(() => {
         setPlayerSequence([])
+
+        if (mode === "chaos") {
+          shuffleButtonPositions()
+        }
       }, 400)
+
+      // Extra delay for chaos so the shuffle is visible before next sequence
+      const nextSequenceDelay = mode === "chaos" ? 1400 : 1000
 
       addTimeout(() => {
         const newSequence = [...sequence]
         newSequence.push(colors[getNextColorIndex(newSequence.length)])
         setSequence(newSequence)
         showSequence(newSequence, newLevel)
-      }, 1000)
+      }, nextSequenceDelay)
     }
   }
 
