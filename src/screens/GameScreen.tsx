@@ -193,9 +193,8 @@ export function GameScreen() {
     }
   }, [isIdle])
 
-  const titleColor = isIdle
-    ? theme.buttonColors[NEON_COLOR_ORDER[neonColorIndex]].color
-    : theme.textColor
+  const neonColors = NEON_COLOR_ORDER.map((c) => theme.buttonColors[c].color)
+  const activeNeonColor = isIdle ? neonColors[neonColorIndex] : theme.textColor
 
   function handleModeSelect(id: GameMode) {
     if (id === mode) return
@@ -376,8 +375,48 @@ export function GameScreen() {
           transition={{
             default: { type: "timing", duration: 1500, easing: "easeInOut", loop: "reverse" },
           }}
+          style={styles.headerCenter}
         >
-          <Text style={[styles.title, { color: titleColor }]}>{t("game:title")}</Text>
+          <View style={styles.titleStack}>
+            {isIdle ? (
+              neonColors.map((color, i) => (
+                <EaseView
+                  key={i}
+                  animate={{ opacity: neonColorIndex === i ? 1 : 0 }}
+                  transition={{ default: { type: "timing", duration: 600, easing: "easeInOut" } }}
+                  style={i > 0 ? styles.titleLayerAbsolute : undefined}
+                >
+                  <Text
+                    style={[
+                      styles.title,
+                      {
+                        color,
+                        textShadowColor: color,
+                        textShadowOffset: { width: 0, height: 0 },
+                        textShadowRadius: 12,
+                      },
+                    ]}
+                  >
+                    {t("game:title")}
+                  </Text>
+                </EaseView>
+              ))
+            ) : (
+              <Text style={[styles.title, { color: theme.textColor }]}>{t("game:title")}</Text>
+            )}
+          </View>
+          {(() => {
+            const currentMode = GAME_MODES.find((m) => m.id === mode)
+            if (!currentMode) return null
+            return (
+              <View style={styles.modeIndicator}>
+                <Ionicons name={currentMode.icon} size={12} color={theme.secondaryTextColor} />
+                <Text style={[styles.modeIndicatorText, { color: theme.secondaryTextColor }]}>
+                  {t(`game:modes.${mode}`)}
+                </Text>
+              </View>
+            )
+          })()}
         </EaseView>
         <Pressable
           onPress={() => {
@@ -493,11 +532,6 @@ export function GameScreen() {
 
       {/* Game Status */}
       <View style={styles.statusContainer}>
-        {gameState === "idle" && (
-          <Text style={[styles.statusText, { color: theme.secondaryTextColor }]}>
-            {t("game:pressStart")}
-          </Text>
-        )}
         {gameState === "showing" && (
           <Text style={[styles.statusText, styles.showingText]}>{t("game:watchSequence")}</Text>
         )}
@@ -786,9 +820,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: 12,
     paddingHorizontal: 20,
     width: "100%",
+  },
+  headerCenter: {
+    alignItems: "center",
   },
   headerAction: {
     alignItems: "center",
@@ -984,6 +1021,25 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-Bold",
     fontSize: 36,
     letterSpacing: 4,
+  },
+  titleStack: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  titleLayerAbsolute: {
+    position: "absolute",
+  },
+  modeIndicator: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
+    marginTop: 2,
+  },
+  modeIndicatorText: {
+    fontFamily: "Oxanium-Medium",
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 2,
   },
   waitingText: {
     color: "#22c55e",
