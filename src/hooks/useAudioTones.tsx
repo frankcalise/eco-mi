@@ -1,6 +1,7 @@
 import { useRef } from "react"
 
 import { AudioContext, GainNode, OscillatorNode } from "react-native-audio-api"
+import type { OscillatorType } from "react-native-audio-api"
 
 const ATTACK_S = 0.025 // 25ms fade-in (longer = fewer pops on fast hardware)
 const RELEASE_S = 0.04 // 40ms fade-out
@@ -32,7 +33,11 @@ interface ActiveSound {
   gain: GainNode
 }
 
-export function useAudioTones(colorMap: ColorMap, soundEnabled: boolean): AudioTonesHook {
+export function useAudioTones(
+  colorMap: ColorMap,
+  soundEnabled: boolean,
+  oscillatorType: OscillatorType = "sine",
+): AudioTonesHook {
   const audioContextRef = useRef<AudioContext | null>(null)
   const activeSoundRef = useRef<ActiveSound | null>(null)
 
@@ -77,7 +82,7 @@ export function useAudioTones(colorMap: ColorMap, soundEnabled: boolean): AudioT
     const oscillator = ctx.createOscillator()
     const gain = ctx.createGain()
 
-    oscillator.type = "sine"
+    oscillator.type = oscillatorType
     oscillator.frequency.setValueAtTime(frequency, now)
 
     gain.gain.setValueAtTime(EPSILON, now)
