@@ -19,10 +19,22 @@ export interface ColorMap {
   }
 }
 
+// Ascending arpeggio frequencies — the 4 game tones in a pleasing pattern
+const PREVIEW_NOTES = [
+  { freq: 220, delay: 0 },     // red
+  { freq: 277, delay: 0.15 },  // blue
+  { freq: 330, delay: 0.30 },  // green
+  { freq: 415, delay: 0.45 },  // yellow
+  { freq: 330, delay: 0.60 },  // green (resolve back down)
+  { freq: 415, delay: 0.70 },  // yellow (end on high)
+]
+const PREVIEW_NOTE_DURATION = 0.12
+
 interface AudioTonesHook {
   initialize: () => Promise<void>
   cleanup: () => Promise<void>
   playSound: (color: Color, duration?: number) => Promise<void>
+  playPreview: (overrideType?: OscillatorType) => Promise<void>
   startContinuousSound: (color: Color) => Promise<void>
   stopContinuousSound: (color: Color) => Promise<void>
   stopContinuousSoundWithFade: (color: Color, fadeDuration?: number) => Promise<void>
@@ -146,6 +158,40 @@ export function useAudioTones(
     }, duration + 50)
   }
 
+  async function playPreview(overrideType?: OscillatorType) {
+    const ctx = getContext()
+    if (!ctx) return
+
+    // @ts-ignore
+    await ctx?.resume?.()
+
+    const type = overrideType ?? oscillatorType
+    const now = ctx.currentTime
+
+    for (const note of PREVIEW_NOTES) {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+
+      osc.type = type
+      osc.frequency.setValueAtTime(note.freq, now + note.delay)
+
+      const noteStart = now + note.delay
+      gain.gain.setValueAtTime(EPSILON, noteStart)
+      gain.gain.exponentialRampToValueAtTime(TARGET_GAIN * 0.8, noteStart + ATTACK_S)
+      gain.gain.exponentialRampToValueAtTime(EPSILON, noteStart + PREVIEW_NOTE_DURATION)
+
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start(noteStart)
+      osc.stop(noteStart + PREVIEW_NOTE_DURATION + 0.01)
+
+      setTimeout(() => {
+        try { osc.disconnect() } catch {}
+        try { gain.disconnect() } catch {}
+      }, (note.delay + PREVIEW_NOTE_DURATION + 0.05) * 1000)
+    }
+  }
+
   async function startContinuousSound(color: Color) {
     if (!soundEnabled || !getContext()) return
 
@@ -185,6 +231,7 @@ export function useAudioTones(
     initialize,
     cleanup,
     playSound,
+    playPreview,
     startContinuousSound,
     stopContinuousSound,
     stopContinuousSoundWithFade,

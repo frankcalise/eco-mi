@@ -89,6 +89,7 @@ interface UseGameEngineReturn {
   handleButtonTouch: (color: Color) => void
   handleButtonRelease: (color: Color) => void
   toggleSound: () => void
+  playPreview: (overrideType?: OscillatorType) => void
   setMode: (mode: GameMode) => void
 }
 
@@ -157,8 +158,14 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
   const activeColorMap = options?.theme ? getColorMapForTheme(options.theme) : colorMap
 
-  const { initialize, cleanup, playSound, startContinuousSound, stopContinuousSoundWithFade } =
-    useAudioTones(activeColorMap, soundEnabled, options?.oscillatorType)
+  const {
+    initialize,
+    cleanup,
+    playSound,
+    playPreview,
+    startContinuousSound,
+    stopContinuousSoundWithFade,
+  } = useAudioTones(activeColorMap, soundEnabled, options?.oscillatorType)
 
   // --- Timeout management (fixes orphaned timer bug) ---
 
@@ -493,6 +500,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     handleButtonTouch,
     handleButtonRelease,
     toggleSound,
+    playPreview,
     setMode,
   }
 }

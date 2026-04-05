@@ -44,6 +44,7 @@ export function GameScreen() {
     handleButtonTouch,
     handleButtonRelease,
     toggleSound,
+    playPreview,
   } = useGameEngine({ oscillatorType: soundPack.oscillatorType, theme })
 
   const {
@@ -206,7 +207,10 @@ export function GameScreen() {
                     styles.soundPackButton,
                     pack.id === soundPack.id && styles.soundPackButtonActive,
                   ]}
-                  onPress={() => setSoundPack(pack.id)}
+                  onPress={() => {
+                    setSoundPack(pack.id)
+                    playPreview(pack.oscillatorType)
+                  }}
                 >
                   <Text
                     style={[
