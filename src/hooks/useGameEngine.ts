@@ -5,6 +5,7 @@ import * as Haptics from "expo-haptics"
 import type { OscillatorType } from "react-native-audio-api"
 
 import { getToneDuration, getSequenceInterval } from "@/config/difficulty"
+import { pickShuffleSequence, getShuffleStepDelay } from "@/config/shuffleAnimations"
 import { type GameTheme, gameThemes } from "@/config/themes"
 import { useAudioTones } from "@/hooks/useAudioTones"
 import { recordGameResult } from "@/hooks/useStats"
@@ -82,6 +83,7 @@ interface UseGameEngineReturn {
   timeRemaining: number | null
   sequencesCompleted: number
   buttonPositions: Color[]
+  isShuffling: boolean
 
   startGame: () => void
   resetGame: () => void
@@ -149,6 +151,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const [sequencesCompleted, setSequencesCompleted] = useState(0)
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [buttonPositions, setButtonPositions] = useState<Color[]>([...colors])
+  const [isShuffling, setIsShuffling] = useState(false)
 
   const scoreRef = useRef(0)
   const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
@@ -311,13 +314,26 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     }, 1000)
   }
 
-  function shuffleButtonPositions() {
-    const shuffled = [...colors]
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-    }
-    setButtonPositions(shuffled)
+  function animateShuffleSequence(currentLevel: number): number {
+    const steps = pickShuffleSequence(currentLevel, buttonPositions)
+    const stepDelay = getShuffleStepDelay(currentLevel)
+
+    setIsShuffling(true)
+
+    steps.forEach((step, i) => {
+      addTimeout(() => {
+        setButtonPositions(step)
+
+        if (i === steps.length - 1) {
+          addTimeout(() => {
+            setIsShuffling(false)
+          }, stepDelay)
+        }
+      }, i * stepDelay)
+    })
+
+    // Total duration: steps * stepDelay + final settle delay
+    return steps.length * stepDelay + stepDelay
   }
 
   function startGame() {
@@ -339,6 +355,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     setContinuedThisGame(false)
     setSequencesCompleted(0)
     setButtonPositions([...colors])
+    setIsShuffling(false)
 
     if (mode === "timed") {
       startTimer(60)
@@ -364,6 +381,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     setContinuedThisGame(false)
     setSequencesCompleted(0)
     setButtonPositions([...colors])
+    setIsShuffling(false)
     buttonPressStartTime.current = null
   }
 
@@ -468,19 +486,23 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
         setPlayerSequence([])
 
         if (mode === "chaos") {
-          shuffleButtonPositions()
+          const shuffleDuration = animateShuffleSequence(newLevel)
+
+          addTimeout(() => {
+            const newSequence = [...sequence]
+            newSequence.push(colors[getNextColorIndex(newSequence.length)])
+            setSequence(newSequence)
+            showSequence(newSequence, newLevel)
+          }, shuffleDuration + 200)
+        } else {
+          addTimeout(() => {
+            const newSequence = [...sequence]
+            newSequence.push(colors[getNextColorIndex(newSequence.length)])
+            setSequence(newSequence)
+            showSequence(newSequence, newLevel)
+          }, 600)
         }
       }, 400)
-
-      // Extra delay for chaos so the shuffle is visible before next sequence
-      const nextSequenceDelay = mode === "chaos" ? 1400 : 1000
-
-      addTimeout(() => {
-        const newSequence = [...sequence]
-        newSequence.push(colors[getNextColorIndex(newSequence.length)])
-        setSequence(newSequence)
-        showSequence(newSequence, newLevel)
-      }, nextSequenceDelay)
     }
   }
 
@@ -503,6 +525,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     timeRemaining,
     sequencesCompleted,
     buttonPositions,
+    isShuffling,
 
     startGame,
     resetGame,

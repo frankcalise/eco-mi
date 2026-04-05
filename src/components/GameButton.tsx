@@ -15,10 +15,44 @@ type GameButtonProps = {
   buttonSize: number
   gameSize: number
   index: number
+  isShuffling?: boolean
   onPressIn: () => void
   onPressOut: () => void
   themeColor?: string
   themeActiveColor?: string
+}
+
+function getSlotCoords(
+  position: Position,
+  buttonSize: number,
+  gameSize: number,
+): { top: number; left: number } {
+  const offset = gameSize * 0.05
+  const far = gameSize - buttonSize - offset
+
+  switch (position) {
+    case "topLeft":
+      return { top: offset, left: offset }
+    case "topRight":
+      return { top: offset, left: far }
+    case "bottomLeft":
+      return { top: far, left: offset }
+    case "bottomRight":
+      return { top: far, left: far }
+  }
+}
+
+function getBorderRadius(position: Position, buttonSize: number) {
+  switch (position) {
+    case "topLeft":
+      return { borderTopLeftRadius: buttonSize / 2 }
+    case "topRight":
+      return { borderTopRightRadius: buttonSize / 2 }
+    case "bottomLeft":
+      return { borderBottomLeftRadius: buttonSize / 2 }
+    case "bottomRight":
+      return { borderBottomRightRadius: buttonSize / 2 }
+  }
 }
 
 export function GameButton({
@@ -28,6 +62,7 @@ export function GameButton({
   buttonSize,
   gameSize,
   index,
+  isShuffling,
   onPressIn,
   onPressOut,
   themeColor,
@@ -45,47 +80,42 @@ export function GameButton({
     height: buttonSize,
   }
 
-  const positionStyle = getPositionStyle(position, buttonSize, gameSize)
+  // Use topLeft as the base position for all buttons, then translate to target slot
+  const baseCoords = getSlotCoords("topLeft", buttonSize, gameSize)
+  const targetCoords = getSlotCoords(position, buttonSize, gameSize)
+  const translateX = targetCoords.left - baseCoords.left
+  const translateY = targetCoords.top - baseCoords.top
+  const borderRadius = getBorderRadius(position, buttonSize)
 
   return (
     <EaseView
       animate={{
         scale: isActive ? 1.08 : 1,
         opacity: isActive ? 1 : 0.85,
+        translateX,
+        translateY,
       }}
       transition={{
         default: { type: "spring", stiffness: 300, damping: 20, mass: 0.8 },
         opacity: { type: "timing", duration: 150, easing: "easeOut" },
+        transform: isShuffling
+          ? { type: "timing", duration: 350, easing: "easeInOut" }
+          : { type: "spring", stiffness: 300, damping: 20, mass: 0.8 },
       }}
-      style={[styles.button, positionStyle, { width: buttonSize, height: buttonSize }]}
+      style={[
+        styles.button,
+        { top: baseCoords.top, left: baseCoords.left, width: buttonSize, height: buttonSize },
+      ]}
     >
       <Pressable
         testID={`btn-${color}${isActive ? "-active" : ""}`}
-        style={[styles.pressable, buttonStyle]}
+        style={[styles.pressable, buttonStyle, borderRadius]}
         disabled={disabled}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
       />
     </EaseView>
   )
-}
-
-function getPositionStyle(
-  position: Position,
-  buttonSize: number,
-  gameSize: number,
-) {
-  const offset = gameSize * 0.05
-  switch (position) {
-    case "topLeft":
-      return { top: offset, left: offset, borderTopLeftRadius: buttonSize / 2 }
-    case "topRight":
-      return { top: offset, right: offset, borderTopRightRadius: buttonSize / 2 }
-    case "bottomLeft":
-      return { bottom: offset, left: offset, borderBottomLeftRadius: buttonSize / 2 }
-    case "bottomRight":
-      return { bottom: offset, right: offset, borderBottomRightRadius: buttonSize / 2 }
-  }
 }
 
 const styles = StyleSheet.create({
