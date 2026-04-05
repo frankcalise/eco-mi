@@ -294,6 +294,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       const remaining = durationSec - elapsed
       if (remaining <= 0) {
         stopTimer()
+        clearAllTimeouts()
         setGameState("gameover")
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 

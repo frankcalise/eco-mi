@@ -22,6 +22,9 @@
   - Whether `expo-haptics` vibration timing interferes with audio playback
   - Test with longer attack/release ramps and see if the pop goes away
 
+- [ ] **Layout shift when status text toggles between "Watch" and "Repeat"**
+  The progress indicator dots below "Repeat the sequence!" cause the status area to grow, pushing content down. When it switches back to "Watch the sequence..." (no dots), content shifts up. Fix by reserving consistent vertical space for the status + dots area regardless of state — either always render the dots row (invisible when not in `waiting` state) or use a fixed-height container.
+
 - [ ] **Status bar content color doesn't adapt to pastel theme**
   When the pastel theme is selected (light background), the status bar text/icons remain light — invisible against the light background. Use `expo-status-bar` to set `style="dark"` for pastel and `style="light"` for the other 3 themes. The theme config in `src/config/themes.ts` should include a `statusBarStyle` field (`"light" | "dark"`) per theme.
 

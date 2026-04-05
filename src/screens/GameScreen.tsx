@@ -11,12 +11,20 @@ import { ReviewPrompt } from "@/components/ReviewPrompt"
 import { SOUND_PACKS } from "@/config/soundPacks"
 import { themeIds, gameThemes } from "@/config/themes"
 import { useAds } from "@/hooks/useAds"
-import { useGameEngine, colors } from "@/hooks/useGameEngine"
+import { useGameEngine, colors, type GameMode } from "@/hooks/useGameEngine"
 import { useSoundPack } from "@/hooks/useSoundPack"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
 import { useAnalytics } from "@/utils/analytics"
+
+const GAME_MODES: { id: GameMode; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { id: "classic", label: "Classic", icon: "game-controller" },
+  { id: "daily", label: "Daily", icon: "calendar" },
+  { id: "timed", label: "Timed", icon: "timer" },
+  { id: "reverse", label: "Reverse", icon: "swap-horizontal" },
+  { id: "chaos", label: "Chaos", icon: "shuffle" },
+]
 
 export function GameScreen() {
   const { t } = useTranslation()
@@ -45,6 +53,10 @@ export function GameScreen() {
     handleButtonRelease,
     toggleSound,
     playPreview,
+    setMode,
+    mode,
+    timeRemaining,
+    sequencesCompleted,
   } = useGameEngine({ oscillatorType: soundPack.oscillatorType, theme })
 
   const {
@@ -184,7 +196,13 @@ export function GameScreen() {
 
           {/* Center Circle */}
           <View style={styles.centerCircle}>
-            <Text style={[styles.centerText, { color: theme.textColor }]}>{t("game:title")}</Text>
+            {mode === "timed" && timeRemaining !== null && gameState !== "idle" ? (
+              <Text style={[styles.centerTimer, { color: timeRemaining <= 10 ? "#ef4444" : theme.textColor }]}>
+                {timeRemaining}
+              </Text>
+            ) : (
+              <Text style={[styles.centerText, { color: theme.textColor }]}>{t("game:title")}</Text>
+            )}
           </View>
         </View>
       </View>
@@ -236,6 +254,25 @@ export function GameScreen() {
                   ]}
                   onPress={() => setTheme(id)}
                 />
+              ))}
+            </View>
+
+            <View style={styles.modeRow}>
+              {GAME_MODES.map((m) => (
+                <TouchableOpacity
+                  key={m.id}
+                  testID={`btn-mode-${m.id}`}
+                  style={[
+                    styles.modeButton,
+                    mode === m.id && styles.modeButtonActive,
+                  ]}
+                  onPress={() => setMode(m.id)}
+                >
+                  <Ionicons name={m.icon} size={14} color={mode === m.id ? "#22c55e" : "rgba(255,255,255,0.5)"} />
+                  <Text style={[styles.modeLabel, mode === m.id && styles.modeLabelActive]}>
+                    {m.label}
+                  </Text>
+                </TouchableOpacity>
               ))}
             </View>
           </>
@@ -322,6 +359,10 @@ const styles = StyleSheet.create({
     top: "50%",
     transform: [{ translateX: -40 }, { translateY: -40 }],
     width: 80,
+  },
+  centerTimer: {
+    fontFamily: "Oxanium-Bold",
+    fontSize: 24,
   },
   centerText: {
     color: "white",
@@ -469,6 +510,35 @@ const styles = StyleSheet.create({
     gap: 8,
     justifyContent: "center",
     width: "100%",
+  },
+  modeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    justifyContent: "center",
+    width: "100%",
+  },
+  modeButton: {
+    alignItems: "center",
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 6,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  modeButtonActive: {
+    backgroundColor: "rgba(34, 197, 94, 0.3)",
+    borderColor: "#22c55e",
+  },
+  modeLabel: {
+    color: "rgba(255, 255, 255, 0.5)",
+    fontFamily: "Oxanium-Regular",
+    fontSize: 11,
+  },
+  modeLabelActive: {
+    color: "#22c55e",
   },
   themeCircle: {
     borderColor: "transparent",
