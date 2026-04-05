@@ -293,8 +293,8 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     setTimeRemaining(durationSec)
     const startTime = Date.now()
     timerIntervalRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000)
-      const remaining = durationSec - elapsed
+      const elapsedMs = Date.now() - startTime
+      const remaining = durationSec - elapsedMs / 1000
       if (remaining <= 0) {
         stopTimer()
         clearAllTimeouts()
@@ -311,7 +311,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       } else {
         setTimeRemaining(remaining)
       }
-    }, 1000)
+    }, 100)
   }
 
   function animateShuffleSequence(currentLevel: number): number {

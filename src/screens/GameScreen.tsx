@@ -218,7 +218,7 @@ export function GameScreen() {
             <View style={[styles.centerCircle, { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor }, showTimerRing && styles.centerCircleNoRing]}>
               {mode === "timed" && timeRemaining !== null && gameState !== "idle" ? (
                 <AnimatedCountdown
-                  value={timeRemaining}
+                  value={Math.ceil(timeRemaining)}
                   color={timeRemaining <= 10 ? "#ef4444" : theme.textColor}
                   style={styles.centerTimer}
                 />
@@ -381,6 +381,9 @@ const styles = StyleSheet.create({
   },
   centerCircleNoRing: {
     borderWidth: 0,
+    height: 72,
+    width: 72,
+    borderRadius: 36,
   },
   centerCircleWrapper: {
     alignItems: "center",
