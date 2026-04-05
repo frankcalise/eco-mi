@@ -22,7 +22,7 @@
   - Whether `expo-haptics` vibration timing interferes with audio playback
   - Test with longer attack/release ramps and see if the pop goes away
 
-- [ ] **Layout shift when status text toggles between "Watch" and "Repeat"**
+- [x] **Layout shift when status text toggles between "Watch" and "Repeat"**
   The progress indicator dots below "Repeat the sequence!" cause the status area to grow, pushing content down. When it switches back to "Watch the sequence..." (no dots), content shifts up. Fix by reserving consistent vertical space for the status + dots area regardless of state — either always render the dots row (invisible when not in `waiting` state) or use a fixed-height container.
 
 - [ ] **Status bar content color doesn't adapt to pastel theme**
