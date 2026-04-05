@@ -61,7 +61,7 @@ export function GameScreen() {
     }
   }, [])
 
-  // Track game over + show interstitial
+  // Track game over (no ad here — interstitial shows on Play Again)
   const prevGameState = useRef(gameState)
   useEffect(() => {
     if (prevGameState.current !== "gameover" && gameState === "gameover") {
@@ -72,17 +72,17 @@ export function GameScreen() {
         analytics.trackGameCompleted(score, level, true)
         triggerReviewCheck("new_high_score", adShownThisSession)
       }
-
-      showInterstitial(level, removeAds).then((shown) => {
-        if (shown) {
-          analytics.trackAdShown("interstitial", "game_over")
-        }
-      })
     }
     prevGameState.current = gameState
   }, [gameState])
 
-  function handleStartGame() {
+  async function handleStartGame() {
+    // Show interstitial before starting next game (not on game over)
+    const adShown = await showInterstitial(level, removeAds)
+    if (adShown) {
+      analytics.trackAdShown("interstitial", "game_over")
+    }
+
     analytics.trackGameStarted()
     startGame()
   }
