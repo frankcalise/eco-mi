@@ -26,6 +26,20 @@
   The progress indicator dots below "Repeat the sequence!" cause the status area to grow, pushing content down. When it switches back to "Watch the sequence..." (no dots), content shifts up. Fix by reserving consistent vertical space for the status + dots area regardless of state — either always render the dots row (invisible when not in `waiting` state) or use a fixed-height container.
 
 - [x] **Status bar content color doesn't adapt to pastel theme**
+
+## Animation Polish
+
+- [ ] **Chaos mode: spinning button shuffle animation**
+  When buttons shuffle in chaos mode, animate them rotating around the center circle before settling into new positions. Use `react-native-ease` to orchestrate a circular path animation — buttons slide along the circle perimeter (like a roulette spin) for ~800ms before landing. Much more satisfying than an instant position swap.
+
+- [ ] **Timed mode: animated countdown number**
+  Use `react-native-ease` to smoothly transition the countdown number in the center circle. Each tick should scale down the current number (shrink + fade) and scale up the new number (grow + appear). Gives the timer a fluid, non-jarring feel instead of a hard digit swap every second.
+
+- [ ] **Timed mode: circular progress ring around center circle**
+  Replace the plain center circle border with a circular progress ring that depletes as time runs out. The ring should animate smoothly from full (green) to empty (red) over 60 seconds. Could use `react-native-svg` (already installed) with an animated `strokeDashoffset` on a `Circle` element, driven by `react-native-ease` or a simple interpolation from `timeRemaining / 60`.
+
+- [ ] **Explore Expo UI adaptive/dynamic colors as a theme option**
+  Investigate `expo-ui` adaptive colors (iOS dynamic colors, Android Material You). Could be a "System" theme that pulls the device's accent colors for the game buttons and UI chrome. Evaluate whether this works as the default theme (free, adapts to every user's device) or as a separate purchasable theme. Research: does `@expo/ui` expose adaptive color primitives that work cross-platform? What does it look like on Android Material You vs iOS?
   When the pastel theme is selected (light background), the status bar text/icons remain light — invisible against the light background. Use `expo-status-bar` to set `style="dark"` for pastel and `style="light"` for the other 3 themes. The theme config in `src/config/themes.ts` should include a `statusBarStyle` field (`"light" | "dark"`) per theme.
 
 - [ ] **Add game mode selector for demoing modes**
