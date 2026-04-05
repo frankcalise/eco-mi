@@ -22,6 +22,19 @@
   - Whether `expo-haptics` vibration timing interferes with audio playback
   - Test with longer attack/release ramps and see if the pop goes away
 
+- [ ] **Status bar content color doesn't adapt to pastel theme**
+  When the pastel theme is selected (light background), the status bar text/icons remain light — invisible against the light background. Use `expo-status-bar` to set `style="dark"` for pastel and `style="light"` for the other 3 themes. The theme config in `src/config/themes.ts` should include a `statusBarStyle` field (`"light" | "dark"`) per theme.
+
+- [ ] **Add game mode selector for demoing modes**
+  The game engine supports classic, daily, timed, reverse, and chaos modes but there's no UI to switch between them. Add a mode selector in the idle state (similar to the theme/sound pack selectors) so all modes can be demoed. Show the mode name and a brief description. Daily mode should show the current streak if available.
+
+---
+
+## Tech Debt
+
+- [ ] **Remove unused navigation dependencies**
+  Remove `@react-navigation/native-stack` and `react-native-drawer-layout` from `package.json`. Expo Router brings in its own navigation stack — these are unused Ignite boilerplate leftovers.
+
 ---
 
 ## Phase 0 — Tech Debt & Foundation
