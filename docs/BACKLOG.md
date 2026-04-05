@@ -29,8 +29,18 @@
 
 ## Animation Polish
 
-- [ ] **Chaos mode: spinning button shuffle animation**
-  When buttons shuffle in chaos mode, animate them rotating around the center circle before settling into new positions. Use `react-native-ease` to orchestrate a circular path animation — buttons slide along the circle perimeter (like a roulette spin) for ~800ms before landing. Much more satisfying than an instant position swap.
+- [ ] **Chaos mode: animated shuffle sequences (shell game style)**
+  Instead of a single shuffle animation, build a pool of shuffle sequences that are randomly selected each round. At higher levels, chain multiple sequences together for harder visual tracking. Sequences:
+  - **Clockwise orbit** — all 4 buttons rotate one position around the circle
+  - **Counter-clockwise orbit** — reverse direction
+  - **Diagonal swap** — top-left ↔ bottom-right, top-right ↔ bottom-left (X pattern)
+  - **Horizontal swap** — left pair swaps with right pair
+  - **Vertical swap** — top pair swaps with bottom pair
+  - **Shell shuffle** — 2-3 rapid sequential pair swaps (cup game: A↔B, C↔D, A↔C)
+  - **Scatter & return** — all buttons fly to center, pause, then fly out to new positions
+  - **Cascade** — each button moves one at a time in quick succession (domino effect)
+  
+  Use `react-native-ease` for smooth position transitions. At level 1-3, pick one sequence. At 4-6, chain two. At 7+, chain three with faster timing. The animation duration should compress at higher levels too — more chaos, less time to track.
 
 - [ ] **Timed mode: animated countdown number**
   Use `react-native-ease` to smoothly transition the countdown number in the center circle. Each tick should scale down the current number (shrink + fade) and scale up the new number (grow + appear). Gives the timer a fluid, non-jarring feel instead of a hard digit swap every second.
