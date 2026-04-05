@@ -25,6 +25,9 @@
 - [x] **Layout shift when status text toggles between "Watch" and "Repeat"**
   The progress indicator dots below "Repeat the sequence!" cause the status area to grow, pushing content down. When it switches back to "Watch the sequence..." (no dots), content shifts up. Fix by reserving consistent vertical space for the status + dots area regardless of state — either always render the dots row (invisible when not in `waiting` state) or use a fixed-height container.
 
+- [ ] **Game over overlay: no way to return to idle/home without playing again**
+  After game over, tapping Play Again starts a new game. But if the player wants to switch modes, themes, or sounds, they have to play again and then hit Reset. Add a "Home" or "X" button on the overlay that returns to idle state without starting a game.
+
 - [x] **Status bar content color doesn't adapt to pastel theme**
 
 ## Animation Polish

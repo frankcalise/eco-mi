@@ -145,6 +145,8 @@ export function GameScreen() {
     }
   }
 
+  const showTimerRing = mode === "timed" && timeRemaining !== null && gameState !== "idle"
+
   const gameContainerStyle = {
     backgroundColor: "rgba(0, 0, 0, 0.5)" as const,
     borderColor: "rgba(255, 255, 255, 0.2)" as const,
@@ -167,15 +169,15 @@ export function GameScreen() {
 
       {/* Score Display */}
       <View style={styles.scoreContainer}>
-        <View style={styles.scoreBox}>
+        <View style={[styles.scoreBox, { backgroundColor: theme.surfaceColor }]}>
           <Text style={[styles.scoreLabel, { color: theme.secondaryTextColor }]}>{t("game:level")}</Text>
           <Text testID="text-level" style={[styles.scoreValue, { color: theme.textColor }]}>{level}</Text>
         </View>
-        <View style={styles.scoreBox}>
+        <View style={[styles.scoreBox, { backgroundColor: theme.surfaceColor }]}>
           <Text style={[styles.scoreLabel, { color: theme.secondaryTextColor }]}>{t("game:score")}</Text>
           <Text testID="text-score" style={[styles.scoreValue, { color: theme.textColor }]}>{score}</Text>
         </View>
-        <View style={styles.scoreBox}>
+        <View style={[styles.scoreBox, { backgroundColor: theme.surfaceColor }]}>
           <Text style={[styles.scoreLabel, { color: theme.secondaryTextColor }]}>{t("game:best")}</Text>
           <Text testID="text-high-score" style={[styles.scoreValue, { color: theme.textColor }]}>{highScore}</Text>
         </View>
@@ -203,17 +205,17 @@ export function GameScreen() {
 
           {/* Center Circle */}
           <View style={styles.centerCircleWrapper}>
-            {mode === "timed" && timeRemaining !== null && gameState !== "idle" && (
+            {showTimerRing && (
               <View style={styles.timerRingContainer}>
                 <TimerRing
-                  progress={timeRemaining / 60}
-                  size={96}
-                  strokeWidth={5}
+                  progress={timeRemaining! / 60}
+                  size={80}
+                  strokeWidth={4}
                   theme={theme}
                 />
               </View>
             )}
-            <View style={styles.centerCircle}>
+            <View style={[styles.centerCircle, { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor }, showTimerRing && styles.centerCircleNoRing]}>
               {mode === "timed" && timeRemaining !== null && gameState !== "idle" ? (
                 <AnimatedCountdown
                   value={timeRemaining}
@@ -371,23 +373,24 @@ const styles = StyleSheet.create({
   },
   centerCircle: {
     alignItems: "center",
-    backgroundColor: "black",
-    borderColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 40,
     borderWidth: 4,
     height: 80,
     justifyContent: "center",
     width: 80,
   },
+  centerCircleNoRing: {
+    borderWidth: 0,
+  },
   centerCircleWrapper: {
     alignItems: "center",
-    height: 96,
+    height: 80,
     justifyContent: "center",
     left: "50%",
     position: "absolute",
     top: "50%",
-    transform: [{ translateX: -48 }, { translateY: -48 }],
-    width: 96,
+    transform: [{ translateX: -40 }, { translateY: -40 }],
+    width: 80,
   },
   timerRingContainer: {
     left: 0,
@@ -438,7 +441,6 @@ const styles = StyleSheet.create({
   },
   scoreBox: {
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
     borderRadius: 10,
     minWidth: 80,
     paddingHorizontal: 20,
