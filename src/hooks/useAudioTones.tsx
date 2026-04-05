@@ -29,11 +29,23 @@ const PREVIEW_NOTES = [
 ]
 const PREVIEW_NOTE_DURATION = 0.12
 
+// Retro chiptune jingle — short ascending C-major melody with resolution
+const JINGLE_NOTES = [
+  { freq: 523, delay: 0 }, // C5
+  { freq: 659, delay: 0.2 }, // E5
+  { freq: 784, delay: 0.4 }, // G5
+  { freq: 1047, delay: 0.6 }, // C6
+  { freq: 784, delay: 0.85 }, // G5
+  { freq: 1047, delay: 1.05 }, // C6 (resolve)
+]
+const JINGLE_NOTE_DURATION = 0.15
+
 interface AudioTonesHook {
   initialize: () => Promise<void>
   cleanup: () => Promise<void>
   playSound: (color: Color, duration?: number) => Promise<void>
   playPreview: (overrideType?: OscillatorType) => Promise<void>
+  playJingle: () => Promise<void>
   startContinuousSound: (color: Color) => Promise<void>
   stopContinuousSound: (color: Color) => Promise<void>
   stopContinuousSoundWithFade: (color: Color, fadeDuration?: number) => Promise<void>
@@ -201,6 +213,48 @@ export function useAudioTones(
     }
   }
 
+  async function playJingle() {
+    if (!soundEnabled) return
+
+    const ctx = getContext()
+    if (!ctx) return
+
+    // @ts-ignore
+    await ctx?.resume?.()
+
+    const now = ctx.currentTime
+
+    for (const note of JINGLE_NOTES) {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+
+      osc.type = oscillatorType
+      osc.frequency.setValueAtTime(note.freq, now + note.delay)
+
+      const noteStart = now + note.delay
+      gain.gain.setValueAtTime(EPSILON, noteStart)
+      gain.gain.exponentialRampToValueAtTime(TARGET_GAIN * 0.6, noteStart + ATTACK_S)
+      gain.gain.exponentialRampToValueAtTime(EPSILON, noteStart + JINGLE_NOTE_DURATION)
+
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start(noteStart)
+      osc.stop(noteStart + JINGLE_NOTE_DURATION + 0.01)
+
+      setTimeout(
+        () => {
+          try {
+            osc.disconnect()
+          } catch {}
+          try {
+            gain.disconnect()
+          } catch {}
+        },
+        (note.delay + JINGLE_NOTE_DURATION + 0.05) * 1000,
+      )
+    }
+  }
+
   async function startContinuousSound(color: Color) {
     if (!soundEnabled || !getContext()) return
 
@@ -241,6 +295,7 @@ export function useAudioTones(
     cleanup,
     playSound,
     playPreview,
+    playJingle,
     startContinuousSound,
     stopContinuousSound,
     stopContinuousSoundWithFade,

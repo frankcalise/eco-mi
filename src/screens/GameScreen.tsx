@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { View, Text, Pressable, StyleSheet, useWindowDimensions, Modal } from "react-native"
+import * as Haptics from "expo-haptics"
 import * as Sharing from "expo-sharing"
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
@@ -135,6 +136,7 @@ export function GameScreen() {
     handleButtonRelease,
     toggleSound,
     playPreview,
+    playJingle,
     setMode,
     mode,
     timeRemaining,
@@ -161,10 +163,44 @@ export function GameScreen() {
   const [pulsingMode, setPulsingMode] = useState<GameMode | null>(null)
   const [pulsePhase, setPulsePhase] = useState<"bright" | "dim">("bright")
   const pulseTimers = useRef<ReturnType<typeof setTimeout>[]>([])
+  const [soundTogglePop, setSoundTogglePop] = useState(false)
+  const [poppingSoundPack, setPoppingSoundPack] = useState<string | null>(null)
+  const [poppingTheme, setPoppingTheme] = useState<string | null>(null)
   const isIdle = gameState === "idle"
+
+  // Neon sign color cycling for idle title
+  const NEON_COLOR_ORDER = ["red", "blue", "green", "yellow"] as const
+  const [neonColorIndex, setNeonColorIndex] = useState(0)
+  const neonIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    if (isIdle) {
+      setNeonColorIndex(0)
+      neonIntervalRef.current = setInterval(() => {
+        setNeonColorIndex((prev) => (prev + 1) % 4)
+      }, 2000)
+    } else {
+      if (neonIntervalRef.current) {
+        clearInterval(neonIntervalRef.current)
+        neonIntervalRef.current = null
+      }
+    }
+    return () => {
+      if (neonIntervalRef.current) {
+        clearInterval(neonIntervalRef.current)
+        neonIntervalRef.current = null
+      }
+    }
+  }, [isIdle])
+
+  const titleColor = isIdle
+    ? theme.buttonColors[NEON_COLOR_ORDER[neonColorIndex]].color
+    : theme.textColor
 
   function handleModeSelect(id: GameMode) {
     if (id === mode) return
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 
     // Clear any in-flight pulse timers
     pulseTimers.current.forEach(clearTimeout)
@@ -212,7 +248,16 @@ export function GameScreen() {
     }
   }, [])
 
-  // Track game over (no ad here — interstitial shows on Play Again)
+  // Play idle jingle on initial mount
+  const mountJingleFired = useRef(false)
+  useEffect(() => {
+    if (!mountJingleFired.current && gameState === "idle") {
+      mountJingleFired.current = true
+      playJingle()
+    }
+  }, [])
+
+  // Track game over and idle-entry jingle
   const prevGameState = useRef(gameState)
   useEffect(() => {
     if (prevGameState.current !== "gameover" && gameState === "gameover") {
@@ -232,6 +277,11 @@ export function GameScreen() {
         }
       }
     }
+
+    if (prevGameState.current !== "idle" && gameState === "idle") {
+      playJingle()
+    }
+
     prevGameState.current = gameState
   }, [gameState])
 
@@ -307,7 +357,10 @@ export function GameScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable
-          onPress={() => setModeModalVisible(true)}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+            setModeModalVisible(true)
+          }}
           disabled={!isIdle}
           style={styles.headerAction}
         >
@@ -318,9 +371,19 @@ export function GameScreen() {
             style={{ opacity: isIdle ? 1 : 0.4 }}
           />
         </Pressable>
-        <Text style={[styles.title, { color: theme.textColor }]}>{t("game:title")}</Text>
+        <EaseView
+          animate={{ scale: isIdle ? 1.03 : 1 }}
+          transition={{
+            default: { type: "timing", duration: 1500, easing: "easeInOut", loop: "reverse" },
+          }}
+        >
+          <Text style={[styles.title, { color: titleColor }]}>{t("game:title")}</Text>
+        </EaseView>
         <Pressable
-          onPress={() => setSettingsModalVisible(true)}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+            setSettingsModalVisible(true)
+          }}
           disabled={!isIdle}
           style={styles.headerAction}
         >
@@ -514,15 +577,25 @@ export function GameScreen() {
               </Text>
               <Pressable
                 testID="btn-sound-toggle"
-                style={[styles.soundToggleBtn, soundEnabled && styles.soundToggleBtnActive]}
-                onPress={toggleSound}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                  toggleSound()
+                  setSoundTogglePop(true)
+                  setTimeout(() => setSoundTogglePop(false), 150)
+                }}
               >
-                <Ionicons
-                  name={soundEnabled ? "volume-high" : "volume-mute"}
-                  size={20}
-                  color="white"
-                />
-                <Text style={styles.soundToggleText}>{soundEnabled ? "On" : "Off"}</Text>
+                <EaseView
+                  animate={{ scale: soundTogglePop ? 1.05 : 1 }}
+                  transition={{ default: { type: "timing", duration: 75, easing: "easeOut" } }}
+                  style={[styles.soundToggleBtn, soundEnabled && styles.soundToggleBtnActive]}
+                >
+                  <Ionicons
+                    name={soundEnabled ? "volume-high" : "volume-mute"}
+                    size={20}
+                    color="white"
+                  />
+                  <Text style={styles.soundToggleText}>{soundEnabled ? "On" : "Off"}</Text>
+                </EaseView>
               </Pressable>
             </View>
 
@@ -534,29 +607,41 @@ export function GameScreen() {
               <View style={styles.settingsRow}>
                 {SOUND_PACKS.map((pack) => {
                   const isSelected = pack.id === soundPack.id
+                  const isPopping = poppingSoundPack === pack.id
                   return (
                     <Pressable
                       key={pack.id}
                       testID={`btn-sound-pack-${pack.id}`}
-                      style={[
-                        styles.selectorButton,
-                        { borderColor: isSelected ? "#22c55e" : theme.borderColor },
-                        isSelected && styles.selectorButtonActive,
-                      ]}
                       onPress={() => {
+                        if (pack.id === soundPack.id) return
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
                         setSoundPack(pack.id)
                         playPreview(pack.oscillatorType)
+                        setPoppingSoundPack(pack.id)
+                        setTimeout(() => setPoppingSoundPack(null), 150)
                       }}
                     >
-                      <Text
-                        style={{
-                          color: isSelected ? "#22c55e" : theme.secondaryTextColor,
-                          fontFamily: "Oxanium-Regular",
-                          fontSize: 12,
+                      <EaseView
+                        animate={{ scale: isPopping ? 1.08 : 1 }}
+                        transition={{
+                          default: { type: "spring", stiffness: 400, damping: 15 },
                         }}
+                        style={[
+                          styles.selectorButton,
+                          { borderColor: isSelected ? "#22c55e" : theme.borderColor },
+                          isSelected && styles.selectorButtonActive,
+                        ]}
                       >
-                        {pack.name}
-                      </Text>
+                        <Text
+                          style={{
+                            color: isSelected ? "#22c55e" : theme.secondaryTextColor,
+                            fontFamily: "Oxanium-Regular",
+                            fontSize: 12,
+                          }}
+                        >
+                          {pack.name}
+                        </Text>
+                      </EaseView>
                     </Pressable>
                   )
                 })}
@@ -569,18 +654,34 @@ export function GameScreen() {
                 {t("game:theme")}
               </Text>
               <View style={styles.settingsRow}>
-                {themeIds.map((id) => (
-                  <Pressable
-                    key={id}
-                    testID={`btn-theme-${id}`}
-                    style={[
-                      styles.themeCircle,
-                      { backgroundColor: gameThemes[id].buttonColors.red.color },
-                      id === theme.id && styles.themeCircleSelected,
-                    ]}
-                    onPress={() => setTheme(id)}
-                  />
-                ))}
+                {themeIds.map((id) => {
+                  const isPopping = poppingTheme === id
+                  return (
+                    <Pressable
+                      key={id}
+                      testID={`btn-theme-${id}`}
+                      onPress={() => {
+                        if (id === theme.id) return
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                        setTheme(id)
+                        setPoppingTheme(id)
+                        setTimeout(() => setPoppingTheme(null), 150)
+                      }}
+                    >
+                      <EaseView
+                        animate={{ scale: isPopping ? 1.08 : 1 }}
+                        transition={{
+                          default: { type: "spring", stiffness: 400, damping: 15 },
+                        }}
+                        style={[
+                          styles.themeCircle,
+                          { backgroundColor: gameThemes[id].buttonColors.red.color },
+                          id === theme.id && styles.themeCircleSelected,
+                        ]}
+                      />
+                    </Pressable>
+                  )
+                })}
               </View>
             </View>
 

@@ -90,6 +90,7 @@ interface UseGameEngineReturn {
   handleButtonRelease: (color: Color) => void
   toggleSound: () => void
   playPreview: (overrideType?: OscillatorType) => void
+  playJingle: () => void
   setMode: (mode: GameMode) => void
 }
 
@@ -164,6 +165,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     cleanup,
     playSound,
     playPreview,
+    playJingle,
     startContinuousSound,
     stopContinuousSoundWithFade,
   } = useAudioTones(activeColorMap, soundEnabled, options?.oscillatorType)
@@ -536,6 +538,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     handleButtonRelease,
     toggleSound,
     playPreview,
+    playJingle,
     setMode,
   }
 }
