@@ -20,6 +20,7 @@ import { usePurchases } from "@/hooks/usePurchases"
 import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
 import { useAnalytics } from "@/utils/analytics"
+import { loadString } from "@/utils/storage"
 
 const GAME_MODES: { id: GameMode; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { id: "classic", label: "Classic", icon: "game-controller" },
@@ -96,6 +97,14 @@ export function GameScreen() {
       if (isNewHighScore) {
         analytics.trackGameCompleted(score, level, true)
         triggerReviewCheck("new_high_score", adShownThisSession)
+      }
+
+      // Check daily streak milestones (3-day, 7-day)
+      if (mode === "daily") {
+        const streak = parseInt(loadString("ecomi:daily:currentStreak") ?? "0", 10)
+        if (streak === 3 || streak === 7) {
+          triggerReviewCheck(`streak_${streak}`, adShownThisSession)
+        }
       }
     }
     prevGameState.current = gameState
