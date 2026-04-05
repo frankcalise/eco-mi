@@ -327,6 +327,8 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       seededRng.current = mulberry32(getDailySeed())
     } else if (testSeed !== null) {
       seededRng.current = mulberry32(testSeed)
+    } else {
+      seededRng.current = null
     }
     setSequence([])
     setPlayerSequence([])
