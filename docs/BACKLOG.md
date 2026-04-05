@@ -61,20 +61,20 @@
 - [x] **Add game mode selector for demoing modes**
   The game engine supports classic, daily, timed, reverse, and chaos modes but there's no UI to switch between them. Add a mode selector in the idle state (similar to the theme/sound pack selectors) so all modes can be demoed. Show the mode name and a brief description. Daily mode should show the current streak if available.
 
-- [ ] **Settings modal: animate button toggles on value change**
+- [x] **Settings modal: animate button toggles on value change**
   When toggling values in the settings modal (sound on/off, selecting a sound pack, selecting a theme), wrap the interactive elements in `EaseView` with a quick scale pulse + opacity fade on the outgoing selection and a pop-in on the incoming one. Same retro-confirm pattern as the mode selector pulse animation. Keep it subtle — 100–150ms timing transitions.
 
-- [ ] **Haptic feedback on mode select and settings interactions**
+- [x] **Haptic feedback on mode select and settings interactions**
   Add `expo-haptics` calls to the header action buttons and modal interactions:
   - Light impact when opening mode selector or settings modals
   - Medium impact when selecting a game mode (fires with the pulse animation)
   - Light impact when toggling sound, changing sound pack, or changing theme in settings
   Use `Haptics.impactAsync()` with the appropriate `ImpactFeedbackStyle`.
 
-- [ ] **Idle screen: neon sign title animation**
+- [x] **Idle screen: neon sign title animation**
   While in idle state, animate the "Eco Mi" title text to cycle through the active theme's 4 button colors (red → blue → green → yellow) with a smooth transition, simulating a glowing neon sign. Add a subtle scale breathe (1.0 → 1.02 → 1.0) using `EaseView` with a looping timing animation. The color cycle should use the current theme's `buttonColors` so it stays consistent across Classic, Neon, Retro, and Pastel themes. Stop the animation when the game starts (gameState !== "idle").
 
-- [ ] **Idle screen: one-shot retro chiptune jingle**
+- [x] **Idle screen: one-shot retro chiptune jingle**
   Compose a short (3–5 second) retro chiptune jingle using the existing `react-native-audio-api` oscillator engine. Play it once when the game returns to idle state (app launch, after game over → home, after reset). The jingle should use the currently selected sound pack's `oscillatorType` (sine, square, sawtooth, triangle) so it changes character with the player's choice. Respect the existing `soundEnabled` toggle — no sound when muted. Keep the melody simple: 6–10 notes in a major key, ascending pattern, classic arcade "ready!" feel.
 
 ---
