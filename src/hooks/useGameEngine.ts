@@ -456,7 +456,6 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
       setScore(newScore)
       setLevel(newLevel)
-      setPlayerSequence([])
 
       if (mode === "timed") {
         setSequencesCompleted((prev) => prev + 1)
@@ -465,6 +464,11 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       if (mode === "chaos") {
         shuffleButtonPositions()
       }
+
+      // Brief delay so the last dot renders as filled before advancing
+      addTimeout(() => {
+        setPlayerSequence([])
+      }, 400)
 
       addTimeout(() => {
         const newSequence = [...sequence]

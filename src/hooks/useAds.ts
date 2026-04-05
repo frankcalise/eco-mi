@@ -137,10 +137,6 @@ export function useAds(): UseAdsReturn {
 
   function shouldShowInterstitial(roundsPlayed: number, removeAds: boolean): boolean {
     if (removeAds) return false
-
-    // In dev, skip all frequency caps to test ad flow quickly
-    if (__DEV__) return true
-
     if (roundsPlayed < MIN_ROUNDS_TO_SHOW) return false
 
     const sessionCount = parseInt(loadString(SESSION_COUNT_KEY) ?? "0", 10)
