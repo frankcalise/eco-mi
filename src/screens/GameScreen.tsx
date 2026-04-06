@@ -12,6 +12,8 @@ import { EaseView } from "react-native-ease"
 import { AnimatedCountdown } from "@/components/AnimatedCountdown"
 import { GameButton } from "@/components/GameButton"
 import { GameOverOverlay } from "@/components/GameOverOverlay"
+import { HighScoreTable } from "@/components/HighScoreTable"
+import { InitialEntryModal } from "@/components/InitialEntryModal"
 import { ReviewPrompt } from "@/components/ReviewPrompt"
 import { TimerRing } from "@/components/TimerRing"
 import { SOUND_PACKS } from "@/config/soundPacks"
@@ -22,6 +24,7 @@ import { usePurchases } from "@/hooks/usePurchases"
 import { useSoundPack } from "@/hooks/useSoundPack"
 import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
+import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
 import { useAnalytics } from "@/utils/analytics"
 import { loadString } from "@/utils/storage"
 
@@ -155,11 +158,17 @@ export function GameScreen() {
   } = useAds()
   const { removeAds, purchaseRemoveAds } = usePurchases()
   const analytics = useAnalytics()
+  const { getHighScores, isHighScore: checkIsHighScore, addHighScore } = useHighScores()
   const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
     useStoreReview()
   const sessionCounted = useRef(false)
   const [modeModalVisible, setModeModalVisible] = useState(false)
   const [settingsModalVisible, setSettingsModalVisible] = useState(false)
+  const [leaderboardModalVisible, setLeaderboardModalVisible] = useState(false)
+  const [showInitialEntry, setShowInitialEntry] = useState(false)
+  const [leaderboardScores, setLeaderboardScores] = useState<HighScoreEntry[]>([])
+  const [highlightIndex, setHighlightIndex] = useState<number | undefined>(undefined)
+  const pendingGameOver = useRef(false)
   const [pulsingMode, setPulsingMode] = useState<GameMode | null>(null)
   const [pulsePhase, setPulsePhase] = useState<"bright" | "dim">("bright")
   const pulseTimers = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -275,6 +284,12 @@ export function GameScreen() {
           triggerReviewCheck(`streak_${streak}`, adShownThisSession)
         }
       }
+
+      // Check if score qualifies for local top 10
+      if (checkIsHighScore(score)) {
+        pendingGameOver.current = true
+        setShowInitialEntry(true)
+      }
     }
 
     if (prevGameState.current !== "idle" && gameState === "idle") {
@@ -301,6 +316,24 @@ export function GameScreen() {
       analytics.trackAdRewardedWatched("continue")
       continueGame()
     }
+  }
+
+  function handleInitialSubmit(initials: string) {
+    const entry: HighScoreEntry = {
+      initials,
+      score,
+      level,
+      date: new Date().toISOString(),
+      mode,
+    }
+    const updated = addHighScore(entry)
+    const newIndex = updated.findIndex(
+      (e) => e.initials === initials && e.score === score && e.date === entry.date,
+    )
+    setLeaderboardScores(updated)
+    setHighlightIndex(newIndex >= 0 ? newIndex : undefined)
+    setShowInitialEntry(false)
+    pendingGameOver.current = false
   }
 
   function handleReviewResponse(response: "love_it" | "not_really") {
@@ -516,10 +549,24 @@ export function GameScreen() {
       {/* Controls */}
       <View style={styles.controlsContainer}>
         {gameState === "idle" && (
-          <Pressable testID="btn-start" style={styles.startButton} onPress={handleStartGame}>
-            <Ionicons name="play" size={24} color="white" />
-            <Text style={styles.buttonText}>{t("game:startGame")}</Text>
-          </Pressable>
+          <>
+            <Pressable testID="btn-start" style={styles.startButton} onPress={handleStartGame}>
+              <Ionicons name="play" size={24} color="white" />
+              <Text style={styles.buttonText}>{t("game:startGame")}</Text>
+            </Pressable>
+            <Pressable
+              testID="btn-leaderboard"
+              style={styles.trophyButton}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                setLeaderboardScores(getHighScores())
+                setHighlightIndex(undefined)
+                setLeaderboardModalVisible(true)
+              }}
+            >
+              <Ionicons name="trophy" size={22} color="#fbbf24" />
+            </Pressable>
+          </>
         )}
 
         {(gameState === "showing" || gameState === "waiting") && (
@@ -732,8 +779,15 @@ export function GameScreen() {
         </Pressable>
       </Modal>
 
+      <InitialEntryModal
+        visible={showInitialEntry}
+        score={score}
+        level={level}
+        onSubmit={handleInitialSubmit}
+      />
+
       <GameOverOverlay
-        visible={gameState === "gameover"}
+        visible={gameState === "gameover" && !showInitialEntry}
         score={score}
         level={level}
         highScore={highScore}
@@ -746,6 +800,23 @@ export function GameScreen() {
         onRemoveAds={handleRemoveAds}
         onHome={resetGame}
       />
+
+      {/* Leaderboard Modal */}
+      <Modal
+        visible={leaderboardModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLeaderboardModalVisible(false)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setLeaderboardModalVisible(false)}
+        >
+          <Pressable style={[styles.modalContent, { backgroundColor: "#0a0a0a" }]}>
+            <HighScoreTable scores={leaderboardScores} highlightIndex={highlightIndex} />
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <ReviewPrompt
         visible={showReviewPrompt}
@@ -990,6 +1061,16 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 20,
     paddingVertical: 12,
+  },
+  trophyButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(251, 191, 36, 0.15)",
+    borderColor: "#fbbf24",
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 44,
+    justifyContent: "center",
+    width: 44,
   },
   statusContainer: {
     alignItems: "center",
