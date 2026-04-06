@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { Slot } from "expo-router"
+import * as Sentry from "@sentry/react-native"
 import { PostHogProvider } from "posthog-react-native"
 import { KeyboardProvider } from "react-native-keyboard-controller"
 import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context"
@@ -9,9 +10,19 @@ import { initI18n } from "@/i18n"
 import { ThemeProvider } from "@/theme/context"
 import { loadDateFnsLocale } from "@/utils/formatDate"
 
+const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? ""
+
+if (SENTRY_DSN) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    debug: __DEV__,
+    environment: __DEV__ ? "development" : "production",
+  })
+}
+
 const POSTHOG_KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY ?? ""
 
-export default function Root() {
+function Root() {
   const [isI18nInitialized, setIsI18nInitialized] = useState(false)
   const { loaded: isFontsLoaded } = useWebFonts()
 
@@ -47,3 +58,5 @@ export default function Root() {
     </SafeAreaProvider>
   )
 }
+
+export default SENTRY_DSN ? Sentry.wrap(Root) : Root

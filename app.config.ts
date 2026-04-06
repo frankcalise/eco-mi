@@ -93,6 +93,13 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
       "expo-tracking-transparency",
       "expo-sharing",
       [
+        "@sentry/react-native/expo",
+        {
+          organization: process.env.SENTRY_ORG ?? "your-org",
+          project: process.env.SENTRY_PROJECT ?? "your-project",
+        },
+      ],
+      [
         "react-native-google-mobile-ads",
         {
           androidAppId: ADMOB_ANDROID_APP_ID,
