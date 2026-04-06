@@ -389,6 +389,12 @@
   - Blocked by: Strings extracted into i18n
   - Ref: VISION.md > Localization > Priority Languages
 
+- [ ] **Arcade high score table with three-initial entry**
+  Top 10 local leaderboard stored in MMKV (`ecomi:highScores` key) as `{ initials: string, score: number, level: number, date: string, mode: GameMode }[]` sorted by score descending, capped at 10. When a player's score qualifies for the top 10, show a three-letter initial input modal (standard keyboard input for v1). Display the leaderboard on the idle screen or as a dedicated view accessible from the header. Retro arcade cabinet aesthetic — monospaced, numbered rows, blinking cursor on entry. Coexists cleanly with future global leaderboards (Phase 5) as a "This Device" tab.
+
+- [ ] **Enhanced initial input: gesture/drawing recognition**
+  Phase 2 of the high score table. Replace the keyboard-based three-initial entry with a draw-to-letter input using `@shopify/react-native-skia`. Player draws each letter on a canvas, app converts the Skia path to a recognized character. Gives a unique, tactile arcade feel. Investigate ML-based handwriting recognition (on-device, lightweight) or a simpler template-matching approach for A-Z recognition. Could also explore gesture-based input (swipe patterns mapped to letters) as an alternative.
+
 - [ ] **Localize App Store listings (ES, PT)**
   Translate subtitle, description, and keywords for Spanish and Portuguese in App Store Connect and Google Play Console.
   - Ref: VISION.md > ASO > Store Listing Copy, Localization > App Store Localization
