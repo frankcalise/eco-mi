@@ -389,7 +389,7 @@
   - Blocked by: Strings extracted into i18n
   - Ref: VISION.md > Localization > Priority Languages
 
-- [ ] **Arcade high score table with three-initial entry**
+- [x] **Arcade high score table with three-initial entry**
   Top 10 local leaderboard stored in MMKV (`ecomi:highScores` key) as `{ initials: string, score: number, level: number, date: string, mode: GameMode }[]` sorted by score descending, capped at 10. When a player's score qualifies for the top 10, show a three-letter initial input modal (standard keyboard input for v1). Display the leaderboard on the idle screen or as a dedicated view accessible from the header. Retro arcade cabinet aesthetic — monospaced, numbered rows, blinking cursor on entry. Coexists cleanly with future global leaderboards (Phase 5) as a "This Device" tab.
 
 - [ ] **Enhanced initial input: gesture/drawing recognition**

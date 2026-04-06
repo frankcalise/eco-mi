@@ -6,6 +6,15 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 
 ## [Unreleased]
 
+### Feat
+- `7adeb98` — Arcade-style local high score leaderboard: top 10 in MMKV, three-initial entry modal (retro CRT aesthetic), high score table with pulsing highlight, trophy button on idle screen
+- `9997f61` — Sentry crash reporting (conditional on DSN env var), app-ads.txt placeholder
+- `6255f7c` — GDPR/UMP consent flow before loading AdMob ads
+- `8c81047` — Environment property (development/production) on all PostHog events
+- `7aee920` — Smooth neon title crossfade with glow effect, game mode indicator under title
+- `f5740fd` — Settings toggle animations, haptics on mode/settings, neon title, idle jingle
+- `af8cb12` — Header action bar with mode selector (pulse animation), settings modal, game over home button
+
 ### Feat (Phase 2)
 - `PENDING` — Add Lottie high score celebration animation in GameOverOverlay (placeholder trophy.json — replace with real animation from LottieFiles)
 - `PENDING` — Replace all `Vibration.vibrate()` with `expo-haptics` in useGameEngine (Light for flash, Medium for touch, Error for game over)
