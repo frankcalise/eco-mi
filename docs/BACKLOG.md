@@ -84,6 +84,10 @@
 - [ ] **Remove unused navigation dependencies**
   Remove `@react-navigation/native-stack` and `react-native-drawer-layout` from `package.json`. Expo Router brings in its own navigation stack — these are unused Ignite boilerplate leftovers.
 
+- [ ] **Install and configure Sentry for crash reporting**
+  `npx expo install @sentry/react-native` and add the config plugin to `app.config.ts`. Initialize in `_layout.tsx` with DSN from env var (`EXPO_PUBLIC_SENTRY_DSN`). Gives stack traces with source maps, JS error capture, and breadcrumbs. Add DSN to `.env.example` and EAS Secrets. Do this before public release — TestFlight/Play Console crash reports are sufficient for internal testing.
+  - Blocked by: Sentry account created, project DSN noted
+
 ---
 
 ## Phase 0 — Tech Debt & Foundation
