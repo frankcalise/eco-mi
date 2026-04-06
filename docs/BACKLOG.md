@@ -283,8 +283,13 @@
   - Ref: VISION.md > ASO
 
 - [ ] **Configure EAS submit profiles**
-  Add `submit` section to `eas.json` for automated App Store and Play Store uploads.
-  - Blocked by: Apple Developer account, Google Play Console account (ACCOUNTS.md checklist)
+  Add `submit` section to `eas.json` for automated App Store and Play Store uploads. Configure `eas submit --platform ios` for TestFlight/App Store and `eas submit --platform android` for Play Store internal/production tracks. Set up App Store Connect API key and Google Play service account JSON in EAS credentials.
+
+- [ ] **Set up expo-updates for OTA updates**
+  `npx expo install expo-updates` and configure in `app.config.ts`. Enables pushing JS bundle updates without going through store review. Configure update channel per environment (development, preview, production). Set up `eas update` workflow for quick bug fixes and content changes post-launch.
+
+- [ ] **Integrate expo-observe for performance monitoring**
+  `npx expo install expo-eas-observe` — currently in technical preview / early access. Tracks session performance (TTI, frame drops, device breakdown), before/after release comparisons, and outlier detection. Minimal setup. **Note:** User has early access with Notion notes containing setup details — prompt for those when executing this task.
 
 - [ ] **Submit v1.0 to App Store and Google Play**
   - `eas build --profile production --platform all`
