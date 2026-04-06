@@ -272,7 +272,7 @@
 
 ### 1.6 Build & Submit
 
-- [ ] **Create privacy policy page**
+- [x] **Create privacy policy page**
   Required by both App Store and Google Play. Host at a URL (GitHub Pages, Vercel, or simple static page). Must disclose: AdMob ads, PostHog analytics, MMKV local storage. No PII collected.
   - Ref: VISION.md > ASO > App Store Assets Required
 
@@ -453,31 +453,31 @@ These are account setup and asset creation tasks. Track alongside code work.
 
 ### Accounts (ref: ACCOUNTS.md checklist)
 
-- [ ] Apple Developer Program — enroll, verify
-- [ ] App Store Connect — create app, register Bundle ID
-- [ ] App Store Connect — create 7 IAP products (Remove Ads + 6 packs)
-- [ ] App Store Connect — generate App-Specific Shared Secret (for RevenueCat)
-- [ ] Google Play Console — register, verify identity
-- [ ] Google Play Console — create app, complete store listing
-- [ ] Google Play Console — create 7 IAP products (matching iOS product IDs)
+- [x] Apple Developer Program — enroll, verify
+- [x] App Store Connect — create app, register Bundle ID
+- [x] App Store Connect — create 7 IAP products (Remove Ads + 6 packs)
+- [x] App Store Connect — generate App-Specific Shared Secret (for RevenueCat)
+- [x] Google Play Console — register, verify identity
+- [x] Google Play Console — create app, complete store listing
+- [x] Google Play Console — create 7 IAP products (matching iOS product IDs)
 - [ ] Google Play Console — create Service Account JSON (for RevenueCat)
-- [ ] RevenueCat — create account, create "Eco Mi" project
-- [ ] RevenueCat — configure iOS app with shared secret, note API key
+- [x] RevenueCat — create account, create "Eco Mi" project
+- [x] RevenueCat — configure iOS app with shared secret, note API key
 - [ ] RevenueCat — configure Android app with service account JSON, note API key
-- [ ] RevenueCat — create 7 entitlements, map products, create Default offering
-- [ ] AdMob — create account, verify
-- [ ] AdMob — register iOS app, note App ID
-- [ ] AdMob — register Android app, note App ID
-- [ ] AdMob — create 3 ad units per platform (banner, interstitial, rewarded)
+- [x] RevenueCat — create 7 entitlements, map products, create Default offering
+- [x] AdMob — create account, verify
+- [x] AdMob — register iOS app, note App ID
+- [x] AdMob — register Android app, note App ID
+- [x] AdMob — create 3 ad units per platform (banner, interstitial, rewarded)
 - [ ] AdMob — configure GDPR consent message (Privacy & messaging)
-- [ ] PostHog — create account, create "Eco Mi" project, note API key
+- [x] PostHog — create account, create "Eco Mi" project, note API key
 - [ ] Host `app-ads.txt` at developer website
 
 ### Secrets & Config
 
-- [ ] Create `.env` file from `.env.example` with real keys
-- [ ] Configure EAS Secrets for all env vars (`eas secret:create` for each)
-- [ ] Run `eas credentials` to set up iOS signing
+- [x] Create `.env` file from `.env.example` with real keys
+- [x] Configure EAS Secrets for all env vars (`eas env:create` for each)
+- [x] Run `eas credentials` to set up iOS signing
 - [ ] Verify Android keystore is backed up securely
 
 ### ASO Assets
@@ -486,5 +486,5 @@ These are account setup and asset creation tasks. Track alongside code work.
 - [ ] Design Google Play feature graphic (1024x500)
 - [ ] Write store listing copy (title, subtitle, description, keywords)
 - [ ] Record 15–30s preview video
-- [ ] Create privacy policy page and host at a public URL
+- [x] Create privacy policy page and host at a public URL
 - [ ] Set up Google Form or email for user feedback channel (review pre-prompt "Not really" path)
