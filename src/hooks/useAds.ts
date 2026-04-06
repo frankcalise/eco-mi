@@ -6,6 +6,7 @@ import {
   RewardedAdEventType,
   AdEventType,
   TestIds,
+  AdsConsent,
 } from "react-native-google-mobile-ads"
 
 import { loadString, saveString } from "@/utils/storage"
@@ -49,20 +50,39 @@ type UseAdsReturn = {
   incrementGamesPlayed: () => void
   incrementSessionCount: () => void
   adShownThisSession: boolean
+  consentReady: boolean
 }
 
 export function useAds(): UseAdsReturn {
   const [adShownThisSession, setAdShownThisSession] = useState(false)
   const [rewardedReady, setRewardedReady] = useState(false)
+  const [consentReady, setConsentReady] = useState(false)
   const interstitialRef = useRef<InterstitialAd | null>(null)
   const rewardedRef = useRef<RewardedAd | null>(null)
   const loadedRef = useRef(false)
   const rewardedLoadedRef = useRef(false)
   const gamesThisSessionRef = useRef(0)
 
+  async function requestConsent() {
+    try {
+      await AdsConsent.requestInfoUpdate()
+      await AdsConsent.loadAndShowConsentFormIfRequired()
+    } catch {
+      // Consent errors should not block the app from functioning.
+      // The form may not be configured in AdMob, or the device may be
+      // in a region where consent is not required.
+    } finally {
+      setConsentReady(true)
+    }
+  }
+
   useEffect(() => {
-    loadInterstitial()
-    loadRewarded()
+    async function init() {
+      await requestConsent()
+      loadInterstitial()
+      loadRewarded()
+    }
+    init()
     return () => {
       interstitialRef.current = null
       rewardedRef.current = null
@@ -181,5 +201,6 @@ export function useAds(): UseAdsReturn {
     incrementGamesPlayed,
     incrementSessionCount,
     adShownThisSession,
+    consentReady,
   }
 }
