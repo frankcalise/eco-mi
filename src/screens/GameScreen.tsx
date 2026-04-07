@@ -815,9 +815,9 @@ export function GameScreen() {
           style={styles.modalBackdrop}
           onPress={() => setLeaderboardModalVisible(false)}
         >
-          <Pressable style={[styles.modalContent, { backgroundColor: theme.backgroundColor }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.backgroundColor }]} onStartShouldSetResponder={() => true}>
             <HighScoreTable initialMode={mode} highlightIndex={highlightIndex} highlightMode={mode} theme={theme} />
-          </Pressable>
+          </View>
         </Pressable>
       </Modal>
 
