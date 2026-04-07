@@ -48,5 +48,8 @@ export function useAnalytics() {
     trackReviewPromptResponse(response: string) {
       capture("review_prompt_response", { response })
     },
+    trackAudioContextRecycle(nodeCount: number) {
+      capture("audio_context_recycled", { nodeCount })
+    },
   }
 }

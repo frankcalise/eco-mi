@@ -62,6 +62,7 @@ export function useAudioTones(
   colorMap: ColorMap,
   soundEnabled: boolean,
   oscillatorType: OscillatorType = "sine",
+  onContextRecycle?: (nodeCount: number) => void,
 ): AudioTonesHook {
   const audioContextRef = useRef<AudioContext | null>(null)
   const masterGainRef = useRef<GainNode | null>(null)
@@ -95,6 +96,7 @@ export function useAudioTones(
   // Fades out any active sound first to avoid hard-cut pops.
   function recycleContextIfNeeded() {
     if (nodeCountRef.current < NODE_LIMIT) return
+    const recycledCount = nodeCountRef.current
     if (activeSoundRef.current) {
       silentDiscard(activeSoundRef.current)
       activeSoundRef.current = null
@@ -104,6 +106,7 @@ export function useAudioTones(
       try { oldCtx.close() } catch {}
     }
     createFreshContext()
+    onContextRecycle?.(recycledCount)
   }
 
   // Immediately silence and disconnect a sound without scheduling

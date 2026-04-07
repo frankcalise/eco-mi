@@ -64,6 +64,7 @@ interface UseGameEngineOptions {
   mode?: GameMode
   oscillatorType?: OscillatorType
   theme?: GameTheme
+  onAudioContextRecycle?: (nodeCount: number) => void
 }
 
 interface UseGameEngineReturn {
@@ -168,7 +169,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     playJingle,
     startContinuousSound,
     stopContinuousSoundWithFade,
-  } = useAudioTones(activeColorMap, soundEnabled, options?.oscillatorType)
+  } = useAudioTones(activeColorMap, soundEnabled, options?.oscillatorType, options?.onAudioContextRecycle)
 
   // --- Timeout management (fixes orphaned timer bug) ---
 

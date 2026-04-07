@@ -120,6 +120,7 @@ export function GameScreen() {
 
   const { soundPack, setSoundPack } = useSoundPack()
   const { theme, setTheme } = useTheme()
+  const analytics = useAnalytics()
 
   const {
     gameState,
@@ -146,7 +147,13 @@ export function GameScreen() {
     sequencesCompleted,
     buttonPositions,
     isShuffling,
-  } = useGameEngine({ oscillatorType: soundPack.oscillatorType, theme })
+  } = useGameEngine({
+    oscillatorType: soundPack.oscillatorType,
+    theme,
+    onAudioContextRecycle: (nodeCount) => {
+      analytics.trackAudioContextRecycle(nodeCount)
+    },
+  })
 
   const {
     showInterstitial,
@@ -157,7 +164,6 @@ export function GameScreen() {
     adShownThisSession,
   } = useAds()
   const { removeAds, purchaseRemoveAds } = usePurchases()
-  const analytics = useAnalytics()
   const { getHighScores, isHighScore: checkIsHighScore, addHighScore } = useHighScores()
   const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
     useStoreReview()
