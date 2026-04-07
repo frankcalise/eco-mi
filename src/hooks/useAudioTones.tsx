@@ -1,4 +1,5 @@
-import { useRef } from "react"
+import { useRef, useEffect } from "react"
+import { AppState } from "react-native"
 import { AudioContext, GainNode, OscillatorNode } from "react-native-audio-api"
 import type { OscillatorType } from "react-native-audio-api"
 
@@ -69,6 +70,22 @@ export function useAudioTones(
   const activeSoundRef = useRef<ActiveSound | null>(null)
   const nodeCountRef = useRef(0)
   const contextReadyRef = useRef(false)
+  const suspendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const SUSPEND_DELAY = 3000 // Suspend context after 3s of no audio activity
+
+  // Suspend context when app goes to background, resume when foregrounded
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      const ctx = audioContextRef.current
+      if (!ctx) return
+      if (state === "background") {
+        try { ctx.suspend() } catch {}
+      } else if (state === "active" && contextReadyRef.current) {
+        try { ctx.resume() } catch {}
+      }
+    })
+    return () => sub.remove()
+  }, [])
 
   function getContext(): AudioContext | null {
     return audioContextRef.current
@@ -76,6 +93,25 @@ export function useAudioTones(
 
   function getMasterGain(): GainNode | null {
     return masterGainRef.current
+  }
+
+  // Resume the context and reset the auto-suspend timer.
+  // Called before every sound to ensure the context is running.
+  function ensureResumed() {
+    const ctx = getContext()
+    if (!ctx) return
+    try {
+      // @ts-ignore — resume may not exist on all platforms
+      ctx.resume?.()
+    } catch {}
+    // Reset the auto-suspend timer
+    if (suspendTimerRef.current) clearTimeout(suspendTimerRef.current)
+    suspendTimerRef.current = setTimeout(() => {
+      const c = getContext()
+      if (c && !activeSoundRef.current) {
+        try { c.suspend() } catch {}
+      }
+    }, SUSPEND_DELAY)
   }
 
   // Create a fresh context + master gain node. All oscillators route through
@@ -90,12 +126,6 @@ export function useAudioTones(
     masterGainRef.current = master
     nodeCountRef.current = 0
     contextReadyRef.current = true
-    // Resume without awaiting — the context may start suspended on mobile.
-    // Fire-and-forget is safe here; audio will begin as soon as it resolves.
-    try {
-      // @ts-ignore — resume may not exist on all platforms
-      ctx.resume?.()
-    } catch {}
   }
 
   // Recycle the context if too many nodes have accumulated.
@@ -215,8 +245,7 @@ export function useAudioTones(
   async function initialize() {
     try {
       createFreshContext()
-      // @ts-ignore — resume may not exist on all platforms
-      await audioContextRef.current?.resume?.()
+      ensureResumed()
     } catch (error) {
       console.log("Audio initialization failed:", error)
     }
@@ -224,6 +253,10 @@ export function useAudioTones(
 
   async function cleanup() {
     contextReadyRef.current = false
+    if (suspendTimerRef.current) {
+      clearTimeout(suspendTimerRef.current)
+      suspendTimerRef.current = null
+    }
     if (activeSoundRef.current) {
       silentDiscard(activeSoundRef.current)
       activeSoundRef.current = null
@@ -240,6 +273,7 @@ export function useAudioTones(
     if (!soundEnabled || !contextReadyRef.current) return
 
     recycleContextIfNeeded()
+    ensureResumed()
     const ctx = getContext()
     const master = getMasterGain()
     if (!ctx || !master) return
@@ -254,6 +288,7 @@ export function useAudioTones(
     if (!soundEnabled || !contextReadyRef.current) return
 
     recycleContextIfNeeded()
+    ensureResumed()
 
     // Fade out any existing sound first
     if (activeSoundRef.current) {
@@ -285,6 +320,7 @@ export function useAudioTones(
   function playPreview(overrideType?: OscillatorType) {
     if (!contextReadyRef.current) return
     recycleContextIfNeeded()
+    ensureResumed()
     const ctx = getContext()
     const master = getMasterGain()
     if (!ctx || !master) return
@@ -300,6 +336,7 @@ export function useAudioTones(
   function playJingle() {
     if (!soundEnabled || !contextReadyRef.current) return
     recycleContextIfNeeded()
+    ensureResumed()
     const ctx = getContext()
     const master = getMasterGain()
     if (!ctx || !master) return
