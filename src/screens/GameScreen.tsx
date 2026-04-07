@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react"
-import { View, Text, Pressable, StyleSheet, useWindowDimensions, Modal } from "react-native"
+import { View, Text, Pressable, Share, StyleSheet, useWindowDimensions, Modal } from "react-native"
 import * as Haptics from "expo-haptics"
-import * as Sharing from "expo-sharing"
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
@@ -350,13 +349,9 @@ export function GameScreen() {
   async function handleShare() {
     analytics.trackShareTapped(score, level)
     const message = t("game:shareMessage", { level, score })
-    const isAvailable = await Sharing.isAvailableAsync()
-    if (isAvailable) {
-      await Sharing.shareAsync("https://ecomi.app", {
-        dialogTitle: message,
-        mimeType: "text/plain",
-      })
-    }
+    try {
+      await Share.share({ message })
+    } catch {}
   }
 
   async function handleRemoveAds() {
