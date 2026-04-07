@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
-import { Animated, I18nManager, PanResponder, Pressable, StyleSheet, Text, View } from "react-native"
+import { Animated, I18nManager, Pressable, StyleSheet, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import { Gesture, GestureDetector, Directions } from "react-native-gesture-handler"
 
 import type { GameTheme } from "@/config/themes"
 import { translate } from "@/i18n/translate"
@@ -55,27 +56,38 @@ export function HighScoreTable({ initialMode, highlightIndex, highlightMode, the
   const { getHighScores } = useHighScores()
   const scores = getHighScores(selectedMode)
 
-  const SWIPE_THRESHOLD = 50
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gesture) =>
-        Math.abs(gesture.dx) > 20 && Math.abs(gesture.dx) > Math.abs(gesture.dy),
-      onPanResponderRelease: (_, gesture) => {
-        if (Math.abs(gesture.dx) < SWIPE_THRESHOLD) return
-        // In RTL, swipe directions are inverted
-        const isNext = I18nManager.isRTL ? gesture.dx > 0 : gesture.dx < 0
-        setSelectedMode((prev) => {
-          const idx = MODES.findIndex((m) => m.id === prev)
-          const next = isNext ? (idx + 1) % MODES.length : (idx - 1 + MODES.length) % MODES.length
-          return MODES[next].id
-        })
-      },
-    }),
-  ).current
-
   const cellColor = theme.textColor
   const highlight = theme.buttonColors.red.color
   const activeHighlight = selectedMode === highlightMode ? highlightIndex : undefined
+
+  // Fling gestures for swiping between mode tabs
+  // Directions are physical (not logical) — flip for RTL
+  const leftDir = I18nManager.isRTL ? Directions.RIGHT : Directions.LEFT
+  const rightDir = I18nManager.isRTL ? Directions.LEFT : Directions.RIGHT
+
+  const flingNext = Gesture.Fling()
+    .direction(leftDir)
+    .onEnd(() => {
+      setSelectedMode((prev) => {
+        const idx = MODES.findIndex((m) => m.id === prev)
+        if (idx >= MODES.length - 1) return prev
+        return MODES[idx + 1].id
+      })
+    })
+    .runOnJS(true)
+
+  const flingPrev = Gesture.Fling()
+    .direction(rightDir)
+    .onEnd(() => {
+      setSelectedMode((prev) => {
+        const idx = MODES.findIndex((m) => m.id === prev)
+        if (idx <= 0) return prev
+        return MODES[idx - 1].id
+      })
+    })
+    .runOnJS(true)
+
+  const swipeGesture = Gesture.Simultaneous(flingNext, flingPrev)
 
   const rows = Array.from({ length: 10 }, (_, i) => {
     const entry = scores[i]
@@ -118,46 +130,48 @@ export function HighScoreTable({ initialMode, highlightIndex, highlightMode, the
         })}
       </View>
 
-      <View {...panResponder.panHandlers}>
-      <View style={[styles.headerRow, { borderBottomColor: theme.borderColor }]}>
-        <Text style={[styles.headerCell, styles.rankCol, { color: theme.secondaryTextColor }]}>{translate("game:rank")}</Text>
-        <Text style={[styles.headerCell, styles.nameCol, { color: theme.secondaryTextColor }]}>{translate("game:initials")}</Text>
-        <Text style={[styles.headerCell, styles.scoreCol, { color: theme.secondaryTextColor }]}>SCORE</Text>
-        <Text style={[styles.headerCell, styles.levelCol, { color: theme.secondaryTextColor }]}>LVL</Text>
-      </View>
-
-      {rows.map((row, i) => {
-        const isHighlighted = activeHighlight === i
-        const rowContent = (
-          <View
-            key={i}
-            style={[
-              styles.row,
-              isHighlighted && { backgroundColor: theme.surfaceColor, borderRadius: 4 },
-              i % 2 === 0 && { backgroundColor: theme.surfaceColor },
-            ]}
-          >
-            <Text style={[styles.cell, styles.rankCol, { color: cellColor }, isHighlighted && { color: highlight }]}>
-              {String(row.rank).padStart(2, " ")}.
-            </Text>
-            <Text style={[styles.cell, styles.nameCol, { color: cellColor }, isHighlighted && { color: highlight }]}>
-              {row.initials}
-            </Text>
-            <Text style={[styles.cell, styles.scoreCol, { color: cellColor }, isHighlighted && { color: highlight }]}>
-              {row.score}
-            </Text>
-            <Text style={[styles.cell, styles.levelCol, { color: cellColor }, isHighlighted && { color: highlight }]}>
-              {row.level}
-            </Text>
+      <GestureDetector gesture={swipeGesture}>
+        <View>
+          <View style={[styles.headerRow, { borderBottomColor: theme.borderColor }]}>
+            <Text style={[styles.headerCell, styles.rankCol, { color: theme.secondaryTextColor }]}>{translate("game:rank")}</Text>
+            <Text style={[styles.headerCell, styles.nameCol, { color: theme.secondaryTextColor }]}>{translate("game:initials")}</Text>
+            <Text style={[styles.headerCell, styles.scoreCol, { color: theme.secondaryTextColor }]}>SCORE</Text>
+            <Text style={[styles.headerCell, styles.levelCol, { color: theme.secondaryTextColor }]}>LVL</Text>
           </View>
-        )
 
-        if (isHighlighted) {
-          return <HighlightRow key={i}>{rowContent}</HighlightRow>
-        }
-        return rowContent
-      })}
-      </View>
+          {rows.map((row, i) => {
+            const isHighlighted = activeHighlight === i
+            const rowContent = (
+              <View
+                key={i}
+                style={[
+                  styles.row,
+                  isHighlighted && { backgroundColor: theme.surfaceColor, borderRadius: 4 },
+                  i % 2 === 0 && { backgroundColor: theme.surfaceColor },
+                ]}
+              >
+                <Text style={[styles.cell, styles.rankCol, { color: cellColor }, isHighlighted && { color: highlight }]}>
+                  {String(row.rank).padStart(2, " ")}.
+                </Text>
+                <Text style={[styles.cell, styles.nameCol, { color: cellColor }, isHighlighted && { color: highlight }]}>
+                  {row.initials}
+                </Text>
+                <Text style={[styles.cell, styles.scoreCol, { color: cellColor }, isHighlighted && { color: highlight }]}>
+                  {row.score}
+                </Text>
+                <Text style={[styles.cell, styles.levelCol, { color: cellColor }, isHighlighted && { color: highlight }]}>
+                  {row.level}
+                </Text>
+              </View>
+            )
+
+            if (isHighlighted) {
+              return <HighlightRow key={i}>{rowContent}</HighlightRow>
+            }
+            return rowContent
+          })}
+        </View>
+      </GestureDetector>
     </View>
   )
 }

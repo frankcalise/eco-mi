@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
 
 import { EaseView } from "react-native-ease"
 
@@ -811,14 +812,16 @@ export function GameScreen() {
         animationType="fade"
         onRequestClose={() => setLeaderboardModalVisible(false)}
       >
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={() => setLeaderboardModalVisible(false)}
-        >
-          <Pressable style={[styles.modalContent, { backgroundColor: theme.backgroundColor }]}>
-            <HighScoreTable initialMode={mode} highlightIndex={highlightIndex} highlightMode={mode} theme={theme} />
+        <GestureHandlerRootView style={styles.gestureRoot}>
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setLeaderboardModalVisible(false)}
+          >
+            <Pressable style={[styles.modalContent, { backgroundColor: theme.backgroundColor }]}>
+              <HighScoreTable initialMode={mode} highlightIndex={highlightIndex} highlightMode={mode} theme={theme} />
+            </Pressable>
           </Pressable>
-        </Pressable>
+        </GestureHandlerRootView>
       </Modal>
 
       <ReviewPrompt
@@ -884,6 +887,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 20,
     paddingHorizontal: 20,
+  },
+  gestureRoot: {
+    flex: 1,
   },
   gameBoard: {
     alignItems: "center",
