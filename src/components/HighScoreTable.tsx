@@ -42,7 +42,7 @@ function HighlightRow({ children }: { children: React.ReactNode }) {
 
 export function HighScoreTable({ scores, highlightIndex, theme }: HighScoreTableProps) {
   const cellColor = theme.textColor
-  const highlight = theme.buttonColors.yellow.color
+  const highlight = theme.buttonColors.red.color
 
   const rows = Array.from({ length: 10 }, (_, i) => {
     const entry = scores[i]

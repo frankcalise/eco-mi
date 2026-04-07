@@ -184,7 +184,7 @@ export function GameScreen() {
   const isIdle = gameState === "idle"
 
   // Neon sign color cycling for idle title
-  const NEON_COLOR_ORDER = ["red", "blue", "green", "yellow"] as const
+  const NEON_COLOR_ORDER = ["red", "blue", "green"] as const
   const [neonColorIndex, setNeonColorIndex] = useState(0)
   const neonIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -192,7 +192,7 @@ export function GameScreen() {
     if (isIdle) {
       setNeonColorIndex(0)
       neonIntervalRef.current = setInterval(() => {
-        setNeonColorIndex((prev) => (prev + 1) % 4)
+        setNeonColorIndex((prev) => (prev + 1) % NEON_COLOR_ORDER.length)
       }, 2000)
     } else {
       if (neonIntervalRef.current) {
