@@ -88,7 +88,7 @@ export function HighScoreTable({ initialMode, highlightIndex, highlightMode, the
   })
 
   return (
-    <View testID="high-score-table" style={styles.container} {...panResponder.panHandlers}>
+    <View testID="high-score-table" style={styles.container}>
       <Text style={[styles.heading, { color: highlight }]}>{translate("game:highScores")}</Text>
 
       <View style={styles.modeTabs}>
@@ -118,6 +118,7 @@ export function HighScoreTable({ initialMode, highlightIndex, highlightMode, the
         })}
       </View>
 
+      <View {...panResponder.panHandlers}>
       <View style={[styles.headerRow, { borderBottomColor: theme.borderColor }]}>
         <Text style={[styles.headerCell, styles.rankCol, { color: theme.secondaryTextColor }]}>{translate("game:rank")}</Text>
         <Text style={[styles.headerCell, styles.nameCol, { color: theme.secondaryTextColor }]}>{translate("game:initials")}</Text>
@@ -156,6 +157,7 @@ export function HighScoreTable({ initialMode, highlightIndex, highlightMode, the
         }
         return rowContent
       })}
+      </View>
     </View>
   )
 }
