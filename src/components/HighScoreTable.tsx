@@ -41,7 +41,7 @@ function HighlightRow({ children }: { children: React.ReactNode }) {
 }
 
 export function HighScoreTable({ scores, highlightIndex, theme }: HighScoreTableProps) {
-  const accent = theme.buttonColors.green.color
+  const cellColor = theme.textColor
   const highlight = theme.buttonColors.yellow.color
 
   const rows = Array.from({ length: 10 }, (_, i) => {
@@ -76,16 +76,16 @@ export function HighScoreTable({ scores, highlightIndex, theme }: HighScoreTable
               i % 2 === 0 && { backgroundColor: theme.surfaceColor },
             ]}
           >
-            <Text style={[styles.cell, styles.rankCol, { color: accent }, isHighlighted && { color: highlight }]}>
+            <Text style={[styles.cell, styles.rankCol, { color: cellColor }, isHighlighted && { color: highlight }]}>
               {String(row.rank).padStart(2, " ")}.
             </Text>
-            <Text style={[styles.cell, styles.nameCol, { color: accent }, isHighlighted && { color: highlight }]}>
+            <Text style={[styles.cell, styles.nameCol, { color: cellColor }, isHighlighted && { color: highlight }]}>
               {row.initials}
             </Text>
-            <Text style={[styles.cell, styles.scoreCol, { color: accent }, isHighlighted && { color: highlight }]}>
+            <Text style={[styles.cell, styles.scoreCol, { color: cellColor }, isHighlighted && { color: highlight }]}>
               {row.score}
             </Text>
-            <Text style={[styles.cell, styles.levelCol, { color: accent }, isHighlighted && { color: highlight }]}>
+            <Text style={[styles.cell, styles.levelCol, { color: cellColor }, isHighlighted && { color: highlight }]}>
               {row.level}
             </Text>
           </View>

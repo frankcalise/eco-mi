@@ -31,6 +31,7 @@ export function InitialEntryModal({ visible, score, level, theme, onSubmit }: In
 
   const accent = theme.buttonColors.green.color
   const highlight = theme.buttonColors.yellow.color
+  const inputColor = theme.textColor
 
   useEffect(() => {
     if (!visible) return
@@ -96,7 +97,7 @@ export function InitialEntryModal({ visible, score, level, theme, onSubmit }: In
       <View style={styles.overlay}>
         <View style={[styles.container, { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor }]}>
           <Text style={[styles.title, { color: highlight }]}>{translate("game:newHighScoreEntry")}</Text>
-          <Text style={[styles.scoreText, { color: accent }]}>
+          <Text style={[styles.scoreText, { color: theme.textColor }]}>
             {score} PTS - LVL {level}
           </Text>
           <Text style={[styles.subtitle, { color: theme.secondaryTextColor }]}>{translate("game:enterInitials")}</Text>
@@ -107,7 +108,7 @@ export function InitialEntryModal({ visible, score, level, theme, onSubmit }: In
                 <TextInput
                   ref={inputRefs[i]}
                   testID={`input-initial-${i + 1}`}
-                  style={[styles.inputText, { color: accent }]}
+                  style={[styles.inputText, { color: inputColor }]}
                   value={letters[i]}
                   onChangeText={(t) => handleChange(t, i)}
                   onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
