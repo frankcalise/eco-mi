@@ -128,21 +128,13 @@ export function useAudioTones(
     contextReadyRef.current = true
   }
 
-  // Recycle the context if too many nodes have accumulated.
-  // Fades out any active sound first to avoid hard-cut pops.
-  function recycleContextIfNeeded() {
-    if (nodeCountRef.current < NODE_LIMIT) return
-    const recycledCount = nodeCountRef.current
-    if (activeSoundRef.current) {
-      silentDiscard(activeSoundRef.current)
-      activeSoundRef.current = null
+  // Monitor node count — log but don't recycle. The audio engine's
+  // internal GC handles stopped+disconnected nodes. Recycling was
+  // causing more problems (sound death) than it solved.
+  function trackNodeCount() {
+    if (nodeCountRef.current > 0 && nodeCountRef.current % NODE_LIMIT === 0) {
+      onContextRecycle?.(nodeCountRef.current)
     }
-    const oldCtx = audioContextRef.current
-    if (oldCtx) {
-      try { oldCtx.close() } catch {}
-    }
-    createFreshContext()
-    onContextRecycle?.(recycledCount)
   }
 
   // Immediately silence and disconnect a sound without scheduling
@@ -272,7 +264,7 @@ export function useAudioTones(
   function playSound(color: Color, duration: number = 600) {
     if (!soundEnabled || !contextReadyRef.current) return
 
-    recycleContextIfNeeded()
+    trackNodeCount()
     ensureResumed()
     const ctx = getContext()
     const master = getMasterGain()
@@ -287,7 +279,7 @@ export function useAudioTones(
   function startContinuousSound(color: Color) {
     if (!soundEnabled || !contextReadyRef.current) return
 
-    recycleContextIfNeeded()
+    trackNodeCount()
     ensureResumed()
 
     // Fade out any existing sound first
@@ -319,7 +311,7 @@ export function useAudioTones(
 
   function playPreview(overrideType?: OscillatorType) {
     if (!contextReadyRef.current) return
-    recycleContextIfNeeded()
+    trackNodeCount()
     ensureResumed()
     const ctx = getContext()
     const master = getMasterGain()
@@ -335,7 +327,7 @@ export function useAudioTones(
 
   function playJingle() {
     if (!soundEnabled || !contextReadyRef.current) return
-    recycleContextIfNeeded()
+    trackNodeCount()
     ensureResumed()
     const ctx = getContext()
     const master = getMasterGain()
