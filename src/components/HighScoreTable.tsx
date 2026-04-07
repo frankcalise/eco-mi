@@ -9,6 +9,7 @@ interface HighScoreTableProps {
   scores: HighScoreEntry[]
   highlightIndex?: number
   theme: GameTheme
+  modeName?: string
 }
 
 function HighlightRow({ children }: { children: React.ReactNode }) {
@@ -40,7 +41,7 @@ function HighlightRow({ children }: { children: React.ReactNode }) {
   )
 }
 
-export function HighScoreTable({ scores, highlightIndex, theme }: HighScoreTableProps) {
+export function HighScoreTable({ scores, highlightIndex, theme, modeName }: HighScoreTableProps) {
   const cellColor = theme.textColor
   const highlight = theme.buttonColors.red.color
 
@@ -57,6 +58,7 @@ export function HighScoreTable({ scores, highlightIndex, theme }: HighScoreTable
   return (
     <View testID="high-score-table" style={styles.container}>
       <Text style={[styles.heading, { color: highlight }]}>{translate("game:highScores")}</Text>
+      {modeName && <Text style={[styles.modeLabel, { color: theme.secondaryTextColor }]}>{modeName}</Text>}
 
       <View style={[styles.headerRow, { borderBottomColor: theme.borderColor }]}>
         <Text style={[styles.headerCell, styles.rankCol, { color: theme.secondaryTextColor }]}>{translate("game:rank")}</Text>
@@ -124,8 +126,16 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-Bold",
     fontSize: 20,
     letterSpacing: 2,
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  modeLabel: {
+    fontFamily: "Oxanium-Medium",
+    fontSize: 12,
+    letterSpacing: 2,
     marginBottom: 12,
     textAlign: "center",
+    textTransform: "uppercase",
   },
   levelCol: {
     textAlign: "right",

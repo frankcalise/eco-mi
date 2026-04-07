@@ -23,7 +23,7 @@ const en = {
     continue: "Watch Ad to Continue",
     removeAds: "Remove Ads",
     home: "Home",
-    shareMessage: "I reached Level {{level}} with a score of {{score}} on Eco Mi! Can you beat me?",
+    shareMessage: "I reached Level {{level}} with a score of {{score}} in {{mode}} mode on Eco Mi! Can you beat me?",
     timeRemaining: "{{time}}s",
     sequencesCompleted: "Sequences: {{count}}",
     modes: {

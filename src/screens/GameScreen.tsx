@@ -291,7 +291,7 @@ export function GameScreen() {
       }
 
       // Check if score qualifies for local top 10
-      if (checkIsHighScore(score)) {
+      if (checkIsHighScore(score, mode)) {
         pendingGameOver.current = true
         setShowInitialEntry(true)
       }
@@ -348,7 +348,7 @@ export function GameScreen() {
 
   async function handleShare() {
     analytics.trackShareTapped(score, level)
-    const message = t("game:shareMessage", { level, score })
+    const message = t("game:shareMessage", { level, score, mode: t(`game:modes.${mode}`) })
     try {
       await Share.share({ message })
     } catch {}
@@ -560,7 +560,7 @@ export function GameScreen() {
               style={styles.trophyButton}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                setLeaderboardScores(getHighScores())
+                setLeaderboardScores(getHighScores(mode))
                 setHighlightIndex(undefined)
                 setLeaderboardModalVisible(true)
               }}
@@ -819,7 +819,7 @@ export function GameScreen() {
           onPress={() => setLeaderboardModalVisible(false)}
         >
           <Pressable style={[styles.modalContent, { backgroundColor: theme.backgroundColor }]}>
-            <HighScoreTable scores={leaderboardScores} highlightIndex={highlightIndex} theme={theme} />
+            <HighScoreTable scores={leaderboardScores} highlightIndex={highlightIndex} theme={theme} modeName={t(`game:modes.${mode}`)} />
           </Pressable>
         </Pressable>
       </Modal>
