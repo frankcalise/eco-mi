@@ -791,6 +791,10 @@ export function GameScreen() {
         level={level}
         theme={theme}
         onSubmit={handleInitialSubmit}
+        onDismiss={() => {
+          setShowInitialEntry(false)
+          pendingGameOver.current = false
+        }}
       />
 
       <GameOverOverlay

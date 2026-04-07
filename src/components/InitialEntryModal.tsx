@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
 
 import type { GameTheme } from "@/config/themes"
 import { translate } from "@/i18n/translate"
@@ -18,9 +19,10 @@ interface InitialEntryModalProps {
   level: number
   theme: GameTheme
   onSubmit: (initials: string) => void
+  onDismiss: () => void
 }
 
-export function InitialEntryModal({ visible, score, level, theme, onSubmit }: InitialEntryModalProps) {
+export function InitialEntryModal({ visible, score, level, theme, onSubmit, onDismiss }: InitialEntryModalProps) {
   const [letters, setLetters] = useState(["", "", ""])
   const inputRefs = [
     useRef<TextInput>(null),
@@ -96,6 +98,15 @@ export function InitialEntryModal({ visible, score, level, theme, onSubmit }: In
     >
       <View style={styles.overlay}>
         <View style={[styles.container, { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor }]}>
+          <Pressable
+            testID="btn-initial-dismiss"
+            style={styles.dismissButton}
+            onPress={onDismiss}
+            accessibilityLabel="Dismiss"
+            accessibilityRole="button"
+          >
+            <Ionicons name="close" size={24} color={theme.secondaryTextColor} />
+          </Pressable>
           <Text style={[styles.title, { color: highlight }]}>{translate("game:newHighScoreEntry")}</Text>
           <Text style={[styles.scoreText, { color: theme.textColor }]}>
             {score} PTS - LVL {level}
@@ -153,6 +164,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 28,
     width: "85%",
+  },
+  dismissButton: {
+    alignItems: "center",
+    height: 44,
+    justifyContent: "center",
+    position: "absolute",
+    right: 8,
+    top: 8,
+    width: 44,
+    zIndex: 1,
   },
   cursor: {
     bottom: 12,
