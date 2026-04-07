@@ -15,8 +15,9 @@ const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? ""
 if (SENTRY_DSN) {
   Sentry.init({
     dsn: SENTRY_DSN,
-    debug: __DEV__,
+    debug: false,
     environment: __DEV__ ? "development" : "production",
+    enableUserInteractionTracing: false,
   })
 }
 

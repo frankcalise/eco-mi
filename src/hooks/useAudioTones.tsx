@@ -90,6 +90,12 @@ export function useAudioTones(
     masterGainRef.current = master
     nodeCountRef.current = 0
     contextReadyRef.current = true
+    // Resume without awaiting — the context may start suspended on mobile.
+    // Fire-and-forget is safe here; audio will begin as soon as it resolves.
+    try {
+      // @ts-ignore — resume may not exist on all platforms
+      ctx.resume?.()
+    } catch {}
   }
 
   // Recycle the context if too many nodes have accumulated.
