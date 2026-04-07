@@ -1079,9 +1079,9 @@ const styles = StyleSheet.create({
     borderColor: "#fbbf24",
     borderRadius: 8,
     borderWidth: 1,
-    height: 44,
     justifyContent: "center",
-    width: 44,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
   statusContainer: {
     alignItems: "center",
