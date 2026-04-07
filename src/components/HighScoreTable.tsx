@@ -60,8 +60,6 @@ export function HighScoreTable({ initialMode, highlightIndex, highlightMode, the
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gesture) =>
         Math.abs(gesture.dx) > 20 && Math.abs(gesture.dx) > Math.abs(gesture.dy),
-      onMoveShouldSetPanResponderCapture: (_, gesture) =>
-        Math.abs(gesture.dx) > 20 && Math.abs(gesture.dx) > Math.abs(gesture.dy),
       onPanResponderRelease: (_, gesture) => {
         if (Math.abs(gesture.dx) < SWIPE_THRESHOLD) return
         // In RTL, swipe directions are inverted
