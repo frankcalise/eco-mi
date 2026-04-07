@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native"
+import { Animated, I18nManager, PanResponder, Pressable, StyleSheet, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 
 import type { GameTheme } from "@/config/themes"
@@ -55,6 +55,24 @@ export function HighScoreTable({ initialMode, highlightIndex, highlightMode, the
   const { getHighScores } = useHighScores()
   const scores = getHighScores(selectedMode)
 
+  const SWIPE_THRESHOLD = 50
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gesture) =>
+        Math.abs(gesture.dx) > 20 && Math.abs(gesture.dx) > Math.abs(gesture.dy),
+      onPanResponderRelease: (_, gesture) => {
+        if (Math.abs(gesture.dx) < SWIPE_THRESHOLD) return
+        // In RTL, swipe directions are inverted
+        const isNext = I18nManager.isRTL ? gesture.dx > 0 : gesture.dx < 0
+        setSelectedMode((prev) => {
+          const idx = MODES.findIndex((m) => m.id === prev)
+          const next = isNext ? (idx + 1) % MODES.length : (idx - 1 + MODES.length) % MODES.length
+          return MODES[next].id
+        })
+      },
+    }),
+  ).current
+
   const cellColor = theme.textColor
   const highlight = theme.buttonColors.red.color
   const activeHighlight = selectedMode === highlightMode ? highlightIndex : undefined
@@ -70,7 +88,7 @@ export function HighScoreTable({ initialMode, highlightIndex, highlightMode, the
   })
 
   return (
-    <View testID="high-score-table" style={styles.container}>
+    <View testID="high-score-table" style={styles.container} {...panResponder.panHandlers}>
       <Text style={[styles.heading, { color: highlight }]}>{translate("game:highScores")}</Text>
 
       <View style={styles.modeTabs}>
