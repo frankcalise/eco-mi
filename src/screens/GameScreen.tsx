@@ -171,7 +171,6 @@ export function GameScreen() {
   const [settingsModalVisible, setSettingsModalVisible] = useState(false)
   const [leaderboardModalVisible, setLeaderboardModalVisible] = useState(false)
   const [showInitialEntry, setShowInitialEntry] = useState(false)
-  const [leaderboardScores, setLeaderboardScores] = useState<HighScoreEntry[]>([])
   const [highlightIndex, setHighlightIndex] = useState<number | undefined>(undefined)
   const pendingGameOver = useRef(false)
   const [pulsingMode, setPulsingMode] = useState<GameMode | null>(null)
@@ -335,7 +334,6 @@ export function GameScreen() {
     const newIndex = updated.findIndex(
       (e) => e.initials === initials && e.score === score && e.date === entry.date,
     )
-    setLeaderboardScores(updated)
     setHighlightIndex(newIndex >= 0 ? newIndex : undefined)
     setShowInitialEntry(false)
     pendingGameOver.current = false
@@ -560,7 +558,6 @@ export function GameScreen() {
               style={styles.trophyButton}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                setLeaderboardScores(getHighScores(mode))
                 setHighlightIndex(undefined)
                 setLeaderboardModalVisible(true)
               }}
@@ -819,7 +816,7 @@ export function GameScreen() {
           onPress={() => setLeaderboardModalVisible(false)}
         >
           <Pressable style={[styles.modalContent, { backgroundColor: theme.backgroundColor }]}>
-            <HighScoreTable scores={leaderboardScores} highlightIndex={highlightIndex} theme={theme} modeName={t(`game:modes.${mode}`)} />
+            <HighScoreTable initialMode={mode} highlightIndex={highlightIndex} highlightMode={mode} theme={theme} />
           </Pressable>
         </Pressable>
       </Modal>
