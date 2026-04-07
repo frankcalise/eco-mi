@@ -117,8 +117,10 @@ export function useAudioTones(
     try { sound.gain.disconnect() } catch {}
   }
 
-  // Schedule a clean fade-out using setTargetAtTime (mathematically clean
-  // approach to zero, unlike exponentialRamp which can't reach zero)
+  // Schedule a clean fade-out using setTargetAtTime. Does NOT cancel
+  // in-flight ramps — setTargetAtTime takes over smoothly from whatever
+  // the current interpolated value is, avoiding the discontinuity that
+  // cancelScheduledValues + setValueAtTime would cause mid-ramp.
   function fadeOutAndStop(sound: ActiveSound, fadeS: number) {
     const ctx = getContext()
     if (!ctx) {
@@ -128,10 +130,9 @@ export function useAudioTones(
 
     try {
       const now = ctx.currentTime
-      sound.gain.gain.cancelScheduledValues(now)
-      sound.gain.gain.setValueAtTime(Math.max(sound.gain.gain.value, EPSILON), now)
-      // setTargetAtTime asymptotically approaches 0 — no division-by-zero issue
-      // timeConstant = fadeS/3 means ~95% decay in fadeS seconds
+      // timeConstant = fadeS/3 means ~95% decay in fadeS seconds.
+      // setTargetAtTime starts from the current computed value —
+      // no need to anchor with setValueAtTime first.
       sound.gain.gain.setTargetAtTime(0, now, fadeS / 3)
       sound.oscillator.stop(now + fadeS + 0.02)
 
