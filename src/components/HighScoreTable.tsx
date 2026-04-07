@@ -1,12 +1,14 @@
 import { useEffect, useRef } from "react"
 import { Animated, StyleSheet, Text, View } from "react-native"
 
+import type { GameTheme } from "@/config/themes"
 import { translate } from "@/i18n/translate"
 import type { HighScoreEntry } from "@/hooks/useHighScores"
 
 interface HighScoreTableProps {
   scores: HighScoreEntry[]
   highlightIndex?: number
+  theme: GameTheme
 }
 
 function HighlightRow({ children }: { children: React.ReactNode }) {
@@ -38,7 +40,10 @@ function HighlightRow({ children }: { children: React.ReactNode }) {
   )
 }
 
-export function HighScoreTable({ scores, highlightIndex }: HighScoreTableProps) {
+export function HighScoreTable({ scores, highlightIndex, theme }: HighScoreTableProps) {
+  const accent = theme.buttonColors.green.color
+  const highlight = theme.buttonColors.yellow.color
+
   const rows = Array.from({ length: 10 }, (_, i) => {
     const entry = scores[i]
     return {
@@ -51,13 +56,13 @@ export function HighScoreTable({ scores, highlightIndex }: HighScoreTableProps) 
 
   return (
     <View testID="high-score-table" style={styles.container}>
-      <Text style={styles.heading}>{translate("game:highScores")}</Text>
+      <Text style={[styles.heading, { color: highlight }]}>{translate("game:highScores")}</Text>
 
-      <View style={styles.headerRow}>
-        <Text style={[styles.headerCell, styles.rankCol]}>{translate("game:rank")}</Text>
-        <Text style={[styles.headerCell, styles.nameCol]}>{translate("game:initials")}</Text>
-        <Text style={[styles.headerCell, styles.scoreCol]}>SCORE</Text>
-        <Text style={[styles.headerCell, styles.levelCol]}>LVL</Text>
+      <View style={[styles.headerRow, { borderBottomColor: theme.borderColor }]}>
+        <Text style={[styles.headerCell, styles.rankCol, { color: theme.secondaryTextColor }]}>{translate("game:rank")}</Text>
+        <Text style={[styles.headerCell, styles.nameCol, { color: theme.secondaryTextColor }]}>{translate("game:initials")}</Text>
+        <Text style={[styles.headerCell, styles.scoreCol, { color: theme.secondaryTextColor }]}>SCORE</Text>
+        <Text style={[styles.headerCell, styles.levelCol, { color: theme.secondaryTextColor }]}>LVL</Text>
       </View>
 
       {rows.map((row, i) => {
@@ -67,20 +72,20 @@ export function HighScoreTable({ scores, highlightIndex }: HighScoreTableProps) 
             key={i}
             style={[
               styles.row,
-              isHighlighted && styles.highlightedRow,
-              i % 2 === 0 && styles.evenRow,
+              isHighlighted && { backgroundColor: theme.surfaceColor, borderRadius: 4 },
+              i % 2 === 0 && { backgroundColor: theme.surfaceColor },
             ]}
           >
-            <Text style={[styles.cell, styles.rankCol, isHighlighted && styles.highlightedText]}>
+            <Text style={[styles.cell, styles.rankCol, { color: accent }, isHighlighted && { color: highlight }]}>
               {String(row.rank).padStart(2, " ")}.
             </Text>
-            <Text style={[styles.cell, styles.nameCol, isHighlighted && styles.highlightedText]}>
+            <Text style={[styles.cell, styles.nameCol, { color: accent }, isHighlighted && { color: highlight }]}>
               {row.initials}
             </Text>
-            <Text style={[styles.cell, styles.scoreCol, isHighlighted && styles.highlightedText]}>
+            <Text style={[styles.cell, styles.scoreCol, { color: accent }, isHighlighted && { color: highlight }]}>
               {row.score}
             </Text>
-            <Text style={[styles.cell, styles.levelCol, isHighlighted && styles.highlightedText]}>
+            <Text style={[styles.cell, styles.levelCol, { color: accent }, isHighlighted && { color: highlight }]}>
               {row.level}
             </Text>
           </View>
@@ -97,24 +102,18 @@ export function HighScoreTable({ scores, highlightIndex }: HighScoreTableProps) 
 
 const styles = StyleSheet.create({
   cell: {
-    color: "#22c55e",
     fontFamily: "Oxanium-Bold",
     fontSize: 15,
   },
   container: {
     paddingVertical: 8,
   },
-  evenRow: {
-    backgroundColor: "rgba(34, 197, 94, 0.04)",
-  },
   headerCell: {
-    color: "#666",
     fontFamily: "Oxanium-Regular",
     fontSize: 11,
     letterSpacing: 1,
   },
   headerRow: {
-    borderBottomColor: "rgba(34, 197, 94, 0.3)",
     borderBottomWidth: 1,
     flexDirection: "row",
     marginBottom: 4,
@@ -122,19 +121,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   heading: {
-    color: "#fbbf24",
     fontFamily: "Oxanium-Bold",
     fontSize: 20,
     letterSpacing: 2,
     marginBottom: 12,
     textAlign: "center",
-  },
-  highlightedRow: {
-    backgroundColor: "rgba(34, 197, 94, 0.15)",
-    borderRadius: 4,
-  },
-  highlightedText: {
-    color: "#fbbf24",
   },
   levelCol: {
     textAlign: "right",

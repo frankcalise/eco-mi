@@ -9,16 +9,18 @@ import {
   View,
 } from "react-native"
 
+import type { GameTheme } from "@/config/themes"
 import { translate } from "@/i18n/translate"
 
 interface InitialEntryModalProps {
   visible: boolean
   score: number
   level: number
+  theme: GameTheme
   onSubmit: (initials: string) => void
 }
 
-export function InitialEntryModal({ visible, score, level, onSubmit }: InitialEntryModalProps) {
+export function InitialEntryModal({ visible, score, level, theme, onSubmit }: InitialEntryModalProps) {
   const [letters, setLetters] = useState(["", "", ""])
   const inputRefs = [
     useRef<TextInput>(null),
@@ -27,6 +29,9 @@ export function InitialEntryModal({ visible, score, level, onSubmit }: InitialEn
   ]
   const cursorAnim = useRef(new Animated.Value(1)).current
 
+  const accent = theme.buttonColors.green.color
+  const highlight = theme.buttonColors.yellow.color
+
   useEffect(() => {
     if (!visible) return
     setLetters(["", "", ""])
@@ -34,7 +39,6 @@ export function InitialEntryModal({ visible, score, level, onSubmit }: InitialEn
     return () => clearTimeout(timer)
   }, [visible])
 
-  // Blinking cursor effect
   useEffect(() => {
     const animation = Animated.loop(
       Animated.sequence([
@@ -90,20 +94,20 @@ export function InitialEntryModal({ visible, score, level, onSubmit }: InitialEn
       testID="modal-initial-entry"
     >
       <View style={styles.overlay}>
-        <View style={styles.container}>
-          <Text style={styles.title}>{translate("game:newHighScoreEntry")}</Text>
-          <Text style={styles.scoreText}>
-            {score} {translate("game:rank")} - LVL {level}
+        <View style={[styles.container, { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor }]}>
+          <Text style={[styles.title, { color: highlight }]}>{translate("game:newHighScoreEntry")}</Text>
+          <Text style={[styles.scoreText, { color: accent }]}>
+            {score} PTS - LVL {level}
           </Text>
-          <Text style={styles.subtitle}>{translate("game:enterInitials")}</Text>
+          <Text style={[styles.subtitle, { color: theme.secondaryTextColor }]}>{translate("game:enterInitials")}</Text>
 
           <View style={styles.inputRow}>
             {[0, 1, 2].map((i) => (
-              <View key={i} style={styles.inputBox}>
+              <View key={i} style={[styles.inputBox, { borderColor: accent }]}>
                 <TextInput
                   ref={inputRefs[i]}
                   testID={`input-initial-${i + 1}`}
-                  style={styles.inputText}
+                  style={[styles.inputText, { color: accent }]}
                   value={letters[i]}
                   onChangeText={(t) => handleChange(t, i)}
                   onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
@@ -111,11 +115,11 @@ export function InitialEntryModal({ visible, score, level, onSubmit }: InitialEn
                   autoCapitalize="characters"
                   autoCorrect={false}
                   textAlign="center"
-                  selectionColor="#22c55e"
+                  selectionColor={accent}
                 />
                 {!letters[i] && (
                   <Animated.View
-                    style={[styles.cursor, { opacity: cursorAnim }]}
+                    style={[styles.cursor, { backgroundColor: accent, opacity: cursorAnim }]}
                     pointerEvents="none"
                   />
                 )}
@@ -125,11 +129,11 @@ export function InitialEntryModal({ visible, score, level, onSubmit }: InitialEn
 
           <Pressable
             testID="btn-initial-done"
-            style={[styles.doneButton, !allFilled && styles.doneButtonDisabled]}
+            style={[styles.doneButton, { backgroundColor: accent }, !allFilled && { backgroundColor: theme.surfaceColor }]}
             onPress={handleDone}
             disabled={!allFilled}
           >
-            <Text style={[styles.doneText, !allFilled && styles.doneTextDisabled]}>
+            <Text style={[styles.doneText, { color: theme.backgroundColor }, !allFilled && { color: theme.secondaryTextColor }]}>
               {translate("game:done")}
             </Text>
           </Pressable>
@@ -142,17 +146,14 @@ export function InitialEntryModal({ visible, score, level, onSubmit }: InitialEn
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    backgroundColor: "#0a0a0a",
-    borderColor: "#22c55e",
     borderRadius: 12,
-    borderWidth: 2,
+    borderWidth: 1,
     marginHorizontal: 32,
     paddingHorizontal: 24,
     paddingVertical: 28,
     width: "85%",
   },
   cursor: {
-    backgroundColor: "#22c55e",
     bottom: 12,
     height: 3,
     left: "25%",
@@ -160,27 +161,18 @@ const styles = StyleSheet.create({
     width: "50%",
   },
   doneButton: {
-    backgroundColor: "#22c55e",
     borderRadius: 8,
     marginTop: 20,
     paddingHorizontal: 40,
     paddingVertical: 12,
   },
-  doneButtonDisabled: {
-    backgroundColor: "#333",
-  },
   doneText: {
-    color: "#0a0a0a",
     fontFamily: "Oxanium-Bold",
     fontSize: 18,
     letterSpacing: 2,
   },
-  doneTextDisabled: {
-    color: "#666",
-  },
   inputBox: {
     alignItems: "center",
-    borderColor: "#22c55e",
     borderRadius: 8,
     borderWidth: 2,
     height: 64,
@@ -194,7 +186,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   inputText: {
-    color: "#22c55e",
     fontFamily: "Oxanium-Bold",
     fontSize: 32,
     height: 60,
@@ -208,20 +199,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   scoreText: {
-    color: "#22c55e",
     fontFamily: "Oxanium-Bold",
     fontSize: 22,
     letterSpacing: 1,
     marginTop: 8,
   },
   subtitle: {
-    color: "#888",
     fontFamily: "Oxanium-Regular",
     fontSize: 14,
     marginTop: 12,
   },
   title: {
-    color: "#fbbf24",
     fontFamily: "Oxanium-Bold",
     fontSize: 24,
     letterSpacing: 2,

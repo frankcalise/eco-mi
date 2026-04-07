@@ -789,6 +789,7 @@ export function GameScreen() {
         visible={showInitialEntry}
         score={score}
         level={level}
+        theme={theme}
         onSubmit={handleInitialSubmit}
       />
 
@@ -818,8 +819,8 @@ export function GameScreen() {
           style={styles.modalBackdrop}
           onPress={() => setLeaderboardModalVisible(false)}
         >
-          <Pressable style={[styles.modalContent, { backgroundColor: "#0a0a0a" }]}>
-            <HighScoreTable scores={leaderboardScores} highlightIndex={highlightIndex} />
+          <Pressable style={[styles.modalContent, { backgroundColor: theme.backgroundColor }]}>
+            <HighScoreTable scores={leaderboardScores} highlightIndex={highlightIndex} theme={theme} />
           </Pressable>
         </Pressable>
       </Modal>
