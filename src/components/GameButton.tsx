@@ -98,7 +98,7 @@ export function GameButton({
         default: { type: "spring", stiffness: 300, damping: 20, mass: 0.8 },
         opacity: { type: "timing", duration: 150, easing: "easeOut" },
         transform: isShuffling
-          ? { type: "timing", duration: 350, easing: "easeInOut" }
+          ? { type: "timing", duration: 550, easing: "easeInOut" }
           : { type: "spring", stiffness: 300, damping: 20, mass: 0.8 },
       }}
       style={[

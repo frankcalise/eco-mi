@@ -66,6 +66,43 @@ function shellShuffle(positions: Color[]): Color[] {
   return result
 }
 
+// Single-pair swaps — only 2 buttons move, breaking neighbor relationships
+function swapTopLeftTopRight(positions: Color[]): Color[] {
+  const result = [...positions]
+  ;[result[0], result[1]] = [result[1], result[0]]
+  return result
+}
+
+function swapTopLeftBottomLeft(positions: Color[]): Color[] {
+  const result = [...positions]
+  ;[result[0], result[2]] = [result[2], result[0]]
+  return result
+}
+
+function swapTopLeftBottomRight(positions: Color[]): Color[] {
+  const result = [...positions]
+  ;[result[0], result[3]] = [result[3], result[0]]
+  return result
+}
+
+function swapTopRightBottomLeft(positions: Color[]): Color[] {
+  const result = [...positions]
+  ;[result[1], result[2]] = [result[2], result[1]]
+  return result
+}
+
+function swapTopRightBottomRight(positions: Color[]): Color[] {
+  const result = [...positions]
+  ;[result[1], result[3]] = [result[3], result[1]]
+  return result
+}
+
+function swapBottomLeftBottomRight(positions: Color[]): Color[] {
+  const result = [...positions]
+  ;[result[2], result[3]] = [result[3], result[2]]
+  return result
+}
+
 const SINGLE_SEQUENCES: ShuffleFn[] = [
   clockwise,
   counterClockwise,
@@ -73,6 +110,13 @@ const SINGLE_SEQUENCES: ShuffleFn[] = [
   horizontalSwap,
   verticalSwap,
   shellShuffle,
+  // Single-pair swaps for variety — only 2 buttons move
+  swapTopLeftTopRight,
+  swapTopLeftBottomLeft,
+  swapTopLeftBottomRight,
+  swapTopRightBottomLeft,
+  swapTopRightBottomRight,
+  swapBottomLeftBottomRight,
 ]
 
 /**
@@ -80,9 +124,9 @@ const SINGLE_SEQUENCES: ShuffleFn[] = [
  * Faster steps at higher levels for more chaos.
  */
 export function getShuffleStepDelay(level: number): number {
-  if (level <= 3) return 400
-  if (level <= 6) return 300
-  return 200
+  if (level <= 3) return 700
+  if (level <= 6) return 550
+  return 400
 }
 
 /**
