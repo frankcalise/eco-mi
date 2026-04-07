@@ -63,9 +63,25 @@ export function useAudioTones(
 ): AudioTonesHook {
   const audioContextRef = useRef<AudioContext | null>(null)
   const activeSoundRef = useRef<ActiveSound | null>(null)
+  const nodeCountRef = useRef(0)
+  const NODE_LIMIT = 50
 
   function getContext(): AudioContext | null {
     return audioContextRef.current
+  }
+
+  async function refreshContextIfNeeded() {
+    if (nodeCountRef.current < NODE_LIMIT) return
+    const oldCtx = audioContextRef.current
+    if (oldCtx) {
+      try {
+        await oldCtx.close()
+      } catch {}
+    }
+    audioContextRef.current = new AudioContext()
+    // @ts-ignore
+    await audioContextRef.current?.resume?.()
+    nodeCountRef.current = 0
   }
 
   function fadeOutAndDiscard(sound: ActiveSound, fadeS: number) {
@@ -117,6 +133,7 @@ export function useAudioTones(
     oscillator.connect(gain)
     gain.connect(ctx.destination)
     oscillator.start(now)
+    nodeCountRef.current += 1
 
     return { oscillator, gain }
   }
@@ -147,6 +164,7 @@ export function useAudioTones(
   async function playSound(color: Color, duration: number = 600) {
     if (!soundEnabled || !getContext()) return
 
+    await refreshContextIfNeeded()
     const ctx = getContext()!
     // @ts-ignore
     await ctx?.resume?.()
@@ -173,9 +191,9 @@ export function useAudioTones(
   }
 
   async function playPreview(overrideType?: OscillatorType) {
-    const ctx = getContext()
-    if (!ctx) return
-
+    if (!getContext()) return
+    await refreshContextIfNeeded()
+    const ctx = getContext()!
     // @ts-ignore
     await ctx?.resume?.()
 
@@ -198,6 +216,7 @@ export function useAudioTones(
       gain.connect(ctx.destination)
       osc.start(noteStart)
       osc.stop(noteStart + PREVIEW_NOTE_DURATION + 0.01)
+      nodeCountRef.current += 1
 
       setTimeout(
         () => {
@@ -215,10 +234,10 @@ export function useAudioTones(
 
   async function playJingle() {
     if (!soundEnabled) return
+    if (!getContext()) return
 
-    const ctx = getContext()
-    if (!ctx) return
-
+    await refreshContextIfNeeded()
+    const ctx = getContext()!
     // @ts-ignore
     await ctx?.resume?.()
 
@@ -240,6 +259,7 @@ export function useAudioTones(
       gain.connect(ctx.destination)
       osc.start(noteStart)
       osc.stop(noteStart + JINGLE_NOTE_DURATION + 0.01)
+      nodeCountRef.current += 1
 
       setTimeout(
         () => {
@@ -258,6 +278,7 @@ export function useAudioTones(
   async function startContinuousSound(color: Color) {
     if (!soundEnabled || !getContext()) return
 
+    await refreshContextIfNeeded()
     const ctx = getContext()!
     // @ts-ignore
     await ctx?.resume?.()
