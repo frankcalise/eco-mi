@@ -4,8 +4,10 @@ const IS_DEV = process.env.APP_VARIANT === "development"
 const ADMOB_TEST_ANDROID = "ca-app-pub-3940256099942544~3347511713"
 const ADMOB_TEST_IOS = "ca-app-pub-3940256099942544~1458002511"
 
-const ADMOB_ANDROID_APP_ID = IS_DEV ? ADMOB_TEST_ANDROID : process.env.ADMOB_APP_ID_ANDROID
-const ADMOB_IOS_APP_ID = IS_DEV ? ADMOB_TEST_IOS : process.env.ADMOB_APP_ID_IOS
+const ADMOB_ANDROID_APP_ID = IS_DEV
+  ? ADMOB_TEST_ANDROID
+  : process.env.ADMOB_APP_ID_ANDROID || ADMOB_TEST_ANDROID
+const ADMOB_IOS_APP_ID = IS_DEV ? ADMOB_TEST_IOS : process.env.ADMOB_APP_ID_IOS || ADMOB_TEST_IOS
 
 module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
   return {
@@ -95,8 +97,9 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
       [
         "@sentry/react-native/expo",
         {
-          organization: process.env.SENTRY_ORG ?? "your-org",
-          project: process.env.SENTRY_PROJECT ?? "your-project",
+          organization: "fc-sentry",
+          project: "eco-mi",
+          disableAutoUpload: !process.env.SENTRY_AUTH_TOKEN,
         },
       ],
       [
