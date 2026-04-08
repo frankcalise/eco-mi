@@ -777,7 +777,7 @@ export function GameScreen() {
                   }}
                 >
                   <Ionicons name="lock-open" size={14} color="white" />
-                  <Text style={styles.unlockBtnText}>Unlock Sound</Text>
+                  <Text style={styles.unlockBtnText}>Unlock Sound ({previewSoundPack.name})</Text>
                 </Pressable>
               )}
             </View>
@@ -849,7 +849,7 @@ export function GameScreen() {
                   }}
                 >
                   <Ionicons name="lock-open" size={14} color="white" />
-                  <Text style={styles.unlockBtnText}>Unlock Theme</Text>
+                  <Text style={styles.unlockBtnText}>Unlock Theme ({previewTheme.name})</Text>
                 </Pressable>
               )}
             </View>
