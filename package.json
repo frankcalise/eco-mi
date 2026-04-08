@@ -38,6 +38,7 @@
     "expo-build-properties": "~55.0.11",
     "expo-constants": "~55.0.11",
     "expo-dev-client": "~55.0.22",
+    "expo-eas-client": "^55.0.5",
     "expo-eas-observe": "~0.0.32",
     "expo-font": "~55.0.6",
     "expo-haptics": "~55.0.11",
