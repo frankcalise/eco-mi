@@ -2,7 +2,6 @@ import { useEffect, useState } from "react"
 import { Slot } from "expo-router"
 import * as Sentry from "@sentry/react-native"
 import { PostHogProvider } from "posthog-react-native"
-import { KeyboardProvider } from "react-native-keyboard-controller"
 import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context"
 
 import { useWebFonts } from "@/hooks/useWebFonts"
@@ -54,7 +53,7 @@ function Root() {
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <ThemeProvider>
-        <KeyboardProvider>{inner}</KeyboardProvider>
+        {inner}
       </ThemeProvider>
     </SafeAreaProvider>
   )

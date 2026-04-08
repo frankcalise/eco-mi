@@ -7,6 +7,7 @@
     "development": {
       "extends": "production",
       "distribution": "internal",
+      "channel": "development",
       "android": {
         "gradleCommand": ":app:assembleDebug"
       },
@@ -26,6 +27,7 @@
     "preview": {
       "extends": "production",
       "distribution": "internal",
+      "channel": "preview",
       "ios": {
         "simulator": true
       },
@@ -39,7 +41,9 @@
         "simulator": false
       }
     },
-    "production": {}
+    "production": {
+      "channel": "production"
+    }
   },
   "submit": {
     "production": {}
