@@ -106,7 +106,6 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
           disableAutoUpload: !process.env.SENTRY_AUTH_TOKEN,
         },
       ],
-      "expo-eas-observe",
       [
         "react-native-google-mobile-ads",
         {

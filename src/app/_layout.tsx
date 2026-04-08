@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import AppMetrics from "expo-eas-observe"
 import { Slot } from "expo-router"
 import * as Sentry from "@sentry/react-native"
 import { PostHogProvider } from "posthog-react-native"
@@ -33,8 +34,16 @@ function Root() {
       .finally(() => setIsI18nInitialized(true))
   }, [])
 
-  const loaded = isI18nInitialized
-  if (!loaded || !isFontsLoaded) {
+  const loaded = isI18nInitialized && isFontsLoaded
+
+  useEffect(() => {
+    if (loaded) {
+      AppMetrics.markFirstRender()
+      AppMetrics.markInteractive()
+    }
+  }, [loaded])
+
+  if (!loaded) {
     return null
   }
 
@@ -52,9 +61,7 @@ function Root() {
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <ThemeProvider>
-        {inner}
-      </ThemeProvider>
+      <ThemeProvider>{inner}</ThemeProvider>
     </SafeAreaProvider>
   )
 }
