@@ -20,7 +20,11 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
     userInterfaceStyle: "automatic",
     icon: "./assets/images/app-icon-all.png",
     updates: {
+      url: "https://u.expo.dev/a7ae3db1-a5a2-4deb-ba44-ffa09d58aead",
       fallbackToCacheTimeout: 0,
+    },
+    runtimeVersion: {
+      policy: "appVersion",
     },
     assetBundlePatterns: ["**/*"],
     android: {
@@ -102,6 +106,7 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
           disableAutoUpload: !process.env.SENTRY_AUTH_TOKEN,
         },
       ],
+      "expo-eas-observe",
       [
         "react-native-google-mobile-ads",
         {

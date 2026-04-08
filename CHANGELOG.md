@@ -6,6 +6,11 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 
 ## [Unreleased]
 
+### Chore
+- Remove unused deps: `@react-navigation/native-stack`, `react-native-drawer-layout`, `react-native-keyboard-controller` (Ignite boilerplate leftovers)
+- Install and configure `expo-updates` with OTA update channels (development, preview, production) in `eas.json`
+- Install and configure `expo-eas-observe` for production performance monitoring
+
 ### Feat
 - `7adeb98` — Arcade-style local high score leaderboard: top 10 in MMKV, three-initial entry modal (retro CRT aesthetic), high score table with pulsing highlight, trophy button on idle screen
 - `9997f61` — Sentry crash reporting (conditional on DSN env var), app-ads.txt placeholder
