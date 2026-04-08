@@ -8,7 +8,6 @@ import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-c
 import { useWebFonts } from "@/hooks/useWebFonts"
 import { initI18n } from "@/i18n"
 import { ThemeProvider } from "@/theme/context"
-import { loadDateFnsLocale } from "@/utils/formatDate"
 
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? ""
 
@@ -29,7 +28,6 @@ function Root() {
 
   useEffect(() => {
     initI18n()
-      .then(() => loadDateFnsLocale())
       .catch((err) => console.error("i18n init failed:", err))
       .finally(() => setIsI18nInitialized(true))
   }, [])

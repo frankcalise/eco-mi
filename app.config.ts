@@ -97,7 +97,6 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
         },
       ],
       "expo-tracking-transparency",
-      "expo-sharing",
       [
         "@sentry/react-native/expo",
         {
