@@ -67,7 +67,7 @@ buck-out/
 .vscode
 
 # Expo
-.expo/*
+.expo
 bin/Exponent.app
 /android
 /ios
@@ -101,4 +101,4 @@ web-build/
 
 .eslintcache
 
-dist
+distbuild-*.aab

@@ -13,13 +13,90 @@
 
 ---
 
+## Bugs
+
+- [x] **Audio pops/clicks when tapping game buttons**
+  Audible pop artifact on button press, especially on quick taps. Likely related to the oscillator start/stop envelope in `src/hooks/useAudioTones.tsx`. The attack ramp (`ATTACK_S = 0.01`) may be too short on some devices, or the continuous sound start/stop cycle creates a discontinuity when rapidly re-triggering. Investigate:
+  - Whether the gain node value is non-zero when a new oscillator starts (creating a click)
+  - Whether the single oscillator ref causes a race when tapping a new button before the previous fade-out completes
+  - Whether `expo-haptics` vibration timing interferes with audio playback
+  - Test with longer attack/release ramps and see if the pop goes away
+
+- [x] **Layout shift when status text toggles between "Watch" and "Repeat"**
+  The progress indicator dots below "Repeat the sequence!" cause the status area to grow, pushing content down. When it switches back to "Watch the sequence..." (no dots), content shifts up. Fix by reserving consistent vertical space for the status + dots area regardless of state — either always render the dots row (invisible when not in `waiting` state) or use a fixed-height container.
+
+- [x] **Game over overlay: no way to return to idle/home without playing again**
+  After game over, tapping Play Again starts a new game. But if the player wants to switch modes, themes, or sounds, they have to play again and then hit Reset. Add a "Home" or "X" button on the overlay that returns to idle state without starting a game.
+
+- [x] **Status bar content color doesn't adapt to pastel theme**
+
+## Animation Polish
+
+- [x] **Chaos mode: animated shuffle sequences (shell game style)**
+  Instead of a single shuffle animation, build a pool of shuffle sequences that are randomly selected each round. At higher levels, chain multiple sequences together for harder visual tracking. Sequences:
+  - **Clockwise orbit** — all 4 buttons rotate one position around the circle
+  - **Counter-clockwise orbit** — reverse direction
+  - **Diagonal swap** — top-left ↔ bottom-right, top-right ↔ bottom-left (X pattern)
+  - **Horizontal swap** — left pair swaps with right pair
+  - **Vertical swap** — top pair swaps with bottom pair
+  - **Shell shuffle** — 2-3 rapid sequential pair swaps (cup game: A↔B, C↔D, A↔C)
+  - **Scatter & return** — all buttons fly to center, pause, then fly out to new positions
+  - **Cascade** — each button moves one at a time in quick succession (domino effect)
+  
+  Use `react-native-ease` for smooth position transitions. At level 1-3, pick one sequence. At 4-6, chain two. At 7+, chain three with faster timing. The animation duration should compress at higher levels too — more chaos, less time to track.
+
+- [x] **Timed mode: animated countdown number**
+  Use `react-native-ease` to smoothly transition the countdown number in the center circle. Each tick should scale down the current number (shrink + fade) and scale up the new number (grow + appear). Gives the timer a fluid, non-jarring feel instead of a hard digit swap every second.
+
+- [x] **Timed mode: circular progress ring around center circle**
+  Replace the plain center circle border with a circular progress ring that depletes as time runs out. The ring should animate smoothly from full (green) to empty (red) over 60 seconds. Could use `react-native-svg` (already installed) with an animated `strokeDashoffset` on a `Circle` element, driven by `react-native-ease` or a simple interpolation from `timeRemaining / 60`.
+
+- [ ] **Escalating haptic feedback for timed mode countdown**
+  Under 10s: light tick each second. Under 5s: medium. Under 3s: heavy double-pulse (heartbeat). Need to evaluate whether `expo-haptics` has enough granularity or if `react-native-nitro-haptics` is needed for finer control. Also need to ensure countdown haptics don't conflict with the existing button tap and sequence playback haptics — may need to suppress timer haptics during active input.
+
+- [ ] **Explore Expo UI adaptive/dynamic colors as a theme option**
+  Investigate `expo-ui` adaptive colors (iOS dynamic colors, Android Material You). Could be a "System" theme that pulls the device's accent colors for the game buttons and UI chrome. Evaluate whether this works as the default theme (free, adapts to every user's device) or as a separate purchasable theme. Research: does `@expo/ui` expose adaptive color primitives that work cross-platform? What does it look like on Android Material You vs iOS?
+  When the pastel theme is selected (light background), the status bar text/icons remain light — invisible against the light background. Use `expo-status-bar` to set `style="dark"` for pastel and `style="light"` for the other 3 themes. The theme config in `src/config/themes.ts` should include a `statusBarStyle` field (`"light" | "dark"`) per theme.
+
+- [x] **Add game mode selector for demoing modes**
+  The game engine supports classic, daily, timed, reverse, and chaos modes but there's no UI to switch between them. Add a mode selector in the idle state (similar to the theme/sound pack selectors) so all modes can be demoed. Show the mode name and a brief description. Daily mode should show the current streak if available.
+
+- [x] **Settings modal: animate button toggles on value change**
+  When toggling values in the settings modal (sound on/off, selecting a sound pack, selecting a theme), wrap the interactive elements in `EaseView` with a quick scale pulse + opacity fade on the outgoing selection and a pop-in on the incoming one. Same retro-confirm pattern as the mode selector pulse animation. Keep it subtle — 100–150ms timing transitions.
+
+- [x] **Haptic feedback on mode select and settings interactions**
+  Add `expo-haptics` calls to the header action buttons and modal interactions:
+  - Light impact when opening mode selector or settings modals
+  - Medium impact when selecting a game mode (fires with the pulse animation)
+  - Light impact when toggling sound, changing sound pack, or changing theme in settings
+  Use `Haptics.impactAsync()` with the appropriate `ImpactFeedbackStyle`.
+
+- [x] **Idle screen: neon sign title animation**
+  While in idle state, animate the "Eco Mi" title text to cycle through the active theme's 4 button colors (red → blue → green → yellow) with a smooth transition, simulating a glowing neon sign. Add a subtle scale breathe (1.0 → 1.02 → 1.0) using `EaseView` with a looping timing animation. The color cycle should use the current theme's `buttonColors` so it stays consistent across Classic, Neon, Retro, and Pastel themes. Stop the animation when the game starts (gameState !== "idle").
+
+- [x] **Idle screen: one-shot retro chiptune jingle**
+  Compose a short (3–5 second) retro chiptune jingle using the existing `react-native-audio-api` oscillator engine. Play it once when the game returns to idle state (app launch, after game over → home, after reset). The jingle should use the currently selected sound pack's `oscillatorType` (sine, square, sawtooth, triangle) so it changes character with the player's choice. Respect the existing `soundEnabled` toggle — no sound when muted. Keep the melody simple: 6–10 notes in a major key, ascending pattern, classic arcade "ready!" feel.
+
+---
+
+## Tech Debt
+
+- [ ] **Remove unused navigation dependencies**
+  Remove `@react-navigation/native-stack` and `react-native-drawer-layout` from `package.json`. Expo Router brings in its own navigation stack — these are unused Ignite boilerplate leftovers.
+
+- [ ] **Install and configure Sentry for crash reporting**
+  `npx expo install @sentry/react-native` and add the config plugin to `app.config.ts`. Initialize in `_layout.tsx` with DSN from env var (`EXPO_PUBLIC_SENTRY_DSN`). Gives stack traces with source maps, JS error capture, and breadcrumbs. Add DSN to `.env.example` and EAS Secrets. Do this before public release — TestFlight/Play Console crash reports are sufficient for internal testing.
+  - Blocked by: Sentry account created, project DSN noted
+
+---
+
 ## Phase 0 — Tech Debt & Foundation
 
 > Do these first. The SDK upgrade and React Compiler change how we write all new code — no manual memoization needed.
 
 ### 0.1 Expo SDK Upgrade
 
-- [ ] **Upgrade from Expo SDK 53 → SDK 55**
+- [x] **Upgrade from Expo SDK 53 → SDK 55**
   SDK 55 ships RN 0.84, React 19.2, and `babel-preset-expo` with React Compiler built in. This is a 2-version jump (53 → 54 → 55). Recommended approach:
   - Read the SDK 54 and SDK 55 changelogs for breaking changes
   - Bump `expo` version: `npx expo install expo@latest`
@@ -30,7 +107,7 @@
   - Run `bun run test` to verify existing tests pass
   - Potential friction: `react-native-reanimated` Babel plugin ordering with React Compiler — compiler must run first. Since we're not using reanimated for game code, this should be low risk, but verify navigation transitions still work.
 
-- [ ] **Enable React Compiler**
+- [x] **Enable React Compiler**
   `babel-preset-expo@55` includes `babel-plugin-react-compiler@^1.0.0`. To enable:
   - Add `experiments.reactCompiler: true` to `app.config.ts` (or the Babel config, depending on SDK 55's API — check Expo docs)
   - Verify the app builds and runs without errors
@@ -38,19 +115,19 @@
   - Existing manual memoization is harmless (compiler skips already-memoized code) — remove gradually during refactors, not all at once
   - If specific files cause compiler bailouts (e.g., reanimated worklets), add `"use no memo"` directive to opt out per-file
 
-- [ ] **Remove manual memoization from `GameScreen.tsx` during refactor**
-  When extracting `useSimonGame()`, do not carry over `useCallback` wrappers — write plain functions. The compiler handles it. This simplifies the hook code and eliminates the stale closure bugs caused by incorrect dependency arrays.
+- [x] **Remove manual memoization from `GameScreen.tsx` during refactor**
+  When extracting `useGameEngine()`, do not carry over `useCallback` wrappers — write plain functions. The compiler handles it. This simplifies the hook code and eliminates the stale closure bugs caused by incorrect dependency arrays.
   - Blocked by: React Compiler enabled
 
 ### 0.2 Cleanup
 
-- [ ] **Remove unnecessary permissions from audio plugin config**
+- [x] **Remove unnecessary permissions from audio plugin config**
   Current `app.json` requests microphone permission and foreground service — not needed for oscillator playback. Strip `iosMicrophonePermission`, `androidForegroundService`, and `FOREGROUND_SERVICE` permissions from the `react-native-audio-api` plugin config.
 
-- [ ] **Clean up unused boilerplate dependencies**
+- [x] **Clean up unused boilerplate dependencies**
   Remove `apisauce` from `package.json` (unused). Evaluate `react-native-keyboard-controller` — only used as `<KeyboardProvider>` in layout, unnecessary for a single-screen game. Check if SDK 55 upgrade makes any other deps obsolete.
 
-- [ ] **Add `.catch()` to `initI18n` in `_layout.tsx`**
+- [x] **Add `.catch()` to `initI18n` in `_layout.tsx`**
   Currently no error handler — if i18n init fails, the app renders `null` forever (white screen). Add `.catch()` or `.finally()` to ensure the app renders even in degraded state.
 
 ---
@@ -59,23 +136,23 @@
 
 ### 1.1 Code Architecture
 
-- [ ] **Extract `useSimonGame()` hook from `GameScreen.tsx`**
-  Move all game state (`sequence`, `playerSequence`, `gameState`, `score`, `level`, `highScore`), timer refs, and game logic (`startGame`, `showSequence`, `handleButtonTouch`, `handleButtonRelease`, `resetGame`) into `src/hooks/useSimonGame.ts`. GameScreen becomes presentational only.
+- [x] **Extract `useGameEngine()` hook from `GameScreen.tsx`**
+  Move all game state (`sequence`, `playerSequence`, `gameState`, `score`, `level`, `highScore`), timer refs, and game logic (`startGame`, `showSequence`, `handleButtonTouch`, `handleButtonRelease`, `resetGame`) into `src/hooks/useGameEngine.ts`. GameScreen becomes presentational only.
   - Fix orphaned `setTimeout` refs — track all timer IDs and clear on reset/unmount
   - Fix stale closure in `handleButtonRelease` (memoized deps issue)
   - Fix `Dimensions.get("window")` at module scope — use `useWindowDimensions()` instead
   - Return a clean API: `{ gameState, score, level, highScore, sequence, activeButton, startGame, resetGame, handleButtonTouch, handleButtonRelease }`
   - Ref: VISION.md > Phase 1 #1, Technical Architecture > Target Architecture
 
-- [ ] **Create `src/config/difficulty.ts`**
+- [x] **Create `src/config/difficulty.ts`**
   Extract timing constants and speed ramp formula:
   - `MIN_TONE_DURATION`: base 600ms, decreasing with level
   - `SEQUENCE_INTERVAL`: `Math.max(300, 800 - level * 30)`
   - `INPUT_TIMEOUT` (if adding time pressure later): `sequence.length * 2000`
-  - Export as functions of level so `useSimonGame()` consumes them
+  - Export as functions of level so `useGameEngine()` consumes them
   - Ref: VISION.md > Phase 1 #3
 
-- [ ] **Add `testID` props to all interactive and state-displaying elements**
+- [x] **Add `testID` props to all interactive and state-displaying elements**
   Follow the testID convention table in VISION.md > Testing Strategy. This unblocks Maestro flows.
   - Game buttons: `btn-red`, `btn-blue`, `btn-green`, `btn-yellow` (with `-active` suffix when lit)
   - Controls: `btn-start`, `btn-play-again`, `btn-sound-toggle`
@@ -83,17 +160,17 @@
   - Overlays: `overlay-game-over`
   - Ref: VISION.md > Testing Strategy > TestID Conventions
 
-- [ ] **Add seeded RNG for deterministic test mode**
+- [x] **Add seeded RNG for deterministic test mode**
   When `EXPO_PUBLIC_TEST_SEED` env var is set, use a seeded PRNG (e.g., mulberry32) for sequence generation instead of `Math.random()`. Zero impact on production.
   - Ref: VISION.md > Testing Strategy > Deterministic Test Mode
 
 ### 1.2 Visual Polish (v1.0 scope)
 
-- [ ] **Wire up Oxanium font across all game UI**
+- [x] **Wire up Oxanium font across all game UI**
   Fonts are already bundled in `assets/fonts/`. Update `src/theme/typography.ts` to replace SpaceGrotesk with Oxanium as the primary font. Apply `fontFamily` to all text styles in GameScreen.
   - Ref: VISION.md > Phase 1 #2
 
-- [ ] **Build `GameOverOverlay` component**
+- [x] **Build `GameOverOverlay` component**
   New `src/components/GameOverOverlay.tsx`. Modal overlay shown when `gameState === "gameover"`:
   - Score, level reached, high score comparison
   - "New High Score!" badge when applicable
@@ -102,7 +179,7 @@
   - This is the primary surface for ads and IAP prompts later
   - Ref: VISION.md > Phase 1 #4
 
-- [ ] **Extract `GameButton` component**
+- [x] **Extract `GameButton` component**
   New `src/components/GameButton.tsx`. Encapsulates a single game quadrant button:
   - Accepts `color`, `isActive`, `onPressIn`, `onPressOut`, `testID`
   - Static styling for now (animations added in Phase 2)
@@ -111,12 +188,12 @@
 
 ### 1.3 Monetization
 
-- [ ] **Convert `app.json` to `app.config.ts`**
+- [x] **Convert `app.json` to `app.config.ts`**
   Required for reading env vars at build time (AdMob App IDs, PostHog key). Move all config from static `app.json` to dynamic `app.config.ts`. Read `ADMOB_APP_ID_IOS`, `ADMOB_APP_ID_ANDROID` from `process.env`.
   - Ref: ACCOUNTS.md > Security > AdMob App IDs in `app.json`
   - Blocked by: `.env` file created with placeholder values
 
-- [ ] **Install and configure `react-native-purchases` (RevenueCat)**
+- [x] **Install and configure `react-native-purchases` (RevenueCat)**
   - `npx expo install react-native-purchases`
   - Add `"react-native-purchases"` to plugins in `app.config.ts`
   - Create `src/hooks/usePurchases.ts` — generic, reusable hook:
@@ -129,7 +206,7 @@
   - Ref: VISION.md > Phase 1 #5, ACCOUNTS.md > RevenueCat
   - Blocked by: `app.config.ts` conversion, RevenueCat account setup (ACCOUNTS.md checklist)
 
-- [ ] **Install and configure `react-native-google-mobile-ads`**
+- [x] **Install and configure `react-native-google-mobile-ads`**
   - `npx expo install react-native-google-mobile-ads`
   - Add plugin config to `app.config.ts` with env var App IDs
   - Install `expo-tracking-transparency` for ATT consent
@@ -143,14 +220,14 @@
   - Ref: VISION.md > Phase 1 #6, #8, Ad Placement Rules, ACCOUNTS.md > Google AdMob
   - Blocked by: `app.config.ts` conversion, AdMob account setup (ACCOUNTS.md checklist)
 
-- [ ] **Implement Remove Ads IAP flow**
+- [x] **Implement Remove Ads IAP flow**
   - Add "Remove Ads" button to `GameOverOverlay`
   - Check `remove_ads` entitlement via `usePurchases` before showing any ad
   - After 3–5 interstitials shown, display one-time "Tired of ads?" conversion prompt
   - Track `iap_initiated` and `iap_completed` PostHog events
   - Ref: VISION.md > Phase 1 #7, Monetization Strategy > IAP Product Catalog
 
-- [ ] **Wire interstitial ads into game-over flow**
+- [x] **Wire interstitial ads into game-over flow**
   - After game over, check frequency cap → show interstitial if allowed → then show `GameOverOverlay`
   - Skip if game lasted < 3 rounds
   - Skip if Remove Ads purchased
@@ -159,14 +236,14 @@
 
 ### 1.4 Analytics
 
-- [ ] **Install and configure PostHog**
+- [x] **Install and configure PostHog**
   - `npx expo install posthog-react-native`
   - Add `PostHogProvider` to `src/app/_layout.tsx` with env var API key
   - Ref: VISION.md > Analytics > PostHog Setup, ACCOUNTS.md > PostHog
   - Blocked by: PostHog account created (ACCOUNTS.md checklist)
 
-- [ ] **Instrument core analytics events**
-  Add PostHog event tracking calls to `useSimonGame` and `GameOverOverlay`:
+- [x] **Instrument core analytics events**
+  Add PostHog event tracking calls to `useGameEngine` and `GameOverOverlay`:
   - `game_started`, `game_completed`, `game_over`
   - `ad_shown`, `ad_rewarded_watched`
   - `iap_initiated`, `iap_completed`
@@ -176,7 +253,7 @@
 
 ### 1.5 Testing (v1.0 scope)
 
-- [ ] **Write unit tests for `useSimonGame()` hook**
+- [x] **Write unit tests for `useGameEngine()` hook**
   Test with `@testing-library/react-hooks` (already installed via RTL):
   - State transitions: idle → showing → waiting → gameover
   - Score calculation: `sequence.length * 10` per round
@@ -195,7 +272,7 @@
 
 ### 1.6 Build & Submit
 
-- [ ] **Create privacy policy page**
+- [x] **Create privacy policy page**
   Required by both App Store and Google Play. Host at a URL (GitHub Pages, Vercel, or simple static page). Must disclose: AdMob ads, PostHog analytics, MMKV local storage. No PII collected.
   - Ref: VISION.md > ASO > App Store Assets Required
 
@@ -206,8 +283,13 @@
   - Ref: VISION.md > ASO
 
 - [ ] **Configure EAS submit profiles**
-  Add `submit` section to `eas.json` for automated App Store and Play Store uploads.
-  - Blocked by: Apple Developer account, Google Play Console account (ACCOUNTS.md checklist)
+  Add `submit` section to `eas.json` for automated App Store and Play Store uploads. Configure `eas submit --platform ios` for TestFlight/App Store and `eas submit --platform android` for Play Store internal/production tracks. Set up App Store Connect API key and Google Play service account JSON in EAS credentials.
+
+- [ ] **Set up expo-updates for OTA updates**
+  `npx expo install expo-updates` and configure in `app.config.ts`. Enables pushing JS bundle updates without going through store review. Configure update channel per environment (development, preview, production). Set up `eas update` workflow for quick bug fixes and content changes post-launch.
+
+- [ ] **Integrate expo-observe for performance monitoring**
+  `npx expo install expo-eas-observe` — currently in technical preview / early access. Tracks session performance (TTI, frame drops, device breakdown), before/after release comparisons, and outlier detection. Minimal setup. **Note:** User has early access with Notion notes containing setup details — prompt for those when executing this task.
 
 - [ ] **Submit v1.0 to App Store and Google Play**
   - `eas build --profile production --platform all`
@@ -218,35 +300,35 @@
 
 ## Phase 2 — Visual Polish (v1.1)
 
-- [ ] **Install `react-native-ease` and animate game buttons**
+- [x] **Install `react-native-ease` and animate game buttons**
   - `npx expo install react-native-ease`
   - Update `GameButton.tsx` with glow, scale, and pulse animations on press and during computer sequence playback
   - Replace static `transform: [{ scale: 1.05 }]`
   - Ref: VISION.md > Phase 2 #1
 
-- [ ] **Install `lottie-react-native` and add high score celebration**
+- [x] **Install `lottie-react-native` and add high score celebration**
   - `npx expo install lottie-react-native`
   - Download a trophy/confetti animation from LottieFiles → `assets/animations/`
   - Trigger in `GameOverOverlay` when `isHighScore === true`
   - Ref: VISION.md > Phase 2 #2
 
-- [ ] **Install `expo-haptics` and replace `Vibration` API**
+- [x] **Install `expo-haptics` and replace `Vibration` API**
   - `npx expo install expo-haptics`
   - Different impact styles per color button (light/medium/heavy)
   - Success notification on round completion
   - Error notification on game over
   - Ref: VISION.md > Phase 2 #3
 
-- [ ] **Add sequence progress indicator**
+- [x] **Add sequence progress indicator**
   Show dots or a progress bar during the `waiting` state indicating how many steps the player has completed vs total sequence length.
   - Ref: VISION.md > Phase 2 #4
 
-- [ ] **Implement rewarded video "Continue" mechanic**
+- [x] **Implement rewarded video "Continue" mechanic**
   After game over, offer "Watch ad to continue" (one per game). On watch completion, replay the failed sequence and let the player retry.
   - Track `ad_rewarded_watched` PostHog event
   - Ref: VISION.md > Phase 2 #5
 
-- [ ] **Implement store review pre-prompt**
+- [x] **Implement store review pre-prompt**
   - Create `src/components/ReviewPrompt.tsx` (sentiment filter modal)
   - Create `src/hooks/useStoreReview.ts` (guard logic)
   - Install `expo-store-review`
@@ -262,15 +344,15 @@
 
 ## Phase 3 — Engagement (v1.2)
 
-- [ ] **Implement seeded daily challenges**
+- [x] **Implement seeded daily challenges**
   Date-based seed (`parseInt(format(new Date(), 'yyyyMMdd'))`) for deterministic sequence. Store daily best and streak in MMKV (`ecomi:daily:*` keys). Add mode selector to distinguish daily vs classic.
   - Ref: VISION.md > Phase 3 #1
 
-- [ ] **Build stats dashboard screen**
+- [x] **Build stats dashboard screen**
   New `src/app/stats.tsx`. Display: games played, best score, average level, current/longest streak. All from MMKV. Add navigation from game screen.
   - Ref: VISION.md > Phase 3 #2
 
-- [ ] **Implement achievement system**
+- [x] **Implement achievement system**
   - Create `src/config/achievements.ts` with achievement definitions and conditions
   - Store in MMKV (`ecomi:achievements` key)
   - Check conditions on game events (round complete, game over)
@@ -279,33 +361,39 @@
   - Track `achievement_unlocked` PostHog event
   - Ref: VISION.md > Phase 3 #3
 
-- [ ] **Implement score sharing**
+- [x] **Implement score sharing**
   - `npx expo install expo-sharing`
   - Generate branded score card (image or text) from game-over overlay
   - "I reached Level {{level}} with a score of {{score}} on Eco Mi!"
   - Track `share_tapped` PostHog event
   - Ref: VISION.md > Phase 3 #4
 
-- [ ] **Add Timed game mode**
+- [x] **Add Timed game mode**
   60-second countdown. Each completed sequence earns points. Wrong input replays same sequence (no game over). Score = total sequences completed.
   - Ref: VISION.md > Phase 3 #5
 
-- [ ] **Add Reverse game mode**
+- [x] **Add Reverse game mode**
   Player repeats the sequence in reverse order. Single index reversal in input validation.
   - Ref: VISION.md > Phase 3 #5
 
-- [ ] **Add Chaos game mode**
+- [x] **Add Chaos game mode**
   Button positions shuffle between rounds. Promote `colorMap` to state, shuffle after each successful round.
   - Ref: VISION.md > Phase 3 #5
 
-- [ ] **Extract game strings into i18n**
+- [x] **Extract game strings into i18n**
   Replace all hardcoded English strings in game UI with `useTranslation()` calls. Update `src/i18n/en.ts` with game-specific keys per the string table in VISION.md > Localization.
   - Ref: VISION.md > Phase 3 #6, Localization > What Needs to Happen
 
-- [ ] **Add Spanish and Portuguese translations**
+- [x] **Add Spanish and Portuguese translations**
   Create `src/i18n/es.ts` and `src/i18n/pt.ts`. ~30 strings each. Register in `src/i18n/index.ts` resources.
   - Blocked by: Strings extracted into i18n
   - Ref: VISION.md > Localization > Priority Languages
+
+- [x] **Arcade high score table with three-initial entry**
+  Top 10 local leaderboard stored in MMKV (`ecomi:highScores` key) as `{ initials: string, score: number, level: number, date: string, mode: GameMode }[]` sorted by score descending, capped at 10. When a player's score qualifies for the top 10, show a three-letter initial input modal (standard keyboard input for v1). Display the leaderboard on the idle screen or as a dedicated view accessible from the header. Retro arcade cabinet aesthetic — monospaced, numbered rows, blinking cursor on entry. Coexists cleanly with future global leaderboards (Phase 5) as a "This Device" tab.
+
+- [ ] **Enhanced initial input: gesture/drawing recognition**
+  Phase 2 of the high score table. Replace the keyboard-based three-initial entry with a draw-to-letter input using `@shopify/react-native-skia`. Player draws each letter on a canvas, app converts the Skia path to a recognized character. Gives a unique, tactile arcade feel. Investigate ML-based handwriting recognition (on-device, lightweight) or a simpler template-matching approach for A-Z recognition. Could also explore gesture-based input (swipe patterns mapped to letters) as an alternative.
 
 - [ ] **Localize App Store listings (ES, PT)**
   Translate subtitle, description, and keywords for Spanish and Portuguese in App Store Connect and Google Play Console.
@@ -371,31 +459,31 @@ These are account setup and asset creation tasks. Track alongside code work.
 
 ### Accounts (ref: ACCOUNTS.md checklist)
 
-- [ ] Apple Developer Program — enroll, verify
-- [ ] App Store Connect — create app, register Bundle ID
-- [ ] App Store Connect — create 7 IAP products (Remove Ads + 6 packs)
-- [ ] App Store Connect — generate App-Specific Shared Secret (for RevenueCat)
-- [ ] Google Play Console — register, verify identity
-- [ ] Google Play Console — create app, complete store listing
-- [ ] Google Play Console — create 7 IAP products (matching iOS product IDs)
+- [x] Apple Developer Program — enroll, verify
+- [x] App Store Connect — create app, register Bundle ID
+- [x] App Store Connect — create 7 IAP products (Remove Ads + 6 packs)
+- [x] App Store Connect — generate App-Specific Shared Secret (for RevenueCat)
+- [x] Google Play Console — register, verify identity
+- [x] Google Play Console — create app, complete store listing
+- [x] Google Play Console — create 7 IAP products (matching iOS product IDs)
 - [ ] Google Play Console — create Service Account JSON (for RevenueCat)
-- [ ] RevenueCat — create account, create "Eco Mi" project
-- [ ] RevenueCat — configure iOS app with shared secret, note API key
+- [x] RevenueCat — create account, create "Eco Mi" project
+- [x] RevenueCat — configure iOS app with shared secret, note API key
 - [ ] RevenueCat — configure Android app with service account JSON, note API key
-- [ ] RevenueCat — create 7 entitlements, map products, create Default offering
-- [ ] AdMob — create account, verify
-- [ ] AdMob — register iOS app, note App ID
-- [ ] AdMob — register Android app, note App ID
-- [ ] AdMob — create 3 ad units per platform (banner, interstitial, rewarded)
+- [x] RevenueCat — create 7 entitlements, map products, create Default offering
+- [x] AdMob — create account, verify
+- [x] AdMob — register iOS app, note App ID
+- [x] AdMob — register Android app, note App ID
+- [x] AdMob — create 3 ad units per platform (banner, interstitial, rewarded)
 - [ ] AdMob — configure GDPR consent message (Privacy & messaging)
-- [ ] PostHog — create account, create "Eco Mi" project, note API key
+- [x] PostHog — create account, create "Eco Mi" project, note API key
 - [ ] Host `app-ads.txt` at developer website
 
 ### Secrets & Config
 
-- [ ] Create `.env` file from `.env.example` with real keys
-- [ ] Configure EAS Secrets for all env vars (`eas secret:create` for each)
-- [ ] Run `eas credentials` to set up iOS signing
+- [x] Create `.env` file from `.env.example` with real keys
+- [x] Configure EAS Secrets for all env vars (`eas env:create` for each)
+- [x] Run `eas credentials` to set up iOS signing
 - [ ] Verify Android keystore is backed up securely
 
 ### ASO Assets
@@ -404,5 +492,5 @@ These are account setup and asset creation tasks. Track alongside code work.
 - [ ] Design Google Play feature graphic (1024x500)
 - [ ] Write store listing copy (title, subtitle, description, keywords)
 - [ ] Record 15–30s preview video
-- [ ] Create privacy policy page and host at a public URL
+- [x] Create privacy policy page and host at a public URL
 - [ ] Set up Google Form or email for user feedback channel (review pre-prompt "Not really" path)

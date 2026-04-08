@@ -1,11 +1,14 @@
-import { useRef, useCallback } from "react"
+import { useRef, useEffect } from "react"
+import { AppState } from "react-native"
 import { AudioContext, GainNode, OscillatorNode } from "react-native-audio-api"
+import type { OscillatorType } from "react-native-audio-api"
 
-// Fast, click-free envelope (tweak to taste)
-const ATTACK_S = 0.01 // 10 ms fade-in
-const RELEASE_S = 0.02 // 20 ms fade-out
-const TARGET_GAIN = 0.3 // peak volume (0..1)
-const EPSILON = 0.0001 // never ramp to exactly 0 with exponential ramps
+// Envelope constants — tuned to avoid clicks on react-native-audio-api
+// which has per-quantum normalization that amplifies discontinuities
+const ATTACK_S = 0.03 // 30ms fade-in
+const RELEASE_S = 0.05 // 50ms fade-out
+const TARGET_GAIN = 0.25 // Lower peak to avoid per-quantum normalization spikes
+const EPSILON = 0.001 // Higher floor to reduce exponential ramp steepness (300x ratio vs 3000x)
 
 export type Color = "red" | "blue" | "green" | "yellow"
 
@@ -18,271 +21,331 @@ export interface ColorMap {
   }
 }
 
+const PREVIEW_NOTES = [
+  { freq: 220, delay: 0 },
+  { freq: 277, delay: 0.15 },
+  { freq: 330, delay: 0.3 },
+  { freq: 415, delay: 0.45 },
+  { freq: 330, delay: 0.6 },
+  { freq: 415, delay: 0.7 },
+]
+const PREVIEW_NOTE_DURATION = 0.12
+
+const JINGLE_NOTES = [
+  { freq: 523, delay: 0 },
+  { freq: 659, delay: 0.2 },
+  { freq: 784, delay: 0.4 },
+  { freq: 1047, delay: 0.6 },
+  { freq: 784, delay: 0.85 },
+  { freq: 1047, delay: 1.05 },
+]
+const JINGLE_NOTE_DURATION = 0.15
+
+const NODE_LIMIT = 60
+
 interface AudioTonesHook {
-  /**
-   * Initialize audio system
-   */
   initialize: () => Promise<void>
-
-  /**
-   * Cleanup audio resources
-   */
   cleanup: () => Promise<void>
-
-  /**
-   * Play a sound for a specified duration
-   * @param color The color associated with the sound
-   * @param duration How long to play in milliseconds
-   */
-  playSound: (color: Color, duration?: number) => Promise<void>
-
-  /**
-   * Start playing a continuous sound
-   * @param color The color associated with the sound
-   */
-  startContinuousSound: (color: Color) => Promise<void>
-
-  /**
-   * Stop a currently playing continuous sound
-   * @param color The color associated with the sound
-   */
-  stopContinuousSound: (color: Color) => Promise<void>
-
-  /**
-   * Stop a continuous sound with fade-out effect
-   * @param color The color associated with the sound
-   * @param fadeDuration How long the fade-out should take in milliseconds
-   */
-  stopContinuousSoundWithFade: (color: Color, fadeDuration?: number) => Promise<void>
+  playSound: (color: Color, duration?: number) => void
+  playPreview: (overrideType?: OscillatorType) => void
+  playJingle: () => void
+  startContinuousSound: (color: Color) => void
+  stopContinuousSound: (color: Color) => void
+  stopContinuousSoundWithFade: (color: Color, fadeDuration?: number) => void
 }
 
-/**
- * Native implementation of audio tones using react-native-audio-api
- * @param colorMap Color mapping with frequency information
- * @param soundEnabled Whether sound is enabled
- */
-export function useAudioTones(colorMap: ColorMap, soundEnabled: boolean): AudioTonesHook {
+interface ActiveSound {
+  oscillator: OscillatorNode
+  gain: GainNode
+}
+
+export function useAudioTones(
+  colorMap: ColorMap,
+  soundEnabled: boolean,
+  oscillatorType: OscillatorType = "sine",
+  onContextRecycle?: (nodeCount: number) => void,
+): AudioTonesHook {
   const audioContextRef = useRef<AudioContext | null>(null)
-  const oscillatorRef = useRef<OscillatorNode | null>(null)
-  const gainNodeRef = useRef<GainNode | null>(null)
+  const masterGainRef = useRef<GainNode | null>(null)
+  const activeSoundRef = useRef<ActiveSound | null>(null)
+  const nodeCountRef = useRef(0)
+  const contextReadyRef = useRef(false)
+  const suspendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const SUSPEND_DELAY = 3000 // Suspend context after 3s of no audio activity
 
-  const initialize = useCallback(async () => {
+  // Suspend context when app goes to background, resume when foregrounded
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      const ctx = audioContextRef.current
+      if (!ctx) return
+      if (state === "background") {
+        try { ctx.suspend() } catch {}
+      } else if (state === "active" && contextReadyRef.current) {
+        try { ctx.resume() } catch {}
+      }
+    })
+    return () => sub.remove()
+  }, [])
+
+  function getContext(): AudioContext | null {
+    return audioContextRef.current
+  }
+
+  function getMasterGain(): GainNode | null {
+    return masterGainRef.current
+  }
+
+  // Resume the context and reset the auto-suspend timer.
+  // Called before every sound to ensure the context is running.
+  function ensureResumed() {
+    const ctx = getContext()
+    if (!ctx) return
     try {
-      audioContextRef.current = new AudioContext()
-      // Some platforms may require a user gesture first; resume just in case
-      // @ts-ignore
-      await audioContextRef.current?.resume?.()
-    } catch (error) {
-      console.log("Audio initialization failed:", error)
+      // @ts-ignore — resume may not exist on all platforms
+      ctx.resume?.()
+    } catch {}
+    // Reset the auto-suspend timer
+    if (suspendTimerRef.current) clearTimeout(suspendTimerRef.current)
+    suspendTimerRef.current = setTimeout(() => {
+      const c = getContext()
+      if (c && !activeSoundRef.current) {
+        try { c.suspend() } catch {}
+      }
+    }, SUSPEND_DELAY)
+  }
+
+  // Create a fresh context + master gain node. All oscillators route through
+  // the master gain to avoid per-quantum normalization artifacts from
+  // varying peak levels hitting the destination directly.
+  function createFreshContext() {
+    const ctx = new AudioContext()
+    audioContextRef.current = ctx
+    const master = ctx.createGain()
+    master.gain.setValueAtTime(1.0, ctx.currentTime)
+    master.connect(ctx.destination)
+    masterGainRef.current = master
+    nodeCountRef.current = 0
+    contextReadyRef.current = true
+  }
+
+  // Monitor node count — log but don't recycle. The audio engine's
+  // internal GC handles stopped+disconnected nodes. Recycling was
+  // causing more problems (sound death) than it solved.
+  function trackNodeCount() {
+    if (nodeCountRef.current > 0 && nodeCountRef.current % NODE_LIMIT === 0) {
+      onContextRecycle?.(nodeCountRef.current)
     }
-  }, [])
+  }
 
-  const cleanup = useCallback(async () => {
-    if (oscillatorRef.current) {
-      try {
-        oscillatorRef.current.stop()
-        oscillatorRef.current.disconnect()
-      } catch (error) {
-        // ignore
-      }
-      oscillatorRef.current = null
+  // Immediately silence and disconnect a sound without scheduling
+  // (safe to call even on a closing context)
+  function silentDiscard(sound: ActiveSound) {
+    try {
+      sound.gain.gain.setValueAtTime(EPSILON, 0)
+      sound.oscillator.stop(0)
+    } catch {}
+    try { sound.oscillator.disconnect() } catch {}
+    try { sound.gain.disconnect() } catch {}
+  }
+
+  // Schedule a clean fade-out using setTargetAtTime. Does NOT cancel
+  // in-flight ramps — setTargetAtTime takes over smoothly from whatever
+  // the current interpolated value is, avoiding the discontinuity that
+  // cancelScheduledValues + setValueAtTime would cause mid-ramp.
+  function fadeOutAndStop(sound: ActiveSound, fadeS: number) {
+    const ctx = getContext()
+    if (!ctx) {
+      silentDiscard(sound)
+      return
     }
-    if (gainNodeRef.current) {
-      try {
-        gainNodeRef.current.disconnect()
-      } catch (error) {
-        // ignore
-      }
-      gainNodeRef.current = null
-    }
-    if (audioContextRef.current) {
-      try {
-        await audioContextRef.current.close()
-      } catch (error) {
-        // ignore
-      }
-      audioContextRef.current = null
-    }
-  }, [])
-
-  const playSound = useCallback(
-    async (color: Color, duration: number = 600) => {
-      if (!soundEnabled || !audioContextRef.current) return
-
-      try {
-        const ctx = audioContextRef.current
-        // @ts-ignore
-        await ctx?.resume?.()
-
-        const frequency = colorMap[color].sound
-        const now = ctx.currentTime
-        const durationSeconds = duration / 1000
-
-        const oscillator = ctx.createOscillator()
-        const gain = ctx.createGain()
-
-        oscillator.connect(gain)
-        gain.connect(ctx.destination)
-
-        oscillator.frequency.setValueAtTime(frequency, now)
-        oscillator.type = "sine"
-
-        // Click-free one-shot envelope
-        gain.gain.setValueAtTime(EPSILON, now)
-        gain.gain.exponentialRampToValueAtTime(TARGET_GAIN, now + ATTACK_S)
-        gain.gain.exponentialRampToValueAtTime(EPSILON, now + durationSeconds - RELEASE_S)
-
-        oscillator.start(now)
-        oscillator.stop(now + durationSeconds)
-
-        setTimeout(() => {
-          try {
-            oscillator.disconnect()
-          } catch {}
-          try {
-            gain.disconnect()
-          } catch {}
-        }, duration + 10)
-      } catch (error) {
-        console.log("Error playing sound:", error)
-      }
-    },
-    [colorMap, soundEnabled],
-  )
-
-  const startContinuousSound = useCallback(
-    async (color: Color) => {
-      if (!soundEnabled || !audioContextRef.current) return
-
-      try {
-        const ctx = audioContextRef.current
-        // @ts-ignore
-        await ctx?.resume?.()
-
-        const frequency = colorMap[color].sound
-        const now = ctx.currentTime
-
-        // If we’re already sounding, just retune and ramp to target
-        if (oscillatorRef.current && gainNodeRef.current) {
-          const osc = oscillatorRef.current
-          const gain = gainNodeRef.current
-
-          // Retune smoothly
-          osc.frequency.cancelScheduledValues(now)
-          osc.frequency.setValueAtTime(osc.frequency.value, now)
-          osc.frequency.linearRampToValueAtTime(frequency, now + 0.01)
-
-          // Smooth attack to target (re-press behavior)
-          gain.gain.cancelScheduledValues(now)
-          gain.gain.setValueAtTime(Math.max(gain.gain.value, EPSILON), now)
-          gain.gain.linearRampToValueAtTime(TARGET_GAIN, now + ATTACK_S)
-          return
-        }
-
-        // Create fresh nodes
-        const osc = ctx.createOscillator()
-        const gain = ctx.createGain()
-
-        osc.type = "sine"
-        osc.frequency.setValueAtTime(frequency, now)
-
-        // Start silent, then attack
-        gain.gain.setValueAtTime(EPSILON, now)
-        gain.gain.exponentialRampToValueAtTime(TARGET_GAIN, now + ATTACK_S)
-
-        osc.connect(gain)
-        gain.connect(ctx.destination)
-        osc.start(now)
-
-        oscillatorRef.current = osc
-        gainNodeRef.current = gain
-      } catch (error) {
-        console.log("Error starting continuous sound:", error)
-      }
-    },
-    [colorMap, soundEnabled],
-  )
-
-  const stopContinuousSound = useCallback(async (_color: Color) => {
-    const ctx = audioContextRef.current
-    const osc = oscillatorRef.current
-    const gain = gainNodeRef.current
-    if (!ctx || !osc || !gain) return
 
     try {
       const now = ctx.currentTime
+      // timeConstant = fadeS/3 means ~95% decay in fadeS seconds.
+      // setTargetAtTime starts from the current computed value —
+      // no need to anchor with setValueAtTime first.
+      sound.gain.gain.setTargetAtTime(0, now, fadeS / 3)
+      sound.oscillator.stop(now + fadeS + 0.02)
 
-      // Cancel any pending ramps, then release to near-zero
-      gain.gain.cancelScheduledValues(now)
-      gain.gain.setValueAtTime(Math.max(gain.gain.value, EPSILON), now)
-      // Fast, click-free release
-      gain.gain.exponentialRampToValueAtTime(EPSILON, now + RELEASE_S)
-
-      // Stop just after the release
-      osc.stop(now + RELEASE_S + 0.005)
-
-      // Cleanup after fade completes
-      setTimeout(
-        () => {
-          try {
-            osc.disconnect()
-          } catch {}
-          try {
-            gain.disconnect()
-          } catch {}
-          oscillatorRef.current = null
-          gainNodeRef.current = null
-        },
-        Math.ceil((RELEASE_S + 0.02) * 1000),
-      )
+      setTimeout(() => {
+        try { sound.oscillator.disconnect() } catch {}
+        try { sound.gain.disconnect() } catch {}
+      }, Math.ceil((fadeS + 0.05) * 1000))
     } catch {
-      oscillatorRef.current = null
-      gainNodeRef.current = null
+      silentDiscard(sound)
     }
-  }, [])
+  }
 
-  const stopContinuousSoundWithFade = useCallback(
-    async (_color: Color, fadeDuration: number = 200) => {
-      const ctx = audioContextRef.current
-      const osc = oscillatorRef.current
-      const gain = gainNodeRef.current
-      if (!ctx || !osc || !gain) return
+  // Create a new oscillator + gain, routed through master gain.
+  // This is SYNCHRONOUS — no awaits, no race conditions.
+  function createSound(frequency: number): ActiveSound | null {
+    const ctx = getContext()
+    const master = getMasterGain()
+    if (!ctx || !master) return null
 
-      try {
-        const now = ctx.currentTime
-        const fadeS = Math.max(fadeDuration / 1000, 0.005)
+    const now = ctx.currentTime
+    const oscillator = ctx.createOscillator()
+    const gain = ctx.createGain()
 
-        gain.gain.cancelScheduledValues(now)
-        gain.gain.setValueAtTime(Math.max(gain.gain.value, EPSILON), now)
-        gain.gain.exponentialRampToValueAtTime(EPSILON, now + fadeS)
+    oscillator.type = oscillatorType
+    oscillator.frequency.setValueAtTime(frequency, now)
 
-        osc.stop(now + fadeS + 0.005)
+    // Start at silence, ramp up
+    gain.gain.setValueAtTime(EPSILON, now)
+    gain.gain.exponentialRampToValueAtTime(TARGET_GAIN, now + ATTACK_S)
 
-        setTimeout(
-          () => {
-            try {
-              osc.disconnect()
-            } catch {}
-            try {
-              gain.disconnect()
-            } catch {}
-            oscillatorRef.current = null
-            gainNodeRef.current = null
-          },
-          Math.ceil((fadeS + 0.02) * 1000),
-        )
-      } catch {
-        oscillatorRef.current = null
-        gainNodeRef.current = null
-      }
-    },
-    [],
-  )
+    oscillator.connect(gain)
+    gain.connect(master) // Route through master, not directly to destination
+    oscillator.start(now)
+    nodeCountRef.current += 1
+
+    return { oscillator, gain }
+  }
+
+  // Schedule a self-contained note with attack + release envelope
+  function scheduleNote(
+    ctx: AudioContext,
+    master: GainNode,
+    freq: number,
+    type: OscillatorType,
+    noteStart: number,
+    duration: number,
+    gain: number,
+  ) {
+    const osc = ctx.createOscillator()
+    const g = ctx.createGain()
+
+    osc.type = type
+    osc.frequency.setValueAtTime(freq, noteStart)
+
+    g.gain.setValueAtTime(EPSILON, noteStart)
+    g.gain.exponentialRampToValueAtTime(gain, noteStart + ATTACK_S)
+    g.gain.exponentialRampToValueAtTime(EPSILON, noteStart + duration)
+
+    osc.connect(g)
+    g.connect(master)
+    osc.start(noteStart)
+    osc.stop(noteStart + duration + 0.02)
+    nodeCountRef.current += 1
+
+    setTimeout(() => {
+      try { osc.disconnect() } catch {}
+      try { g.disconnect() } catch {}
+    }, (noteStart - ctx.currentTime + duration + 0.05) * 1000)
+  }
+
+  async function initialize() {
+    try {
+      createFreshContext()
+      ensureResumed()
+    } catch (error) {
+      console.log("Audio initialization failed:", error)
+    }
+  }
+
+  async function cleanup() {
+    contextReadyRef.current = false
+    if (suspendTimerRef.current) {
+      clearTimeout(suspendTimerRef.current)
+      suspendTimerRef.current = null
+    }
+    if (activeSoundRef.current) {
+      silentDiscard(activeSoundRef.current)
+      activeSoundRef.current = null
+    }
+    if (audioContextRef.current) {
+      try { await audioContextRef.current.close() } catch {}
+      audioContextRef.current = null
+      masterGainRef.current = null
+    }
+  }
+
+  // Used by the computer during sequence playback — pre-scheduled envelope
+  function playSound(color: Color, duration: number = 600) {
+    if (!soundEnabled || !contextReadyRef.current) return
+
+    trackNodeCount()
+    ensureResumed()
+    const ctx = getContext()
+    const master = getMasterGain()
+    if (!ctx || !master) return
+
+    const frequency = colorMap[color].sound
+    const durationS = duration / 1000
+    scheduleNote(ctx, master, frequency, oscillatorType, ctx.currentTime, durationS, TARGET_GAIN)
+  }
+
+  // Used by the player on touch — SYNCHRONOUS node creation, no async race
+  function startContinuousSound(color: Color) {
+    if (!soundEnabled || !contextReadyRef.current) return
+
+    trackNodeCount()
+    ensureResumed()
+
+    // Fade out any existing sound first
+    if (activeSoundRef.current) {
+      fadeOutAndStop(activeSoundRef.current, 0.02)
+      activeSoundRef.current = null
+    }
+
+    const frequency = colorMap[color].sound
+    const sound = createSound(frequency)
+    if (!sound) return
+
+    activeSoundRef.current = sound
+  }
+
+  // Used by the player on release — setTargetAtTime for clean fade to zero
+  function stopContinuousSound(_color: Color) {
+    if (!activeSoundRef.current) return
+    fadeOutAndStop(activeSoundRef.current, RELEASE_S)
+    activeSoundRef.current = null
+  }
+
+  function stopContinuousSoundWithFade(_color: Color, fadeDuration: number = 200) {
+    if (!activeSoundRef.current) return
+    const fadeS = Math.max(fadeDuration / 1000, 0.02)
+    fadeOutAndStop(activeSoundRef.current, fadeS)
+    activeSoundRef.current = null
+  }
+
+  function playPreview(overrideType?: OscillatorType) {
+    if (!contextReadyRef.current) return
+    trackNodeCount()
+    ensureResumed()
+    const ctx = getContext()
+    const master = getMasterGain()
+    if (!ctx || !master) return
+
+    const type = overrideType ?? oscillatorType
+    const now = ctx.currentTime
+
+    for (const note of PREVIEW_NOTES) {
+      scheduleNote(ctx, master, note.freq, type, now + note.delay, PREVIEW_NOTE_DURATION, TARGET_GAIN * 0.8)
+    }
+  }
+
+  function playJingle() {
+    if (!soundEnabled || !contextReadyRef.current) return
+    trackNodeCount()
+    ensureResumed()
+    const ctx = getContext()
+    const master = getMasterGain()
+    if (!ctx || !master) return
+
+    const now = ctx.currentTime
+
+    for (const note of JINGLE_NOTES) {
+      scheduleNote(ctx, master, note.freq, oscillatorType, now + note.delay, JINGLE_NOTE_DURATION, TARGET_GAIN * 0.6)
+    }
+  }
 
   return {
     initialize,
     cleanup,
     playSound,
+    playPreview,
+    playJingle,
     startContinuousSound,
     stopContinuousSound,
     stopContinuousSoundWithFade,

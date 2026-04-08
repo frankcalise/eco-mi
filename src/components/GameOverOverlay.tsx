@@ -1,0 +1,246 @@
+import { View, Text, Pressable, StyleSheet } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import LottieView from "lottie-react-native"
+import { useTranslation } from "react-i18next"
+
+type GameOverOverlayProps = {
+  visible: boolean
+  score: number
+  level: number
+  highScore: number
+  isNewHighScore: boolean
+  showRemoveAds?: boolean
+  showContinue?: boolean
+  onPlayAgain: () => void
+  onContinue?: () => void
+  onShare?: () => void
+  onRemoveAds?: () => void
+  onHome?: () => void
+}
+
+export function GameOverOverlay({
+  visible,
+  score,
+  level,
+  highScore,
+  isNewHighScore,
+  showRemoveAds,
+  showContinue,
+  onPlayAgain,
+  onContinue,
+  onShare,
+  onRemoveAds,
+  onHome,
+}: GameOverOverlayProps) {
+  const { t } = useTranslation()
+
+  if (!visible) return null
+
+  return (
+    <View testID="overlay-game-over" style={styles.backdrop}>
+      <View style={styles.card}>
+        {onHome && (
+          <Pressable
+            testID="btn-home"
+            style={styles.homeButton}
+            onPress={onHome}
+            accessibilityLabel={t("game:home")}
+            accessibilityRole="button"
+          >
+            <Ionicons name="close" size={24} color="#a0a0a0" />
+          </Pressable>
+        )}
+
+        <Text style={styles.title}>{t("game:gameOver")}</Text>
+
+        <View style={styles.statsRow}>
+          <View style={styles.statBox}>
+            <Text style={styles.statLabel}>{t("game:score")}</Text>
+            <Text style={styles.statValue}>{score}</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statLabel}>{t("game:level")}</Text>
+            <Text style={styles.statValue}>{level}</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statLabel}>{t("game:best")}</Text>
+            <Text style={styles.statValue}>{highScore}</Text>
+          </View>
+        </View>
+
+        {isNewHighScore && (
+          <View style={styles.celebrationContainer}>
+            <LottieView
+              source={require("../../assets/animations/trophy.json")}
+              autoPlay
+              loop={false}
+              style={styles.lottie}
+            />
+            <View style={styles.badgeContainer}>
+              <Ionicons name="trophy" size={20} color="#fbbf24" />
+              <Text style={styles.badgeText}>{t("game:newHighScore")}</Text>
+            </View>
+          </View>
+        )}
+
+        <View style={styles.actions}>
+          <Pressable testID="btn-play-again" style={styles.playAgainButton} onPress={onPlayAgain}>
+            <Ionicons name="refresh" size={20} color="white" />
+            <Text style={styles.buttonText}>{t("game:playAgain")}</Text>
+          </Pressable>
+
+          {onShare && (
+            <Pressable testID="btn-share" style={styles.shareButton} onPress={onShare}>
+              <Ionicons name="share-outline" size={20} color="white" />
+              <Text style={styles.buttonText}>{t("game:share")}</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {showContinue && onContinue && (
+          <Pressable testID="btn-continue" style={styles.continueButton} onPress={onContinue}>
+            <Ionicons name="play-forward" size={18} color="white" />
+            <Text style={styles.continueText}>{t("game:continue")}</Text>
+          </Pressable>
+        )}
+
+        {showRemoveAds && onRemoveAds && (
+          <Pressable testID="btn-remove-ads" style={styles.removeAdsButton} onPress={onRemoveAds}>
+            <Ionicons name="close-circle-outline" size={18} color="#fbbf24" />
+            <Text style={styles.removeAdsText}>{t("game:removeAds")}</Text>
+          </Pressable>
+        )}
+      </View>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  actions: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 20,
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    zIndex: 100,
+  },
+  badgeContainer: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 4,
+  },
+  badgeText: {
+    color: "#fbbf24",
+    fontFamily: "Oxanium-Bold",
+    fontSize: 16,
+  },
+  buttonText: {
+    color: "white",
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 16,
+  },
+  card: {
+    alignItems: "center",
+    backgroundColor: "#1a1a2e",
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: 16,
+    borderWidth: 1,
+    marginHorizontal: 32,
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    width: "85%",
+  },
+  celebrationContainer: {
+    alignItems: "center",
+    marginTop: 12,
+  },
+  continueButton: {
+    alignItems: "center",
+    backgroundColor: "#8b5cf6",
+    borderRadius: 8,
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  continueText: {
+    color: "white",
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 14,
+  },
+  homeButton: {
+    alignItems: "center",
+    height: 44,
+    justifyContent: "center",
+    position: "absolute",
+    right: 8,
+    top: 8,
+    width: 44,
+    zIndex: 1,
+  },
+  lottie: {
+    height: 80,
+    width: 80,
+  },
+  playAgainButton: {
+    alignItems: "center",
+    backgroundColor: "#3b82f6",
+    borderRadius: 8,
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  removeAdsButton: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 16,
+    paddingVertical: 8,
+  },
+  removeAdsText: {
+    color: "#fbbf24",
+    fontFamily: "Oxanium-Medium",
+    fontSize: 14,
+  },
+  shareButton: {
+    alignItems: "center",
+    backgroundColor: "#6b7280",
+    borderRadius: 8,
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  statBox: {
+    alignItems: "center",
+    flex: 1,
+  },
+  statLabel: {
+    color: "#a0a0a0",
+    fontFamily: "Oxanium-Regular",
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  statValue: {
+    color: "white",
+    fontFamily: "Oxanium-Bold",
+    fontSize: 24,
+  },
+  statsRow: {
+    flexDirection: "row",
+    marginTop: 16,
+    width: "100%",
+  },
+  title: {
+    color: "#ef4444",
+    fontFamily: "Oxanium-Bold",
+    fontSize: 28,
+  },
+})

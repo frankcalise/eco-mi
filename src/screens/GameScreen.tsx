@@ -1,351 +1,547 @@
-import React, { useState, useEffect, useRef, useCallback } from "react"
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-  StatusBar,
-  Vibration,
-} from "react-native"
+import { useEffect, useRef, useState } from "react"
+import { View, Text, Pressable, Share, StyleSheet, useWindowDimensions, Modal } from "react-native"
+import * as Haptics from "expo-haptics"
+import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
+import { useTranslation } from "react-i18next"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
 
-import { useAudioTones } from "@/hooks/useAudioTones"
-import { saveString, loadString } from "@/utils/storage"
+import { EaseView } from "react-native-ease"
 
-type GameState = "idle" | "showing" | "waiting" | "gameover"
-type Color = "red" | "blue" | "green" | "yellow"
+import { AnimatedCountdown } from "@/components/AnimatedCountdown"
+import { GameButton } from "@/components/GameButton"
+import { GameOverOverlay } from "@/components/GameOverOverlay"
+import { HighScoreTable } from "@/components/HighScoreTable"
+import { InitialEntryModal } from "@/components/InitialEntryModal"
+import { ReviewPrompt } from "@/components/ReviewPrompt"
+import { TimerRing } from "@/components/TimerRing"
+import { SOUND_PACKS } from "@/config/soundPacks"
+import { themeIds, gameThemes } from "@/config/themes"
+import { useAds } from "@/hooks/useAds"
+import { useGameEngine, colors, type GameMode } from "@/hooks/useGameEngine"
+import { usePurchases } from "@/hooks/usePurchases"
+import { useSoundPack } from "@/hooks/useSoundPack"
+import { useStoreReview } from "@/hooks/useStoreReview"
+import { useTheme } from "@/hooks/useTheme"
+import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
+import { useAnalytics } from "@/utils/analytics"
+import { loadString } from "@/utils/storage"
 
-const colors: Color[] = ["red", "blue", "green", "yellow"]
+const GAME_MODES: { id: GameMode; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { id: "classic", label: "Classic", icon: "game-controller" },
+  { id: "daily", label: "Daily", icon: "calendar" },
+  { id: "timed", label: "Timed", icon: "timer" },
+  { id: "reverse", label: "Reverse", icon: "swap-horizontal" },
+  { id: "chaos", label: "Chaos", icon: "shuffle" },
+]
 
-// Minimum tone duration to match computer sequence duration
-const MIN_TONE_DURATION = 600
+const PULSE_DURATION = 150
+const PULSE_COUNT = 3
+const DISMISS_DELAY = 200
 
-const colorMap = {
-  red: {
-    color: "#ef4444",
-    activeColor: "#fca5a5",
-    sound: 220,
-    position: "topLeft" as const,
-  },
-  blue: {
-    color: "#3b82f6",
-    activeColor: "#93c5fd",
-    sound: 277,
-    position: "topRight" as const,
-  },
-  green: {
-    color: "#22c55e",
-    activeColor: "#86efac",
-    sound: 330,
-    position: "bottomLeft" as const,
-  },
-  yellow: {
-    color: "#eab308",
-    activeColor: "#fde047",
-    sound: 415,
-    position: "bottomRight" as const,
-  },
+function ModeItem({
+  m,
+  isSelected,
+  isPulsing,
+  pulsePhase,
+  streak,
+  theme,
+  onPress,
+}: {
+  m: (typeof GAME_MODES)[number]
+  isSelected: boolean
+  isPulsing: boolean
+  pulsePhase: "bright" | "dim"
+  streak: number
+  theme: { textColor: string; secondaryTextColor: string; borderColor: string }
+  onPress: () => void
+}) {
+  const { t } = useTranslation()
+
+  const pulseBright = isPulsing && pulsePhase === "bright"
+  const showGreen = isSelected || pulseBright
+
+  return (
+    <Pressable testID={`btn-mode-${m.id}`} onPress={onPress}>
+      <EaseView
+        animate={{
+          scale: pulseBright ? 1.03 : 1,
+          backgroundColor: pulseBright
+            ? "rgba(34, 197, 94, 0.25)"
+            : isSelected
+              ? "rgba(34, 197, 94, 0.1)"
+              : "rgba(0, 0, 0, 0)",
+        }}
+        transition={{
+          default: { type: "timing", duration: PULSE_DURATION, easing: "easeOut" },
+        }}
+        style={[
+          styles.modeItem,
+          { borderColor: showGreen ? "#22c55e" : theme.borderColor },
+        ]}
+      >
+        <Ionicons
+          name={m.icon}
+          size={22}
+          color={showGreen ? "#22c55e" : theme.secondaryTextColor}
+        />
+        <View style={styles.modeItemText}>
+          <Text
+            style={[
+              styles.modeItemLabel,
+              { color: showGreen ? "#22c55e" : theme.textColor },
+            ]}
+          >
+            {t(`game:modes.${m.id}`)}
+            {m.id === "daily" && streak > 0 ? ` (${streak}d)` : ""}
+          </Text>
+          <Text style={[styles.modeItemDesc, { color: theme.secondaryTextColor }]}>
+            {t(`game:modeDescriptions.${m.id}`)}
+          </Text>
+        </View>
+        <EaseView
+          animate={{ opacity: isSelected ? 1 : 0, scale: isSelected ? 1 : 0.5 }}
+          transition={{ default: { type: "spring", stiffness: 400, damping: 15 } }}
+        >
+          <Ionicons name="checkmark-circle" size={22} color="#22c55e" />
+        </EaseView>
+      </EaseView>
+    </Pressable>
+  )
 }
 
-const { width, height } = Dimensions.get("window")
-const gameSize = Math.min(width * 0.8, height * 0.5)
-const buttonSize = gameSize * 0.4
-
 export function GameScreen() {
-  const [sequence, setSequence] = useState<Color[]>([])
-  const [playerSequence, setPlayerSequence] = useState<Color[]>([])
-  const [gameState, setGameState] = useState<GameState>("idle")
-  const [level, setLevel] = useState(1)
-  const [score, setScore] = useState(0)
-  const [activeButton, setActiveButton] = useState<Color | null>(null)
-  const [soundEnabled, setSoundEnabled] = useState(true)
-  const [highScore, setHighScore] = useState(0)
+  const { t } = useTranslation()
+  const { width, height } = useWindowDimensions()
+  const insets = useSafeAreaInsets()
+  const gameSize = Math.min(width * 0.8, height * 0.5)
+  const buttonSize = gameSize * 0.4
 
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const buttonPressStartTime = useRef<number | null>(null)
-  const minimumDurationTimeout = useRef<NodeJS.Timeout | null>(null)
+  const { soundPack, setSoundPack } = useSoundPack()
+  const { theme, setTheme } = useTheme()
+  const analytics = useAnalytics()
 
-  // Use our new audio hook
   const {
-    initialize,
-    cleanup,
-    playSound,
-    startContinuousSound,
-    stopContinuousSound,
-    stopContinuousSoundWithFade,
-  } = useAudioTones(colorMap, soundEnabled)
+    gameState,
+    score,
+    level,
+    highScore,
+    activeButton,
+    soundEnabled,
+    isNewHighScore,
+    continuedThisGame,
+    sequence,
+    playerSequence,
+    startGame,
+    resetGame,
+    continueGame,
+    handleButtonTouch,
+    handleButtonRelease,
+    toggleSound,
+    playPreview,
+    playJingle,
+    setMode,
+    mode,
+    timeRemaining,
+    sequencesCompleted,
+    buttonPositions,
+    isShuffling,
+  } = useGameEngine({
+    oscillatorType: soundPack.oscillatorType,
+    theme,
+    onAudioContextRecycle: (nodeCount) => {
+      analytics.trackAudioContextRecycle(nodeCount)
+    },
+  })
 
-  // Initialize audio and load high score
+  const {
+    showInterstitial,
+    showRewarded,
+    rewardedReady,
+    incrementGamesPlayed,
+    incrementSessionCount,
+    adShownThisSession,
+  } = useAds()
+  const { removeAds, purchaseRemoveAds } = usePurchases()
+  const { getHighScores, isHighScore: checkIsHighScore, addHighScore } = useHighScores()
+  const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
+    useStoreReview()
+  const sessionCounted = useRef(false)
+  const [modeModalVisible, setModeModalVisible] = useState(false)
+  const [settingsModalVisible, setSettingsModalVisible] = useState(false)
+  const [leaderboardModalVisible, setLeaderboardModalVisible] = useState(false)
+  const [showInitialEntry, setShowInitialEntry] = useState(false)
+  const [highlightIndex, setHighlightIndex] = useState<number | undefined>(undefined)
+  const pendingGameOver = useRef(false)
+  const [pulsingMode, setPulsingMode] = useState<GameMode | null>(null)
+  const [pulsePhase, setPulsePhase] = useState<"bright" | "dim">("bright")
+  const pulseTimers = useRef<ReturnType<typeof setTimeout>[]>([])
+  const [soundTogglePop, setSoundTogglePop] = useState(false)
+  const [poppingSoundPack, setPoppingSoundPack] = useState<string | null>(null)
+  const [poppingTheme, setPoppingTheme] = useState<string | null>(null)
+  const isIdle = gameState === "idle"
+
+  // Neon sign color cycling for idle title
+  const NEON_COLOR_ORDER = ["red", "blue", "green"] as const
+  const [neonColorIndex, setNeonColorIndex] = useState(0)
+  const neonIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
   useEffect(() => {
-    initialize()
-    loadHighScore()
-
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-      cleanup()
-    }
-  }, [initialize, cleanup])
-
-  const loadHighScore = async () => {
-    try {
-      const savedHighScore = loadString("simon-high-score")
-      if (savedHighScore) {
-        setHighScore(parseInt(savedHighScore, 10))
+    if (isIdle) {
+      setNeonColorIndex(0)
+      neonIntervalRef.current = setInterval(() => {
+        setNeonColorIndex((prev) => (prev + 1) % NEON_COLOR_ORDER.length)
+      }, 2000)
+    } else {
+      if (neonIntervalRef.current) {
+        clearInterval(neonIntervalRef.current)
+        neonIntervalRef.current = null
       }
-    } catch (error) {
-      console.log("Error loading high score:", error)
     }
-  }
-
-  const saveHighScore = async (score: number) => {
-    try {
-      saveString("simon-high-score", score.toString())
-    } catch (error) {
-      console.log("Error saving high score:", error)
+    return () => {
+      if (neonIntervalRef.current) {
+        clearInterval(neonIntervalRef.current)
+        neonIntervalRef.current = null
+      }
     }
-  }
+  }, [isIdle])
 
-  const flashButton = useCallback(
-    (color: Color, duration: number = MIN_TONE_DURATION) => {
-      setActiveButton(color)
-      playSound(color, duration)
-      Vibration.vibrate(100)
+  const neonColors = NEON_COLOR_ORDER.map((c) => theme.buttonColors[c].color)
+  const activeNeonColor = isIdle ? neonColors[neonColorIndex] : theme.textColor
 
-      // Cast the timeout ID to NodeJS.Timeout
-      const timeout = setTimeout(() => {
-        setActiveButton(null)
-      }, duration) as unknown as NodeJS.Timeout
+  function handleModeSelect(id: GameMode) {
+    if (id === mode) return
 
-      timeoutRef.current = timeout
-    },
-    [playSound],
-  )
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 
-  const showSequence = useCallback(
-    (seq: Color[]) => {
-      setGameState("showing")
+    // Clear any in-flight pulse timers
+    pulseTimers.current.forEach(clearTimeout)
+    pulseTimers.current = []
 
-      seq.forEach((color, index) => {
-        setTimeout(
-          () => {
-            flashButton(color)
+    setMode(id)
+    setPulsingMode(id)
+    setPulsePhase("bright")
 
-            if (index === seq.length - 1) {
-              setTimeout(() => {
-                setGameState("waiting")
-              }, 700)
-            }
-          },
-          (index + 1) * 800,
+    // Schedule pulse sequence: bright→dim→bright→dim→bright→dim then dismiss
+    let delay = 0
+    for (let i = 0; i < PULSE_COUNT; i++) {
+      // dim phase
+      pulseTimers.current.push(
+        setTimeout(() => setPulsePhase("dim"), delay + PULSE_DURATION),
+      )
+      // bright phase (except after last pulse)
+      if (i < PULSE_COUNT - 1) {
+        pulseTimers.current.push(
+          setTimeout(() => setPulsePhase("bright"), delay + PULSE_DURATION * 2),
         )
-      })
-    },
-    [flashButton],
-  )
+      }
+      delay += PULSE_DURATION * 2
+    }
 
-  const startGame = useCallback(() => {
-    setSequence([])
-    setPlayerSequence([])
-    setLevel(1)
-    setScore(0)
-    setGameState("idle")
+    // After pulses finish, clean up and dismiss
+    pulseTimers.current.push(
+      setTimeout(() => {
+        setPulsingMode(null)
+        setModeModalVisible(false)
+      }, delay + DISMISS_DELAY),
+    )
+  }
 
-    setTimeout(() => {
-      const newSequence = [colors[Math.floor(Math.random() * colors.length)]]
-      setSequence(newSequence)
-      showSequence(newSequence)
-    }, 500)
-  }, [showSequence])
-
-  const resetGame = useCallback(() => {
-    setGameState("idle")
-    setSequence([])
-    setPlayerSequence([])
-    setLevel(1)
-    setScore(0)
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    if (minimumDurationTimeout.current) clearTimeout(minimumDurationTimeout.current)
-    setActiveButton(null)
-    buttonPressStartTime.current = null
+  // Clean up pulse timers on unmount
+  useEffect(() => {
+    return () => pulseTimers.current.forEach(clearTimeout)
   }, [])
 
-  const handleButtonTouch = useCallback(
-    (color: Color) => {
-      if (gameState !== "waiting") return
+  // Count session on first mount
+  useEffect(() => {
+    if (!sessionCounted.current) {
+      incrementSessionCount()
+      sessionCounted.current = true
+    }
+  }, [])
 
-      // Record the start time of the button press
-      buttonPressStartTime.current = Date.now()
+  // Play idle jingle on initial mount
+  const mountJingleFired = useRef(false)
+  useEffect(() => {
+    if (!mountJingleFired.current && gameState === "idle") {
+      mountJingleFired.current = true
+      playJingle()
+    }
+  }, [])
 
-      setActiveButton(color)
-      startContinuousSound(color)
-      Vibration.vibrate(50)
+  // Track game over and idle-entry jingle
+  const prevGameState = useRef(gameState)
+  useEffect(() => {
+    if (prevGameState.current !== "gameover" && gameState === "gameover") {
+      incrementGamesPlayed()
+      analytics.trackGameOver(score, level)
 
-      // Set up a timeout to ensure minimum duration is met
-      // This will be cleared if the user holds the button longer
-      minimumDurationTimeout.current = setTimeout(() => {
-        // If we reach here, the user released the button before minimum duration
-        // The sound should continue playing until minimum duration is complete
-      }, MIN_TONE_DURATION) as unknown as NodeJS.Timeout
-    },
-    [gameState, startContinuousSound],
-  )
-
-  const handleButtonRelease = useCallback(
-    (color: Color) => {
-      if (gameState !== "waiting") return
-
-      const currentTime = Date.now()
-      const pressDuration = buttonPressStartTime.current
-        ? currentTime - buttonPressStartTime.current
-        : 0
-
-      // Clear the minimum duration timeout since we're handling the release
-      if (minimumDurationTimeout.current) {
-        clearTimeout(minimumDurationTimeout.current)
-        minimumDurationTimeout.current = null
+      if (isNewHighScore) {
+        analytics.trackGameCompleted(score, level, true)
+        triggerReviewCheck("new_high_score", adShownThisSession)
       }
 
-      // If the press was shorter than minimum duration, we need to continue playing
-      // the sound for the remaining time
-      if (pressDuration < MIN_TONE_DURATION) {
-        const remainingTime = MIN_TONE_DURATION - pressDuration
-
-        // Stop the continuous sound with fade-out and play a fixed duration sound for the remaining time
-        stopContinuousSoundWithFade(color, 100) // Quick fade-out
-
-        // Keep the button active for the remaining time
-        setTimeout(() => {
-          setActiveButton(null)
-        }, remainingTime)
-      } else {
-        // The press was long enough, we can stop with fade-out
-        setActiveButton(null)
-        stopContinuousSoundWithFade(color, 200) // Slightly longer fade-out for held buttons
-      }
-
-      const newPlayerSequence = [...playerSequence, color]
-      setPlayerSequence(newPlayerSequence)
-
-      // Check if the player's move is correct
-      if (color !== sequence[newPlayerSequence.length - 1]) {
-        // Wrong move - game over
-        setGameState("gameover")
-        Vibration.vibrate([0, 200, 100, 200])
-
-        // Update high score
-        if (score > highScore) {
-          setHighScore(score)
-          saveHighScore(score)
+      // Check daily streak milestones (3-day, 7-day)
+      if (mode === "daily") {
+        const streak = parseInt(loadString("ecomi:daily:currentStreak") ?? "0", 10)
+        if (streak === 3 || streak === 7) {
+          triggerReviewCheck(`streak_${streak}`, adShownThisSession)
         }
-        return
       }
 
-      // Check if player completed the sequence
-      if (newPlayerSequence.length === sequence.length) {
-        // Player completed the sequence correctly
-        const newScore = score + newPlayerSequence.length * 10
-        const newLevel = level + 1
-
-        setScore(newScore)
-        setLevel(newLevel)
-        setPlayerSequence([])
-
-        // Add new color to sequence and show it
-        setTimeout(() => {
-          const newSequence = [...sequence]
-          const randomColor = colors[Math.floor(Math.random() * colors.length)]
-          newSequence.push(randomColor)
-          setSequence(newSequence)
-          showSequence(newSequence)
-        }, 1000)
+      // Check if score qualifies for local top 10
+      if (checkIsHighScore(score, mode)) {
+        pendingGameOver.current = true
+        setShowInitialEntry(true)
       }
-    },
-    [
-      gameState,
-      playerSequence,
-      sequence,
-      score,
-      highScore,
-      level,
-      showSequence,
-      stopContinuousSoundWithFade,
-      playSound,
-    ],
-  )
+    }
 
-  const getButtonStyle = (color: Color) => {
-    const baseStyle = [styles.gameButton]
-    const colorStyle = { backgroundColor: colorMap[color].color }
-    const activeStyle =
-      activeButton === color
-        ? { backgroundColor: colorMap[color].activeColor, transform: [{ scale: 1.05 }] }
-        : {}
+    if (prevGameState.current !== "idle" && gameState === "idle") {
+      playJingle()
+    }
 
-    return [baseStyle, colorStyle, activeStyle]
+    prevGameState.current = gameState
+  }, [gameState])
+
+  async function handleStartGame() {
+    // Show interstitial before starting next game (not on game over)
+    const adShown = await showInterstitial(level, removeAds)
+    if (adShown) {
+      analytics.trackAdShown("interstitial", "game_over")
+    }
+
+    analytics.trackGameStarted()
+    startGame()
   }
 
-  const getButtonPosition = (color: Color) => {
-    const position = colorMap[color].position
-    switch (position) {
-      case "topLeft":
-        return [styles.topLeft]
-      case "topRight":
-        return [styles.topRight]
-      case "bottomLeft":
-        return [styles.bottomLeft]
-      case "bottomRight":
-        return [styles.bottomRight]
-      default:
-        return []
+  async function handleContinue() {
+    const shown = await showRewarded()
+    if (shown) {
+      analytics.trackAdRewardedWatched("continue")
+      continueGame()
     }
+  }
+
+  function handleInitialSubmit(initials: string) {
+    const entry: HighScoreEntry = {
+      initials,
+      score,
+      level,
+      date: new Date().toISOString(),
+      mode,
+    }
+    const updated = addHighScore(entry)
+    const newIndex = updated.findIndex(
+      (e) => e.initials === initials && e.score === score && e.date === entry.date,
+    )
+    setHighlightIndex(newIndex >= 0 ? newIndex : undefined)
+    setShowInitialEntry(false)
+    pendingGameOver.current = false
+  }
+
+  function handleReviewResponse(response: "love_it" | "not_really") {
+    analytics.trackReviewPromptShown(reviewTrigger)
+    analytics.trackReviewPromptResponse(response)
+  }
+
+  async function handleShare() {
+    analytics.trackShareTapped(score, level)
+    const message = t("game:shareMessage", { level, score, mode: t(`game:modes.${mode}`) })
+    try {
+      await Share.share({ message })
+    } catch {}
+  }
+
+  async function handleRemoveAds() {
+    analytics.trackIapInitiated("ecomi_remove_ads")
+    const success = await purchaseRemoveAds()
+    if (success) {
+      analytics.trackIapCompleted("ecomi_remove_ads")
+    }
+  }
+
+  const showTimerRing = mode === "timed" && timeRemaining !== null && gameState !== "idle"
+
+  const gameContainerStyle = {
+    backgroundColor: "rgba(0, 0, 0, 0.5)" as const,
+    borderColor: "rgba(255, 255, 255, 0.2)" as const,
+    borderRadius: gameSize / 2,
+    borderWidth: 4,
+    height: gameSize,
+    position: "relative" as const,
+    width: gameSize,
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1a1a2e" />
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: theme.backgroundColor,
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+        },
+      ]}
+    >
+      <StatusBar style={theme.statusBarStyle} backgroundColor={theme.backgroundColor} />
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Eco Mi</Text>
-        <Text style={styles.subtitle}>Memory Challenge Game</Text>
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+            setModeModalVisible(true)
+          }}
+          disabled={!isIdle}
+          style={styles.headerAction}
+        >
+          <Ionicons
+            name="game-controller"
+            size={26}
+            color={isIdle ? theme.textColor : theme.secondaryTextColor}
+            style={{ opacity: isIdle ? 1 : 0.4 }}
+          />
+        </Pressable>
+        <EaseView
+          animate={{ scale: isIdle ? 1.03 : 1 }}
+          transition={{
+            default: { type: "timing", duration: 1500, easing: "easeInOut", loop: "reverse" },
+          }}
+          style={styles.headerCenter}
+        >
+          <View style={styles.titleStack}>
+            {isIdle ? (
+              neonColors.map((color, i) => (
+                <EaseView
+                  key={i}
+                  animate={{ opacity: neonColorIndex === i ? 1 : 0 }}
+                  transition={{ default: { type: "timing", duration: 600, easing: "easeInOut" } }}
+                  style={i > 0 ? styles.titleLayerAbsolute : undefined}
+                >
+                  <Text
+                    style={[
+                      styles.title,
+                      {
+                        color,
+                        textShadowColor: color,
+                        textShadowOffset: { width: 0, height: 0 },
+                        textShadowRadius: 12,
+                      },
+                    ]}
+                  >
+                    {t("game:title")}
+                  </Text>
+                </EaseView>
+              ))
+            ) : (
+              <Text style={[styles.title, { color: theme.textColor }]}>{t("game:title")}</Text>
+            )}
+          </View>
+          {(() => {
+            const currentMode = GAME_MODES.find((m) => m.id === mode)
+            if (!currentMode) return null
+            return (
+              <View style={styles.modeIndicator}>
+                <Ionicons name={currentMode.icon} size={12} color={theme.secondaryTextColor} />
+                <Text style={[styles.modeIndicatorText, { color: theme.secondaryTextColor }]}>
+                  {t(`game:modes.${mode}`)}
+                </Text>
+              </View>
+            )
+          })()}
+        </EaseView>
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+            setSettingsModalVisible(true)
+          }}
+          disabled={!isIdle}
+          style={styles.headerAction}
+        >
+          <Ionicons
+            name="settings-outline"
+            size={26}
+            color={isIdle ? theme.textColor : theme.secondaryTextColor}
+            style={{ opacity: isIdle ? 1 : 0.4 }}
+          />
+        </Pressable>
       </View>
 
       {/* Score Display */}
       <View style={styles.scoreContainer}>
-        <View style={styles.scoreBox}>
-          <Text style={styles.scoreLabel}>Level</Text>
-          <Text style={styles.scoreValue}>{level}</Text>
+        <View style={[styles.scoreBox, { backgroundColor: theme.surfaceColor }]}>
+          <Text style={[styles.scoreLabel, { color: theme.secondaryTextColor }]}>
+            {t("game:level")}
+          </Text>
+          <Text testID="text-level" style={[styles.scoreValue, { color: theme.textColor }]}>
+            {level}
+          </Text>
         </View>
-        <View style={styles.scoreBox}>
-          <Text style={styles.scoreLabel}>Score</Text>
-          <Text style={styles.scoreValue}>{score}</Text>
+        <View style={[styles.scoreBox, { backgroundColor: theme.surfaceColor }]}>
+          <Text style={[styles.scoreLabel, { color: theme.secondaryTextColor }]}>
+            {t("game:score")}
+          </Text>
+          <Text testID="text-score" style={[styles.scoreValue, { color: theme.textColor }]}>
+            {score}
+          </Text>
         </View>
-        <View style={styles.scoreBox}>
-          <Text style={styles.scoreLabel}>Best</Text>
-          <Text style={styles.scoreValue}>{highScore}</Text>
+        <View style={[styles.scoreBox, { backgroundColor: theme.surfaceColor }]}>
+          <Text style={[styles.scoreLabel, { color: theme.secondaryTextColor }]}>
+            {t("game:best")}
+          </Text>
+          <Text testID="text-high-score" style={[styles.scoreValue, { color: theme.textColor }]}>
+            {highScore}
+          </Text>
         </View>
       </View>
 
       {/* Game Board */}
       <View style={styles.gameBoard}>
-        <View style={styles.gameContainer}>
-          {colors.map((color) => (
-            <TouchableOpacity
+        <View style={gameContainerStyle}>
+          {buttonPositions.map((color, index) => (
+            <GameButton
               key={color}
-              style={[getButtonStyle(color), getButtonPosition(color)]}
+              color={color}
+              index={index}
+              isActive={activeButton === color}
+              disabled={gameState !== "waiting" || isShuffling}
+              buttonSize={buttonSize}
+              gameSize={gameSize}
+              isShuffling={isShuffling}
               onPressIn={() => handleButtonTouch(color)}
               onPressOut={() => handleButtonRelease(color)}
-              disabled={gameState !== "waiting"}
-              activeOpacity={0.8}
-            >
-              {activeButton === color && <View style={styles.activeIndicator} />}
-            </TouchableOpacity>
+              themeColor={theme.buttonColors[color].color}
+              themeActiveColor={theme.buttonColors[color].activeColor}
+            />
           ))}
 
           {/* Center Circle */}
-          <View style={styles.centerCircle}>
-            <Text style={styles.centerText}>Eco Mi</Text>
+          <View style={styles.centerCircleWrapper}>
+            {showTimerRing && (
+              <View style={styles.timerRingContainer}>
+                <TimerRing progress={timeRemaining! / 60} size={80} strokeWidth={4} theme={theme} />
+              </View>
+            )}
+            <View
+              style={[
+                styles.centerCircle,
+                { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor },
+                showTimerRing && styles.centerCircleNoRing,
+              ]}
+            >
+              {mode === "timed" && timeRemaining !== null && gameState !== "idle" ? (
+                <AnimatedCountdown
+                  value={Math.ceil(timeRemaining)}
+                  color={timeRemaining <= 10 ? "#ef4444" : theme.textColor}
+                  style={styles.centerTimer}
+                />
+              ) : (
+                <Text style={[styles.centerText, { color: theme.textColor }]}>
+                  {t("game:title")}
+                </Text>
+              )}
+            </View>
           </View>
         </View>
       </View>
@@ -353,78 +549,291 @@ export function GameScreen() {
       {/* Controls */}
       <View style={styles.controlsContainer}>
         {gameState === "idle" && (
-          <TouchableOpacity style={styles.startButton} onPress={startGame}>
-            <Ionicons name="play" size={24} color="white" />
-            <Text style={styles.buttonText}>Start Game</Text>
-          </TouchableOpacity>
-        )}
-
-        {gameState === "gameover" && (
-          <TouchableOpacity style={styles.playAgainButton} onPress={startGame}>
-            <Ionicons name="refresh" size={24} color="white" />
-            <Text style={styles.buttonText}>Play Again</Text>
-          </TouchableOpacity>
+          <>
+            <Pressable testID="btn-start" style={styles.startButton} onPress={handleStartGame}>
+              <Ionicons name="play" size={24} color="white" />
+              <Text style={styles.buttonText}>{t("game:startGame")}</Text>
+            </Pressable>
+            <Pressable
+              testID="btn-leaderboard"
+              style={styles.trophyButton}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                setHighlightIndex(undefined)
+                setLeaderboardModalVisible(true)
+              }}
+            >
+              <Ionicons name="trophy" size={22} color="#fbbf24" />
+            </Pressable>
+          </>
         )}
 
         {(gameState === "showing" || gameState === "waiting") && (
-          <TouchableOpacity style={styles.resetButton} onPress={resetGame}>
+          <Pressable style={styles.resetButton} onPress={resetGame}>
             <Ionicons name="stop" size={24} color="white" />
-            <Text style={styles.buttonText}>Reset</Text>
-          </TouchableOpacity>
+            <Text style={styles.buttonText}>{t("game:reset")}</Text>
+          </Pressable>
         )}
-
-        <TouchableOpacity style={styles.soundButton} onPress={() => setSoundEnabled(!soundEnabled)}>
-          <Ionicons name={soundEnabled ? "volume-high" : "volume-mute"} size={24} color="white" />
-          <Text style={styles.buttonText}>Sound</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Game Status */}
       <View style={styles.statusContainer}>
-        {gameState === "idle" && <Text style={styles.statusText}>Press Start Game to begin!</Text>}
         {gameState === "showing" && (
-          <Text style={[styles.statusText, styles.showingText]}>Watch the sequence...</Text>
+          <Text style={[styles.statusText, styles.showingText]}>{t("game:watchSequence")}</Text>
         )}
         {gameState === "waiting" && (
-          <Text style={[styles.statusText, styles.waitingText]}>Repeat the sequence!</Text>
+          <Text style={[styles.statusText, styles.waitingText]}>{t("game:repeatSequence")}</Text>
         )}
-        {gameState === "gameover" && (
-          <View style={styles.gameOverContainer}>
-            <Text style={styles.gameOverText}>Game Over!</Text>
-            <Text style={styles.statusText}>
-              You reached level {level} with {score} points
-            </Text>
-            {score === highScore && score > 0 && (
-              <Text style={styles.highScoreText}>🎉 New High Score! 🎉</Text>
-            )}
-          </View>
-        )}
+        <View style={styles.progressRow}>
+          {(gameState === "showing" || gameState === "waiting") &&
+            sequence.map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.progressDot,
+                  gameState === "waiting" && i < playerSequence.length && styles.progressDotFilled,
+                ]}
+              />
+            ))}
+        </View>
       </View>
+
+      {/* Mode Selector Modal */}
+      <Modal
+        visible={modeModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          if (!pulsingMode) setModeModalVisible(false)
+        }}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => {
+            if (!pulsingMode) setModeModalVisible(false)
+          }}
+        >
+          <Pressable style={[styles.modalContent, { backgroundColor: theme.backgroundColor }]}>
+            <Text style={[styles.modalTitle, { color: theme.textColor }]}>
+              {t("game:modeSelect")}
+            </Text>
+            {GAME_MODES.map((m) => {
+              const streak =
+                m.id === "daily" ? parseInt(loadString("ecomi:daily:currentStreak") ?? "0", 10) : 0
+              return (
+                <ModeItem
+                  key={m.id}
+                  m={m}
+                  isSelected={mode === m.id}
+                  isPulsing={pulsingMode === m.id}
+                  pulsePhase={pulsePhase}
+                  streak={streak}
+                  theme={theme}
+                  onPress={() => handleModeSelect(m.id)}
+                />
+              )
+            })}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Settings Modal */}
+      <Modal
+        visible={settingsModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSettingsModalVisible(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setSettingsModalVisible(false)}>
+          <Pressable style={[styles.modalContent, { backgroundColor: theme.backgroundColor }]}>
+            <Text style={[styles.modalTitle, { color: theme.textColor }]}>
+              {t("game:settings")}
+            </Text>
+
+            {/* Sound Toggle */}
+            <View style={styles.settingsSection}>
+              <Text style={[styles.settingsSectionLabel, { color: theme.secondaryTextColor }]}>
+                {t("game:soundToggle")}
+              </Text>
+              <Pressable
+                testID="btn-sound-toggle"
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                  toggleSound()
+                  setSoundTogglePop(true)
+                  setTimeout(() => setSoundTogglePop(false), 150)
+                }}
+              >
+                <EaseView
+                  animate={{ scale: soundTogglePop ? 1.05 : 1 }}
+                  transition={{ default: { type: "timing", duration: 75, easing: "easeOut" } }}
+                  style={[styles.soundToggleBtn, soundEnabled && styles.soundToggleBtnActive]}
+                >
+                  <Ionicons
+                    name={soundEnabled ? "volume-high" : "volume-mute"}
+                    size={20}
+                    color="white"
+                  />
+                  <Text style={styles.soundToggleText}>{soundEnabled ? "On" : "Off"}</Text>
+                </EaseView>
+              </Pressable>
+            </View>
+
+            {/* Sound Pack */}
+            <View style={styles.settingsSection}>
+              <Text style={[styles.settingsSectionLabel, { color: theme.secondaryTextColor }]}>
+                {t("game:soundPack")}
+              </Text>
+              <View style={styles.settingsRow}>
+                {SOUND_PACKS.map((pack) => {
+                  const isSelected = pack.id === soundPack.id
+                  const isPopping = poppingSoundPack === pack.id
+                  return (
+                    <Pressable
+                      key={pack.id}
+                      testID={`btn-sound-pack-${pack.id}`}
+                      onPress={() => {
+                        if (pack.id === soundPack.id) return
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                        setSoundPack(pack.id)
+                        playPreview(pack.oscillatorType)
+                        setPoppingSoundPack(pack.id)
+                        setTimeout(() => setPoppingSoundPack(null), 150)
+                      }}
+                    >
+                      <EaseView
+                        animate={{ scale: isPopping ? 1.08 : 1 }}
+                        transition={{
+                          default: { type: "spring", stiffness: 400, damping: 15 },
+                        }}
+                        style={[
+                          styles.selectorButton,
+                          { borderColor: isSelected ? "#22c55e" : theme.borderColor },
+                          isSelected && styles.selectorButtonActive,
+                        ]}
+                      >
+                        <Text
+                          style={{
+                            color: isSelected ? "#22c55e" : theme.secondaryTextColor,
+                            fontFamily: "Oxanium-Regular",
+                            fontSize: 12,
+                          }}
+                        >
+                          {pack.name}
+                        </Text>
+                      </EaseView>
+                    </Pressable>
+                  )
+                })}
+              </View>
+            </View>
+
+            {/* Theme */}
+            <View style={styles.settingsSection}>
+              <Text style={[styles.settingsSectionLabel, { color: theme.secondaryTextColor }]}>
+                {t("game:theme")}
+              </Text>
+              <View style={styles.settingsRow}>
+                {themeIds.map((id) => {
+                  const isPopping = poppingTheme === id
+                  return (
+                    <Pressable
+                      key={id}
+                      testID={`btn-theme-${id}`}
+                      onPress={() => {
+                        if (id === theme.id) return
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                        setTheme(id)
+                        setPoppingTheme(id)
+                        setTimeout(() => setPoppingTheme(null), 150)
+                      }}
+                    >
+                      <EaseView
+                        animate={{ scale: isPopping ? 1.08 : 1 }}
+                        transition={{
+                          default: { type: "spring", stiffness: 400, damping: 15 },
+                        }}
+                        style={[
+                          styles.themeCircle,
+                          { backgroundColor: gameThemes[id].buttonColors.red.color },
+                          id === theme.id && styles.themeCircleSelected,
+                        ]}
+                      />
+                    </Pressable>
+                  )
+                })}
+              </View>
+            </View>
+
+            {/* Remove Ads */}
+            {!removeAds && (
+              <View style={styles.settingsSection}>
+                <Pressable style={styles.removeAdsBtn} onPress={handleRemoveAds}>
+                  <Ionicons name="shield-checkmark" size={18} color="white" />
+                  <Text style={styles.removeAdsBtnText}>{t("game:removeAds")}</Text>
+                </Pressable>
+              </View>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <InitialEntryModal
+        visible={showInitialEntry}
+        score={score}
+        level={level}
+        theme={theme}
+        onSubmit={handleInitialSubmit}
+        onDismiss={() => {
+          setShowInitialEntry(false)
+          pendingGameOver.current = false
+        }}
+      />
+
+      <GameOverOverlay
+        visible={gameState === "gameover" && !showInitialEntry}
+        score={score}
+        level={level}
+        highScore={highScore}
+        isNewHighScore={isNewHighScore}
+        showRemoveAds={!removeAds && adShownThisSession}
+        showContinue={rewardedReady && !continuedThisGame}
+        onPlayAgain={handleStartGame}
+        onContinue={handleContinue}
+        onShare={handleShare}
+        onRemoveAds={handleRemoveAds}
+        onHome={resetGame}
+      />
+
+      {/* Leaderboard Modal */}
+      <Modal
+        visible={leaderboardModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLeaderboardModalVisible(false)}
+      >
+        <GestureHandlerRootView style={styles.gestureRoot}>
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setLeaderboardModalVisible(false)}
+          >
+            <Pressable style={[styles.modalContent, { backgroundColor: theme.backgroundColor }]}>
+              <HighScoreTable initialMode={mode} highlightIndex={highlightIndex} highlightMode={mode} theme={theme} />
+            </Pressable>
+          </Pressable>
+        </GestureHandlerRootView>
+      </Modal>
+
+      <ReviewPrompt
+        visible={showReviewPrompt}
+        onDismiss={dismissReviewPrompt}
+        onResponse={handleReviewResponse}
+      />
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  activeIndicator: {
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    borderRadius: 8,
-    height: 16,
-    left: "50%",
-    position: "absolute",
-    top: "50%",
-    transform: [{ translateX: -8 }, { translateY: -8 }],
-    width: 16,
-  },
-  bottomLeft: {
-    borderBottomLeftRadius: buttonSize / 2,
-    bottom: gameSize * 0.05,
-    left: gameSize * 0.05,
-  },
-  bottomRight: {
-    borderBottomRightRadius: buttonSize / 2,
-    bottom: gameSize * 0.05,
-    right: gameSize * 0.05,
-  },
   buttonText: {
     color: "white",
     fontFamily: "Oxanium-SemiBold",
@@ -433,10 +842,20 @@ const styles = StyleSheet.create({
   },
   centerCircle: {
     alignItems: "center",
-    backgroundColor: "black",
-    borderColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 40,
     borderWidth: 4,
+    height: 80,
+    justifyContent: "center",
+    width: 80,
+  },
+  centerCircleNoRing: {
+    borderRadius: 36,
+    borderWidth: 0,
+    height: 72,
+    width: 72,
+  },
+  centerCircleWrapper: {
+    alignItems: "center",
     height: 80,
     justifyContent: "center",
     left: "50%",
@@ -449,6 +868,10 @@ const styles = StyleSheet.create({
     color: "white",
     fontFamily: "Oxanium-Regular",
     fontSize: 10,
+  },
+  centerTimer: {
+    fontFamily: "Oxanium-Bold",
+    fontSize: 24,
   },
   container: {
     alignItems: "center",
@@ -465,61 +888,102 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingHorizontal: 20,
   },
+  gestureRoot: {
+    flex: 1,
+  },
   gameBoard: {
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 30,
   },
-  gameButton: {
-    borderRadius: 20,
-    elevation: 8,
-    height: buttonSize,
-    position: "absolute",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    width: buttonSize,
-  },
-  gameContainer: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: gameSize / 2,
-    borderWidth: 4,
-    height: gameSize,
-    position: "relative",
-    width: gameSize,
-  },
-  gameOverContainer: {
-    alignItems: "center",
-  },
-  gameOverText: {
-    color: "#ef4444",
-    fontFamily: "Oxanium-Bold",
-    fontSize: 20,
-    marginBottom: 8,
-  },
   header: {
     alignItems: "center",
-    marginBottom: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    paddingHorizontal: 20,
+    width: "100%",
   },
-  highScoreText: {
-    color: "#fbbf24",
+  headerCenter: {
+    alignItems: "center",
+  },
+  headerAction: {
+    alignItems: "center",
+    height: 44,
+    justifyContent: "center",
+    width: 44,
+  },
+  modalBackdrop: {
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    flex: 1,
+    justifyContent: "center",
+    padding: 24,
+  },
+  modalContent: {
+    borderRadius: 16,
+    maxWidth: 360,
+    padding: 20,
+    width: "100%",
+  },
+  modalTitle: {
     fontFamily: "Oxanium-Bold",
-    fontSize: 16,
+    fontSize: 20,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  modeItem: {
+    alignItems: "center",
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  modeItemDesc: {
+    fontFamily: "Oxanium-Regular",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  modeItemLabel: {
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 15,
+  },
+  modeItemText: {
+    flex: 1,
+  },
+  progressDot: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 5,
+    height: 10,
+    width: 10,
+  },
+  progressDotFilled: {
+    backgroundColor: "#22c55e",
+  },
+  progressRow: {
+    flexDirection: "row",
+    gap: 6,
+    height: 18,
+    justifyContent: "center",
     marginTop: 8,
   },
-  playAgainButton: {
+  removeAdsBtn: {
     alignItems: "center",
-    backgroundColor: "#3b82f6",
+    backgroundColor: "#8b5cf6",
     borderRadius: 8,
     flexDirection: "row",
     gap: 8,
-    paddingHorizontal: 20,
+    justifyContent: "center",
+    paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  removeAdsBtnText: {
+    color: "white",
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 14,
   },
   resetButton: {
     alignItems: "center",
@@ -532,7 +996,6 @@ const styles = StyleSheet.create({
   },
   scoreBox: {
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
     borderRadius: 10,
     minWidth: 80,
     paddingHorizontal: 20,
@@ -546,26 +1009,58 @@ const styles = StyleSheet.create({
   },
   scoreLabel: {
     color: "#a0a0a0",
+    fontFamily: "Oxanium-Regular",
     fontSize: 12,
     marginBottom: 5,
   },
   scoreValue: {
     color: "white",
+    fontFamily: "Oxanium-Bold",
     fontSize: 24,
-    fontWeight: "bold",
+  },
+  selectorButton: {
+    borderRadius: 6,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  selectorButtonActive: {
+    backgroundColor: "rgba(34, 197, 94, 0.15)",
+  },
+  settingsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  settingsSection: {
+    marginBottom: 16,
+  },
+  settingsSectionLabel: {
+    fontFamily: "Oxanium-Medium",
+    fontSize: 13,
+    marginBottom: 8,
+    textTransform: "uppercase",
   },
   showingText: {
     color: "#fbbf24",
     fontFamily: "Oxanium-Regular",
   },
-  soundButton: {
+  soundToggleBtn: {
     alignItems: "center",
     backgroundColor: "#6b7280",
     borderRadius: 8,
     flexDirection: "row",
     gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  soundToggleBtnActive: {
+    backgroundColor: "#22c55e",
+  },
+  soundToggleText: {
+    color: "white",
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 14,
   },
   startButton: {
     alignItems: "center",
@@ -574,6 +1069,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  trophyButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(251, 191, 36, 0.15)",
+    borderColor: "#fbbf24",
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: "center",
+    paddingHorizontal: 12,
     paddingVertical: 12,
   },
   statusContainer: {
@@ -586,27 +1091,45 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
   },
-  subtitle: {
-    color: "#a0a0a0",
-    fontFamily: "Oxanium-Medium",
-    fontSize: 16,
-    marginTop: 5,
+  themeCircle: {
+    borderColor: "transparent",
+    borderRadius: 16,
+    borderWidth: 3,
+    height: 32,
+    width: 32,
+  },
+  themeCircleSelected: {
+    borderColor: "#ffffff",
+  },
+  timerRingContainer: {
+    left: 0,
+    position: "absolute",
+    top: 0,
   },
   title: {
     color: "white",
     fontFamily: "Oxanium-Bold",
-    fontSize: 48,
+    fontSize: 36,
     letterSpacing: 4,
   },
-  topLeft: {
-    borderTopLeftRadius: buttonSize / 2,
-    left: gameSize * 0.05,
-    top: gameSize * 0.05,
+  titleStack: {
+    alignItems: "center",
+    justifyContent: "center",
   },
-  topRight: {
-    borderTopRightRadius: buttonSize / 2,
-    right: gameSize * 0.05,
-    top: gameSize * 0.05,
+  titleLayerAbsolute: {
+    position: "absolute",
+  },
+  modeIndicator: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
+    marginTop: 2,
+  },
+  modeIndicatorText: {
+    fontFamily: "Oxanium-Medium",
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 2,
   },
   waitingText: {
     color: "#22c55e",

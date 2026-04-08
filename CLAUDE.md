@@ -7,6 +7,7 @@ See `docs/VISION.md` for product vision and architecture. See `docs/BACKLOG.md` 
 
 ## Key Decisions (do not deviate)
 
+- **CNG (Continuous Native Generation)**: `ios/` and `android/` are gitignored. Native projects are generated via `npx expo prebuild`. Never commit native directories. Never modify native code directly — use config plugins in `app.config.ts` instead.
 - **Payments**: RevenueCat via `react-native-purchases` (not expo-iap)
 - **Animations**: `react-native-ease` (not reanimated — avoid worklet errors)
 - **Analytics**: PostHog (`posthog-react-native`)
@@ -31,6 +32,12 @@ bun run lint
 ```
 
 **Lint baseline:** The existing `GameScreen.tsx` has ~27 pre-existing lint errors (color literals, unused vars, default React import). These will be resolved as part of the Phase 0/1 refactors. For new files you create, lint must pass with zero errors. Do not introduce new lint violations. Do not fix pre-existing lint errors in files you aren't otherwise modifying — keep diffs focused.
+
+## Branching Strategy
+
+- **`develop`** — default branch. All feature work and backlog tasks commit here.
+- **`main`** — release branch. Only updated via PR from `develop` when shipping a version to the stores.
+- Feature branches are optional for larger tasks but not required for single-task commits on `develop`.
 
 ## Commit Conventions
 
