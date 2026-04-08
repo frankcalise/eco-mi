@@ -3,6 +3,7 @@ import type { OscillatorType } from "react-native-audio-api"
 export interface SoundPack {
   id: string
   name: string
+  free: boolean
   oscillatorType: OscillatorType
   description: string
 }
@@ -11,24 +12,28 @@ export const SOUND_PACKS: SoundPack[] = [
   {
     id: "sine",
     name: "Classic",
+    free: true,
     oscillatorType: "sine",
     description: "Warm, smooth sine wave",
   },
   {
     id: "square",
     name: "Retro",
+    free: false,
     oscillatorType: "square",
     description: "Retro chiptune feel",
   },
   {
     id: "sawtooth",
     name: "Buzzy",
+    free: false,
     oscillatorType: "sawtooth",
     description: "Buzzy, aggressive sawtooth",
   },
   {
     id: "triangle",
     name: "Mellow",
+    free: false,
     oscillatorType: "triangle",
     description: "Softer, mellow triangle wave",
   },
