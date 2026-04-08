@@ -8,6 +8,7 @@ export interface GameThemeButtonColor {
 export interface GameTheme {
   id: string
   name: string
+  free: boolean
   buttonColors: Record<Color, GameThemeButtonColor>
   backgroundColor: string
   textColor: string
@@ -21,6 +22,7 @@ export const gameThemes: Record<string, GameTheme> = {
   classic: {
     id: "classic",
     name: "Classic",
+    free: true,
     buttonColors: {
       red: { color: "#ef4444", activeColor: "#fca5a5" },
       blue: { color: "#3b82f6", activeColor: "#93c5fd" },
@@ -37,6 +39,7 @@ export const gameThemes: Record<string, GameTheme> = {
   neon: {
     id: "neon",
     name: "Neon",
+    free: false,
     buttonColors: {
       red: { color: "#00fff5", activeColor: "#80fffa" },
       blue: { color: "#ff00ff", activeColor: "#ff80ff" },
@@ -53,6 +56,7 @@ export const gameThemes: Record<string, GameTheme> = {
   retro: {
     id: "retro",
     name: "Retro",
+    free: false,
     buttonColors: {
       red: { color: "#c0392b", activeColor: "#e57368" },
       blue: { color: "#2c3e50", activeColor: "#5d7a94" },
@@ -69,6 +73,7 @@ export const gameThemes: Record<string, GameTheme> = {
   pastel: {
     id: "pastel",
     name: "Pastel",
+    free: false,
     buttonColors: {
       red: { color: "#f8a5c2", activeColor: "#fcd4e2" },
       blue: { color: "#a3d8f4", activeColor: "#d1ecfa" },

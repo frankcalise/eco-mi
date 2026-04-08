@@ -118,8 +118,8 @@ export function GameScreen() {
   const gameSize = Math.min(width * 0.8, height * 0.5)
   const buttonSize = gameSize * 0.4
 
-  const { soundPack, setSoundPack } = useSoundPack()
-  const { theme, setTheme } = useTheme()
+  const { soundPack, previewSoundPack, setSoundPack, setPreviewSoundPack, clearSoundPreview } = useSoundPack()
+  const { theme, activeTheme, previewTheme, setTheme, setPreviewTheme, clearPreview } = useTheme()
   const analytics = useAnalytics()
 
   const {
@@ -149,7 +149,7 @@ export function GameScreen() {
     isShuffling,
   } = useGameEngine({
     oscillatorType: soundPack.oscillatorType,
-    theme,
+    theme: activeTheme,
     onAudioContextRecycle: (nodeCount) => {
       analytics.trackAudioContextRecycle(nodeCount)
     },
@@ -163,7 +163,15 @@ export function GameScreen() {
     incrementSessionCount,
     adShownThisSession,
   } = useAds()
-  const { removeAds, purchaseRemoveAds } = usePurchases()
+  const {
+    removeAds,
+    purchaseRemoveAds,
+    purchaseProduct,
+    ownsTheme,
+    ownsSoundPack,
+    getThemeProductId,
+    getSoundProductId,
+  } = usePurchases()
   const { getHighScores, isHighScore: checkIsHighScore, addHighScore } = useHighScores()
   const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
     useStoreReview()
@@ -207,8 +215,8 @@ export function GameScreen() {
     }
   }, [isIdle])
 
-  const neonColors = NEON_COLOR_ORDER.map((c) => theme.buttonColors[c].color)
-  const activeNeonColor = isIdle ? neonColors[neonColorIndex] : theme.textColor
+  const neonColors = NEON_COLOR_ORDER.map((c) => activeTheme.buttonColors[c].color)
+  const activeNeonColor = isIdle ? neonColors[neonColorIndex] : activeTheme.textColor
 
   function handleModeSelect(id: GameMode) {
     if (id === mode) return
@@ -378,13 +386,13 @@ export function GameScreen() {
       style={[
         styles.container,
         {
-          backgroundColor: theme.backgroundColor,
+          backgroundColor: activeTheme.backgroundColor,
           paddingTop: insets.top,
           paddingBottom: insets.bottom,
         },
       ]}
     >
-      <StatusBar style={theme.statusBarStyle} backgroundColor={theme.backgroundColor} />
+      <StatusBar style={activeTheme.statusBarStyle} backgroundColor={activeTheme.backgroundColor} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -399,7 +407,7 @@ export function GameScreen() {
           <Ionicons
             name="game-controller"
             size={26}
-            color={isIdle ? theme.textColor : theme.secondaryTextColor}
+            color={isIdle ? activeTheme.textColor : activeTheme.secondaryTextColor}
             style={{ opacity: isIdle ? 1 : 0.4 }}
           />
         </Pressable>
@@ -435,7 +443,7 @@ export function GameScreen() {
                 </EaseView>
               ))
             ) : (
-              <Text style={[styles.title, { color: theme.textColor }]}>{t("game:title")}</Text>
+              <Text style={[styles.title, { color: activeTheme.textColor }]}>{t("game:title")}</Text>
             )}
           </View>
           {(() => {
@@ -443,8 +451,8 @@ export function GameScreen() {
             if (!currentMode) return null
             return (
               <View style={styles.modeIndicator}>
-                <Ionicons name={currentMode.icon} size={12} color={theme.secondaryTextColor} />
-                <Text style={[styles.modeIndicatorText, { color: theme.secondaryTextColor }]}>
+                <Ionicons name={currentMode.icon} size={12} color={activeTheme.secondaryTextColor} />
+                <Text style={[styles.modeIndicatorText, { color: activeTheme.secondaryTextColor }]}>
                   {t(`game:modes.${mode}`)}
                 </Text>
               </View>
@@ -462,7 +470,7 @@ export function GameScreen() {
           <Ionicons
             name="settings-outline"
             size={26}
-            color={isIdle ? theme.textColor : theme.secondaryTextColor}
+            color={isIdle ? activeTheme.textColor : activeTheme.secondaryTextColor}
             style={{ opacity: isIdle ? 1 : 0.4 }}
           />
         </Pressable>
@@ -470,27 +478,27 @@ export function GameScreen() {
 
       {/* Score Display */}
       <View style={styles.scoreContainer}>
-        <View style={[styles.scoreBox, { backgroundColor: theme.surfaceColor }]}>
-          <Text style={[styles.scoreLabel, { color: theme.secondaryTextColor }]}>
+        <View style={[styles.scoreBox, { backgroundColor: activeTheme.surfaceColor }]}>
+          <Text style={[styles.scoreLabel, { color: activeTheme.secondaryTextColor }]}>
             {t("game:level")}
           </Text>
-          <Text testID="text-level" style={[styles.scoreValue, { color: theme.textColor }]}>
+          <Text testID="text-level" style={[styles.scoreValue, { color: activeTheme.textColor }]}>
             {level}
           </Text>
         </View>
-        <View style={[styles.scoreBox, { backgroundColor: theme.surfaceColor }]}>
-          <Text style={[styles.scoreLabel, { color: theme.secondaryTextColor }]}>
+        <View style={[styles.scoreBox, { backgroundColor: activeTheme.surfaceColor }]}>
+          <Text style={[styles.scoreLabel, { color: activeTheme.secondaryTextColor }]}>
             {t("game:score")}
           </Text>
-          <Text testID="text-score" style={[styles.scoreValue, { color: theme.textColor }]}>
+          <Text testID="text-score" style={[styles.scoreValue, { color: activeTheme.textColor }]}>
             {score}
           </Text>
         </View>
-        <View style={[styles.scoreBox, { backgroundColor: theme.surfaceColor }]}>
-          <Text style={[styles.scoreLabel, { color: theme.secondaryTextColor }]}>
+        <View style={[styles.scoreBox, { backgroundColor: activeTheme.surfaceColor }]}>
+          <Text style={[styles.scoreLabel, { color: activeTheme.secondaryTextColor }]}>
             {t("game:best")}
           </Text>
-          <Text testID="text-high-score" style={[styles.scoreValue, { color: theme.textColor }]}>
+          <Text testID="text-high-score" style={[styles.scoreValue, { color: activeTheme.textColor }]}>
             {highScore}
           </Text>
         </View>
@@ -511,8 +519,8 @@ export function GameScreen() {
               isShuffling={isShuffling}
               onPressIn={() => handleButtonTouch(color)}
               onPressOut={() => handleButtonRelease(color)}
-              themeColor={theme.buttonColors[color].color}
-              themeActiveColor={theme.buttonColors[color].activeColor}
+              themeColor={activeTheme.buttonColors[color].color}
+              themeActiveColor={activeTheme.buttonColors[color].activeColor}
             />
           ))}
 
@@ -520,24 +528,24 @@ export function GameScreen() {
           <View style={styles.centerCircleWrapper}>
             {showTimerRing && (
               <View style={styles.timerRingContainer}>
-                <TimerRing progress={timeRemaining! / 60} size={80} strokeWidth={4} theme={theme} />
+                <TimerRing progress={timeRemaining! / 60} size={80} strokeWidth={4} theme={activeTheme} />
               </View>
             )}
             <View
               style={[
                 styles.centerCircle,
-                { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor },
+                { backgroundColor: activeTheme.backgroundColor, borderColor: activeTheme.borderColor },
                 showTimerRing && styles.centerCircleNoRing,
               ]}
             >
               {mode === "timed" && timeRemaining !== null && gameState !== "idle" ? (
                 <AnimatedCountdown
                   value={Math.ceil(timeRemaining)}
-                  color={timeRemaining <= 10 ? "#ef4444" : theme.textColor}
+                  color={timeRemaining <= 10 ? "#ef4444" : activeTheme.textColor}
                   style={styles.centerTimer}
                 />
               ) : (
-                <Text style={[styles.centerText, { color: theme.textColor }]}>
+                <Text style={[styles.centerText, { color: activeTheme.textColor }]}>
                   {t("game:title")}
                 </Text>
               )}
@@ -613,8 +621,8 @@ export function GameScreen() {
             if (!pulsingMode) setModeModalVisible(false)
           }}
         >
-          <Pressable style={[styles.modalContent, { backgroundColor: theme.backgroundColor }]}>
-            <Text style={[styles.modalTitle, { color: theme.textColor }]}>
+          <Pressable style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}>
+            <Text style={[styles.modalTitle, { color: activeTheme.textColor }]}>
               {t("game:modeSelect")}
             </Text>
             {GAME_MODES.map((m) => {
@@ -628,7 +636,7 @@ export function GameScreen() {
                   isPulsing={pulsingMode === m.id}
                   pulsePhase={pulsePhase}
                   streak={streak}
-                  theme={theme}
+                  theme={activeTheme}
                   onPress={() => handleModeSelect(m.id)}
                 />
               )
@@ -642,17 +650,28 @@ export function GameScreen() {
         visible={settingsModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setSettingsModalVisible(false)}
+        onRequestClose={() => {
+          clearPreview()
+          clearSoundPreview()
+          setSettingsModalVisible(false)
+        }}
       >
-        <Pressable style={styles.modalBackdrop} onPress={() => setSettingsModalVisible(false)}>
-          <Pressable style={[styles.modalContent, { backgroundColor: theme.backgroundColor }]}>
-            <Text style={[styles.modalTitle, { color: theme.textColor }]}>
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => {
+            clearPreview()
+            clearSoundPreview()
+            setSettingsModalVisible(false)
+          }}
+        >
+          <Pressable style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}>
+            <Text style={[styles.modalTitle, { color: activeTheme.textColor }]}>
               {t("game:settings")}
             </Text>
 
             {/* Sound Toggle */}
             <View style={styles.settingsSection}>
-              <Text style={[styles.settingsSectionLabel, { color: theme.secondaryTextColor }]}>
+              <Text style={[styles.settingsSectionLabel, { color: activeTheme.secondaryTextColor }]}>
                 {t("game:soundToggle")}
               </Text>
               <Pressable
@@ -681,24 +700,30 @@ export function GameScreen() {
 
             {/* Sound Pack */}
             <View style={styles.settingsSection}>
-              <Text style={[styles.settingsSectionLabel, { color: theme.secondaryTextColor }]}>
+              <Text style={[styles.settingsSectionLabel, { color: activeTheme.secondaryTextColor }]}>
                 {t("game:soundPack")}
               </Text>
               <View style={styles.settingsRow}>
                 {SOUND_PACKS.map((pack) => {
+                  const isOwned = pack.free || ownsSoundPack(pack.id)
                   const isSelected = pack.id === soundPack.id
+                  const isPreviewing = !isOwned && pack.id === (previewSoundPack?.id ?? null)
                   const isPopping = poppingSoundPack === pack.id
                   return (
                     <Pressable
                       key={pack.id}
                       testID={`btn-sound-pack-${pack.id}`}
                       onPress={() => {
-                        if (pack.id === soundPack.id) return
+                        if (isOwned && pack.id === soundPack.id) return
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                        setSoundPack(pack.id)
                         playPreview(pack.oscillatorType)
                         setPoppingSoundPack(pack.id)
                         setTimeout(() => setPoppingSoundPack(null), 150)
+                        if (isOwned) {
+                          setSoundPack(pack.id)
+                        } else {
+                          setPreviewSoundPack(pack.id)
+                        }
                       }}
                     >
                       <EaseView
@@ -708,44 +733,80 @@ export function GameScreen() {
                         }}
                         style={[
                           styles.selectorButton,
-                          { borderColor: isSelected ? "#22c55e" : theme.borderColor },
+                          { borderColor: isSelected ? "#22c55e" : isPreviewing ? "#f59e0b" : activeTheme.borderColor },
                           isSelected && styles.selectorButtonActive,
+                          isPreviewing && styles.selectorButtonPreviewing,
                         ]}
                       >
-                        <Text
-                          style={{
-                            color: isSelected ? "#22c55e" : theme.secondaryTextColor,
-                            fontFamily: "Oxanium-Regular",
-                            fontSize: 12,
-                          }}
-                        >
-                          {pack.name}
-                        </Text>
+                        <View style={styles.selectorButtonInner}>
+                          <Text
+                            style={{
+                              color: isSelected ? "#22c55e" : isPreviewing ? "#f59e0b" : activeTheme.secondaryTextColor,
+                              fontFamily: "Oxanium-Regular",
+                              fontSize: 12,
+                            }}
+                          >
+                            {pack.name}
+                          </Text>
+                          {!isOwned && (
+                            <Ionicons
+                              name="lock-closed"
+                              size={10}
+                              color={activeTheme.secondaryTextColor}
+                              style={styles.lockIcon}
+                            />
+                          )}
+                        </View>
                       </EaseView>
                     </Pressable>
                   )
                 })}
               </View>
+              {previewSoundPack && !ownsSoundPack(previewSoundPack.id) && (
+                <Pressable
+                  style={styles.unlockBtn}
+                  onPress={async () => {
+                    const productId = getSoundProductId(previewSoundPack.id)
+                    if (!productId) return
+                    analytics.trackIapInitiated(productId)
+                    const success = await purchaseProduct(productId)
+                    if (success) {
+                      analytics.trackIapCompleted(productId)
+                      setSoundPack(previewSoundPack.id)
+                    }
+                  }}
+                >
+                  <Ionicons name="lock-open" size={14} color="white" />
+                  <Text style={styles.unlockBtnText}>Unlock Sound</Text>
+                </Pressable>
+              )}
             </View>
 
             {/* Theme */}
             <View style={styles.settingsSection}>
-              <Text style={[styles.settingsSectionLabel, { color: theme.secondaryTextColor }]}>
+              <Text style={[styles.settingsSectionLabel, { color: activeTheme.secondaryTextColor }]}>
                 {t("game:theme")}
               </Text>
               <View style={styles.settingsRow}>
                 {themeIds.map((id) => {
+                  const isOwned = gameThemes[id].free || ownsTheme(id)
+                  const isSelected = id === theme.id
+                  const isPreviewing = previewTheme?.id === id
                   const isPopping = poppingTheme === id
                   return (
                     <Pressable
                       key={id}
                       testID={`btn-theme-${id}`}
                       onPress={() => {
-                        if (id === theme.id) return
+                        if (isOwned && id === theme.id) return
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                        setTheme(id)
                         setPoppingTheme(id)
                         setTimeout(() => setPoppingTheme(null), 150)
+                        if (isOwned) {
+                          setTheme(id)
+                        } else {
+                          setPreviewTheme(id)
+                        }
                       }}
                     >
                       <EaseView
@@ -756,13 +817,41 @@ export function GameScreen() {
                         style={[
                           styles.themeCircle,
                           { backgroundColor: gameThemes[id].buttonColors.red.color },
-                          id === theme.id && styles.themeCircleSelected,
+                          isSelected && styles.themeCircleSelected,
+                          isPreviewing && styles.themeCirclePreviewing,
                         ]}
-                      />
+                      >
+                        {!isOwned && (
+                          <Ionicons
+                            name="lock-closed"
+                            size={12}
+                            color="rgba(255, 255, 255, 0.7)"
+                            style={styles.themeLockIcon}
+                          />
+                        )}
+                      </EaseView>
                     </Pressable>
                   )
                 })}
               </View>
+              {previewTheme && !ownsTheme(previewTheme.id) && (
+                <Pressable
+                  style={styles.unlockBtn}
+                  onPress={async () => {
+                    const productId = getThemeProductId(previewTheme.id)
+                    if (!productId) return
+                    analytics.trackIapInitiated(productId)
+                    const success = await purchaseProduct(productId)
+                    if (success) {
+                      analytics.trackIapCompleted(productId)
+                      setTheme(previewTheme.id)
+                    }
+                  }}
+                >
+                  <Ionicons name="lock-open" size={14} color="white" />
+                  <Text style={styles.unlockBtnText}>Unlock Theme</Text>
+                </Pressable>
+              )}
             </View>
 
             {/* Remove Ads */}
@@ -782,7 +871,7 @@ export function GameScreen() {
         visible={showInitialEntry}
         score={score}
         level={level}
-        theme={theme}
+        theme={activeTheme}
         onSubmit={handleInitialSubmit}
         onDismiss={() => {
           setShowInitialEntry(false)
@@ -817,8 +906,8 @@ export function GameScreen() {
             style={styles.modalBackdrop}
             onPress={() => setLeaderboardModalVisible(false)}
           >
-            <Pressable style={[styles.modalContent, { backgroundColor: theme.backgroundColor }]}>
-              <HighScoreTable initialMode={mode} highlightIndex={highlightIndex} highlightMode={mode} theme={theme} />
+            <Pressable style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}>
+              <HighScoreTable initialMode={mode} highlightIndex={highlightIndex} highlightMode={mode} theme={activeTheme} />
             </Pressable>
           </Pressable>
         </GestureHandlerRootView>
@@ -985,6 +1074,25 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-SemiBold",
     fontSize: 14,
   },
+  lockIcon: {
+    opacity: 0.6,
+  },
+  unlockBtn: {
+    alignItems: "center",
+    backgroundColor: "#8b5cf6",
+    borderRadius: 8,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    marginTop: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  unlockBtnText: {
+    color: "white",
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 13,
+  },
   resetButton: {
     alignItems: "center",
     backgroundColor: "#ef4444",
@@ -1026,6 +1134,14 @@ const styles = StyleSheet.create({
   },
   selectorButtonActive: {
     backgroundColor: "rgba(34, 197, 94, 0.15)",
+  },
+  selectorButtonInner: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
+  },
+  selectorButtonPreviewing: {
+    backgroundColor: "rgba(245, 158, 11, 0.15)",
   },
   settingsRow: {
     flexDirection: "row",
@@ -1092,14 +1208,22 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   themeCircle: {
+    alignItems: "center",
     borderColor: "transparent",
     borderRadius: 16,
     borderWidth: 3,
     height: 32,
+    justifyContent: "center",
     width: 32,
+  },
+  themeCirclePreviewing: {
+    borderColor: "#f59e0b",
   },
   themeCircleSelected: {
     borderColor: "#ffffff",
+  },
+  themeLockIcon: {
+    position: "absolute",
   },
   timerRingContainer: {
     left: 0,
