@@ -25,7 +25,7 @@ export function ReviewPrompt({ visible, onDismiss, onResponse }: ReviewPromptPro
   function handleNotReally() {
     onResponse?.("not_really")
     onDismiss()
-    Linking.openURL("https://github.com/frankcalise/EcoMi/issues/new?template=feedback.yml")
+    Linking.openURL("https://github.com/frankcalise/eco-mi/issues/new?template=feedback.yml")
   }
 
   return (
