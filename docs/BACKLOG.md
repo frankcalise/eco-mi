@@ -282,7 +282,7 @@
       Required by both App Store and Google Play. Host at a URL (GitHub Pages, Vercel, or simple static page). Must disclose: AdMob ads, PostHog analytics, MMKV local storage. No PII collected.
   - Ref: VISION.md > ASO > App Store Assets Required
 
-- [ ] **Prepare App Store assets**
+- [x] **Prepare App Store assets**
   - Screenshots: 3+ per device size (6.7", 6.5", 5.5" for iOS; 16:9 for Android)
   - Feature graphic: 1024x500 PNG (Android)
   - Store listing copy (title, subtitle, description, keywords) per VISION.md > ASO > Store Listing Copy
@@ -409,8 +409,8 @@
 
 ## Phase 4 — Cosmetics & IAP Expansion (v1.3)
 
-- [ ] **Wire GameScreen to theme system**
-      Replace all hardcoded colors (`#1a1a2e`, `#ef4444`, etc.) with tokens from `useAppTheme()`. Add game-specific tokens to `src/theme/colors.ts` and `colorsDark.ts`.
+- [x] **Wire GameScreen to theme system**
+      Replace all hardcoded colors (`#1a1a2e`, `#ef4444`, etc.) with tokens from `useAppTheme()`. Add game-specific tokens to `src/theme/colors.ts` and `colorsDark.ts`. (Implemented via custom `gameThemes` config + `useTheme` hook with `activeTheme` pattern instead of Ignite theme system.)
   - Ref: VISION.md > Phase 4 #1
 
 - [x] **Implement theme packs (Neon, Retro, Pastel) as IAP**
@@ -494,7 +494,7 @@ These are account setup and asset creation tasks. Track alongside code work.
 
 ### ASO Assets
 
-- [ ] Design App Store screenshots (3+ per device size)
+- [x] Design App Store screenshots (3+ per device size)
 - [x] Design Google Play feature graphic (1024x500)
 - [x] Write store listing copy (title, subtitle, description, keywords)
 - [ ] Record 15–30s preview video
