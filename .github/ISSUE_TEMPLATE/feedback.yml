@@ -1,0 +1,32 @@
+name: App Feedback
+description: Share your experience with Eco Mi
+title: "[Feedback] "
+labels: ["feedback"]
+body:
+  - type: dropdown
+    id: category
+    attributes:
+      label: What kind of feedback?
+      options:
+        - Something isn't working right
+        - Feature suggestion
+        - General feedback
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Tell us more
+      placeholder: What happened? What did you expect?
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device & OS (optional)
+      placeholder: e.g. iPhone 15, iOS 18.2
+  - type: input
+    id: app-version
+    attributes:
+      label: App version (optional)
+      placeholder: e.g. 1.0.0

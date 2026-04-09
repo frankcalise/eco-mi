@@ -30,6 +30,9 @@
 
 - [x] **Status bar content color doesn't adapt to pastel theme**
 
+- [ ] **Manually test review pre-prompt flow on device**
+      The review prompt requires 5+ games played, no ad shown this session, and 30-day cooldown. Temporarily lower `MIN_GAMES_FOR_REVIEW` to 1 and bypass the `adShownThisSession` check to verify the "Love it!" and "Not really" paths work correctly. Verify the "Not really" path opens the feedback channel. Revert thresholds after testing.
+
 ## Animation Polish
 
 - [x] **Chaos mode: animated shuffle sequences (shell game style)**
@@ -84,7 +87,7 @@
 - [x] **Remove unused navigation dependencies**
       Remove `@react-navigation/native-stack` and `react-native-drawer-layout` from `package.json`. Expo Router brings in its own navigation stack — these are unused Ignite boilerplate leftovers.
 
-- [ ] **Install and configure Sentry for crash reporting**
+- [x] **Install and configure Sentry for crash reporting**
       `npx expo install @sentry/react-native` and add the config plugin to `app.config.ts`. Initialize in `_layout.tsx` with DSN from env var (`EXPO_PUBLIC_SENTRY_DSN`). Gives stack traces with source maps, JS error capture, and breadcrumbs. Add DSN to `.env.example` and EAS Secrets. Do this before public release — TestFlight/Play Console crash reports are sufficient for internal testing.
   - Blocked by: Sentry account created, project DSN noted
 
@@ -407,12 +410,12 @@
       Replace all hardcoded colors (`#1a1a2e`, `#ef4444`, etc.) with tokens from `useAppTheme()`. Add game-specific tokens to `src/theme/colors.ts` and `colorsDark.ts`.
   - Ref: VISION.md > Phase 4 #1
 
-- [ ] **Implement theme packs (Neon, Retro, Pastel) as IAP**
+- [x] **Implement theme packs (Neon, Retro, Pastel) as IAP**
       Define additional theme palettes. Gate behind RevenueCat entitlements (`theme_neon`, `theme_retro`, `theme_pastel`). Persist selection in MMKV (`ecomi:settings:selectedTheme`).
   - Track `theme_applied` PostHog event
   - Ref: VISION.md > Phase 4 #2
 
-- [ ] **Implement sound packs as IAP**
+- [x] **Implement sound packs as IAP**
       Parameterize `oscillator.type` in `useAudioTones.tsx` (currently hardcoded `"sine"`). Add square, sawtooth, triangle options. Gate behind RevenueCat entitlements. Persist in MMKV (`ecomi:settings:selectedSoundPack`).
   - Track `sound_pack_applied` PostHog event
   - Ref: VISION.md > Phase 4 #3
@@ -477,7 +480,7 @@ These are account setup and asset creation tasks. Track alongside code work.
 - [x] AdMob — create 3 ad units per platform (banner, interstitial, rewarded)
 - [x] AdMob — configure GDPR consent message (Privacy & messaging)
 - [x] PostHog — create account, create "Eco Mi" project, note API key
-- [ ] Host `app-ads.txt` at developer website
+- [x] Host `app-ads.txt` at developer website
 
 ### Secrets & Config
 
@@ -489,8 +492,8 @@ These are account setup and asset creation tasks. Track alongside code work.
 ### ASO Assets
 
 - [ ] Design App Store screenshots (3+ per device size)
-- [ ] Design Google Play feature graphic (1024x500)
-- [ ] Write store listing copy (title, subtitle, description, keywords)
+- [x] Design Google Play feature graphic (1024x500)
+- [x] Write store listing copy (title, subtitle, description, keywords)
 - [ ] Record 15–30s preview video
 - [x] Create privacy policy page and host at a public URL
-- [ ] Set up Google Form or email for user feedback channel (review pre-prompt "Not really" path)
+- [x] Set up Google Form or email for user feedback channel (review pre-prompt "Not really" path)
