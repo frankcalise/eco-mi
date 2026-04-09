@@ -130,7 +130,7 @@ Grátis. Sem conta necessária. É só tocar e jogar!
 
 ### v1.0 — EN
 ```
-Welcome to Eco Mi! A modern take on the classic Simon memory game.
+Welcome to Eco Mi! A modern take on the classic memory game.
 
 - 5 game modes: Classic, Daily Challenge, Timed, Reverse, and Chaos
 - Arcade-style high score leaderboard
@@ -143,7 +143,7 @@ Welcome to Eco Mi! A modern take on the classic Simon memory game.
 
 ### v1.0 — ES (es-419)
 ```
-Bienvenido a Eco Mi! Una version moderna del clasico juego de memoria Simon.
+Bienvenido a Eco Mi! Una version moderna del clasico juego de memoria.
 
 - 5 modos de juego: Clasico, Reto Diario, Contrarreloj, Reversa y Caos
 - Tabla de puntuaciones estilo arcade
@@ -156,7 +156,7 @@ Bienvenido a Eco Mi! Una version moderna del clasico juego de memoria Simon.
 
 ### v1.0 — PT (pt-BR)
 ```
-Bem-vindo ao Eco Mi! Uma versao moderna do classico jogo de memoria Simon.
+Bem-vindo ao Eco Mi! Uma versao moderna do classico jogo de memoria.
 
 - 5 modos de jogo: Classico, Desafio Diario, Contrarrelogio, Reverso e Caos
 - Tabela de pontuacoes estilo arcade
