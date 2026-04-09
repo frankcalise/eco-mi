@@ -6,6 +6,9 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 
 ## [Unreleased]
 
+### Feat
+- `82368ac` — Gate themes and sound packs behind IAP with live preview UX. Classic free, others require purchase. Preview behind settings overlay, revert on dismiss, unlock buttons with RevenueCat purchase flow.
+
 ### Chore
 - Remove unused deps: `@react-navigation/native-stack`, `react-native-drawer-layout`, `react-native-keyboard-controller` (Ignite boilerplate leftovers)
 - Install and configure `expo-updates` with OTA update channels (development, preview, production) in `eas.json`
