@@ -17,24 +17,24 @@ Test your memory with Eco Mi — a modern take on the classic Simon game!
 
 Watch the color sequence, then repeat it back. Each round adds one more step. How far can you go?
 
-🎮 FIVE GAME MODES
+FIVE GAME MODES
 • Classic — the original Simon experience
 • Daily Challenge — same sequence for everyone, build your streak
 • Timed — 60 seconds, how many sequences can you complete?
 • Reverse — repeat the sequence backwards
 • Chaos — buttons shuffle positions between rounds
 
-🏆 COMPETE & TRACK
+COMPETE & TRACK
 • Arcade-style high score leaderboard with retro initial entry
 • Achievements to unlock as you improve
 • Stats dashboard tracking your progress over time
 
-🎨 CUSTOMIZE
+CUSTOMIZE
 • Multiple color themes to personalize your game
 • Different sound packs with unique tones
 • Beautiful animations and satisfying haptic feedback
 
-🌍 PLAY IN YOUR LANGUAGE
+PLAY IN YOUR LANGUAGE
 • English, Spanish, and Portuguese
 
 Free to play. No account required. Just tap and play!
@@ -59,24 +59,24 @@ Free to play. No account required. Just tap and play!
 
 Observa la secuencia de colores y repítela. Cada ronda agrega un paso más. ¿Hasta dónde puedes llegar?
 
-🎮 CINCO MODOS DE JUEGO
+CINCO MODOS DE JUEGO
 • Clásico — la experiencia original de Simon
 • Reto Diario — la misma secuencia para todos, construye tu racha
 • Contrarreloj — 60 segundos, ¿cuántas secuencias puedes completar?
 • Reversa — repite la secuencia al revés
 • Caos — los botones cambian de posición entre rondas
 
-🏆 COMPITE Y MEJORA
+COMPITE Y MEJORA
 • Tabla de puntuaciones estilo arcade con entrada de iniciales retro
 • Logros que desbloquear mientras mejoras
 • Panel de estadísticas para seguir tu progreso
 
-🎨 PERSONALIZA
+PERSONALIZA
 • Múltiples temas de colores para personalizar tu juego
 • Diferentes paquetes de sonido con tonos únicos
 • Animaciones fluidas y retroalimentación háptica satisfactoria
 
-🌍 JUEGA EN TU IDIOMA
+JUEGA EN TU IDIOMA
 • Inglés, español y portugués
 
 Gratis. Sin cuenta necesaria. ¡Solo toca y juega!
@@ -101,24 +101,24 @@ Teste sua memória com Eco Mi — uma versão moderna do clássico jogo Simon!
 
 Observe a sequência de cores e repita. Cada rodada adiciona mais um passo. Até onde você consegue chegar?
 
-🎮 CINCO MODOS DE JOGO
+CINCO MODOS DE JOGO
 • Clássico — a experiência original do Simon
 • Desafio Diário — a mesma sequência para todos, construa sua sequência
 • Contrarrelógio — 60 segundos, quantas sequências você consegue completar?
 • Reverso — repita a sequência de trás para frente
 • Caos — os botões mudam de posição entre rodadas
 
-🏆 COMPITA E MELHORE
+COMPITA E MELHORE
 • Tabela de pontuações estilo arcade com entrada de iniciais retrô
 • Conquistas para desbloquear conforme você melhora
 • Painel de estatísticas para acompanhar seu progresso
 
-🎨 PERSONALIZE
+PERSONALIZE
 • Múltiplos temas de cores para personalizar seu jogo
 • Diferentes pacotes de som com tons únicos
 • Animações fluidas e feedback háptico satisfatório
 
-🌍 JOGUE NO SEU IDIOMA
+JOGUE NO SEU IDIOMA
 • Inglês, espanhol e português
 
 Grátis. Sem conta necessária. É só tocar e jogar!
