@@ -33,7 +33,7 @@
 - [ ] **Buttons stay lit during fast sequence playback at high levels (~14-15+)**
       At higher levels where tone duration and sequence interval are very short, consecutive same-color notes (e.g., 3 blues in a row) play the audio correctly but the button never visually returns to its unpressed state between notes. The active/lit state persists across all 3 tones, making it impossible to visually count repeated colors. Likely cause: the deactivation delay in `showSequence` is longer than or equal to the interval between notes, so the button never flashes off before the next activation. Fix by ensuring a minimum gap between the active state turning off and the next note turning it on — even at the fastest speeds, there should be a brief visible "off" frame. Need to verify the timing math in `src/config/difficulty.ts` (`getToneDuration`, `getSequenceInterval`) and the flash logic in `useGameEngine`. Add a Maestro or manual test scenario that reaches level 15+ with a seeded sequence containing consecutive same-color notes to verify the fix.
 
-- [ ] **Manually test review pre-prompt flow on device**
+- [x] **Manually test review pre-prompt flow on device**
       The review prompt requires 5+ games played, no ad shown this session, and 30-day cooldown. Temporarily lower `MIN_GAMES_FOR_REVIEW` to 1 and bypass the `adShownThisSession` check to verify the "Love it!" and "Not really" paths work correctly. Verify the "Not really" path opens the feedback channel. Revert thresholds after testing.
 
 ## Animation Polish
