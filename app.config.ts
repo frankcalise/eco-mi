@@ -18,7 +18,7 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
     version: "1.0.0",
     orientation: "portrait",
     userInterfaceStyle: "automatic",
-    icon: "./assets/images/app-icon-all.png",
+    icon: "./assets/images/app-icon-ios.png",
     updates: {
       url: "https://u.expo.dev/a7ae3db1-a5a2-4deb-ba44-ffa09d58aead",
       fallbackToCacheTimeout: 0,

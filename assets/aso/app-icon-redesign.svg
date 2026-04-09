@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <!-- Subtle inner glow on each button -->
+    <radialGradient id="redGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ff6b6b" />
+      <stop offset="100%" stop-color="#ef4444" />
+    </radialGradient>
+    <radialGradient id="blueGrad" cx="70%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </radialGradient>
+    <radialGradient id="greenGrad" cx="30%" cy="70%" r="70%">
+      <stop offset="0%" stop-color="#4ade80" />
+      <stop offset="100%" stop-color="#22c55e" />
+    </radialGradient>
+    <radialGradient id="yellowGrad" cx="70%" cy="70%" r="70%">
+      <stop offset="0%" stop-color="#facc15" />
+      <stop offset="100%" stop-color="#eab308" />
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="0" fill="#1a1a2e" />
+
+  <!-- Four game buttons filling the icon -->
+  <!-- Gap of 12px between buttons, 60px padding from edges -->
+  <!-- Center hole radius ~70px -->
+
+  <!-- Red — top left -->
+  <rect x="60" y="60" width="436" height="436" rx="80" fill="url(#redGrad)" />
+
+  <!-- Blue — top right -->
+  <rect x="528" y="60" width="436" height="436" rx="80" fill="url(#blueGrad)" />
+
+  <!-- Green — bottom left -->
+  <rect x="60" y="528" width="436" height="436" rx="80" fill="url(#greenGrad)" />
+
+  <!-- Yellow — bottom right -->
+  <rect x="528" y="528" width="436" height="436" rx="80" fill="url(#yellowGrad)" />
+
+  <!-- Center circle overlay — dark with subtle border -->
+  <circle cx="512" cy="512" r="72" fill="#1a1a2e" />
+  <circle cx="512" cy="512" r="72" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="3" />
+
+  <!-- Optional: tiny "E" or dot in center for brand hint -->
+  <text x="512" y="528" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="48" fill="rgba(255,255,255,0.6)" text-anchor="middle">
+    E
+  </text>
+</svg>
