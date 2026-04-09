@@ -51,7 +51,7 @@ Free to play. No account required. Just tap and play!
 **Short Description (Android, 80 char):** Desafío clásico de memoria — 5 modos de juego, retos diarios y mucho más!
 
 **Keywords (iOS, 100 char):**
-`simon,patrón,memoria,reflejos,cognitivo,mente,clásico,retro,toque,repetir,enfoque,rompecabezas,habilidad`
+`patrón,memoria,reflejos,cognitivo,mente,clásico,retro,toque,repetir,enfoque,rompecabezas,secuencia`
 
 **Full Description:**
 ```
@@ -93,7 +93,7 @@ Gratis. Sin cuenta necesaria. ¡Solo toca y juega!
 **Short Description (Android, 80 char):** Desafio clássico de memória — 5 modos de jogo, desafios diários e muito mais!
 
 **Keywords (iOS, 100 char):**
-`simon,padrão,memória,reflexo,cognitivo,mente,clássico,retro,toque,repetir,foco,concentração,quebra-cabeça`
+`padrão,memória,reflexo,cognitivo,mente,clássico,retro,toque,repetir,foco,concentração,jogo`
 
 **Full Description:**
 ```
