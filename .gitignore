@@ -102,3 +102,4 @@ web-build/
 .eslintcache
 
 distbuild-*.aab
+application-*.aab
