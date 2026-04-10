@@ -4,8 +4,8 @@ import { Ionicons } from "@expo/vector-icons"
 import { Gesture, GestureDetector, Directions } from "react-native-gesture-handler"
 
 import type { GameTheme } from "@/config/themes"
-import { translate } from "@/i18n/translate"
 import { useHighScores, type HighScoreEntry, type GameMode } from "@/hooks/useHighScores"
+import { translate } from "@/i18n/translate"
 
 const MODES: { id: GameMode; icon: keyof typeof Ionicons.glyphMap }[] = [
   { id: "classic", icon: "game-controller" },
@@ -44,14 +44,15 @@ function HighlightRow({ children }: { children: React.ReactNode }) {
     return () => animation.stop()
   }, [pulse])
 
-  return (
-    <Animated.View style={{ opacity: pulse }}>
-      {children}
-    </Animated.View>
-  )
+  return <Animated.View style={{ opacity: pulse }}>{children}</Animated.View>
 }
 
-export function HighScoreTable({ initialMode, highlightIndex, highlightMode, theme }: HighScoreTableProps) {
+export function HighScoreTable({
+  initialMode,
+  highlightIndex,
+  highlightMode,
+  theme,
+}: HighScoreTableProps) {
   const [selectedMode, setSelectedMode] = useState<GameMode>(initialMode)
   const { getHighScores } = useHighScores()
   const scores = getHighScores(selectedMode)
@@ -133,10 +134,18 @@ export function HighScoreTable({ initialMode, highlightIndex, highlightMode, the
       <GestureDetector gesture={swipeGesture}>
         <View>
           <View style={[styles.headerRow, { borderBottomColor: theme.borderColor }]}>
-            <Text style={[styles.headerCell, styles.rankCol, { color: theme.secondaryTextColor }]}>{translate("game:rank")}</Text>
-            <Text style={[styles.headerCell, styles.nameCol, { color: theme.secondaryTextColor }]}>{translate("game:initials")}</Text>
-            <Text style={[styles.headerCell, styles.scoreCol, { color: theme.secondaryTextColor }]}>SCORE</Text>
-            <Text style={[styles.headerCell, styles.levelCol, { color: theme.secondaryTextColor }]}>LVL</Text>
+            <Text style={[styles.headerCell, styles.rankCol, { color: theme.secondaryTextColor }]}>
+              {translate("game:rank")}
+            </Text>
+            <Text style={[styles.headerCell, styles.nameCol, { color: theme.secondaryTextColor }]}>
+              {translate("game:initials")}
+            </Text>
+            <Text style={[styles.headerCell, styles.scoreCol, { color: theme.secondaryTextColor }]}>
+              SCORE
+            </Text>
+            <Text style={[styles.headerCell, styles.levelCol, { color: theme.secondaryTextColor }]}>
+              LVL
+            </Text>
           </View>
 
           {rows.map((row, i) => {
@@ -150,16 +159,44 @@ export function HighScoreTable({ initialMode, highlightIndex, highlightMode, the
                   i % 2 === 0 && { backgroundColor: theme.surfaceColor },
                 ]}
               >
-                <Text style={[styles.cell, styles.rankCol, { color: cellColor }, isHighlighted && { color: highlight }]}>
+                <Text
+                  style={[
+                    styles.cell,
+                    styles.rankCol,
+                    { color: cellColor },
+                    isHighlighted && { color: highlight },
+                  ]}
+                >
                   {String(row.rank).padStart(2, " ")}.
                 </Text>
-                <Text style={[styles.cell, styles.nameCol, { color: cellColor }, isHighlighted && { color: highlight }]}>
+                <Text
+                  style={[
+                    styles.cell,
+                    styles.nameCol,
+                    { color: cellColor },
+                    isHighlighted && { color: highlight },
+                  ]}
+                >
                   {row.initials}
                 </Text>
-                <Text style={[styles.cell, styles.scoreCol, { color: cellColor }, isHighlighted && { color: highlight }]}>
+                <Text
+                  style={[
+                    styles.cell,
+                    styles.scoreCol,
+                    { color: cellColor },
+                    isHighlighted && { color: highlight },
+                  ]}
+                >
                   {row.score}
                 </Text>
-                <Text style={[styles.cell, styles.levelCol, { color: cellColor }, isHighlighted && { color: highlight }]}>
+                <Text
+                  style={[
+                    styles.cell,
+                    styles.levelCol,
+                    { color: cellColor },
+                    isHighlighted && { color: highlight },
+                  ]}
+                >
                   {row.level}
                 </Text>
               </View>
@@ -207,12 +244,6 @@ const styles = StyleSheet.create({
     textAlign: "right",
     width: 36,
   },
-  modeTabs: {
-    flexDirection: "row",
-    gap: 4,
-    justifyContent: "center",
-    marginBottom: 12,
-  },
   modeTab: {
     alignItems: "center",
     borderRadius: 6,
@@ -224,6 +255,12 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-Regular",
     fontSize: 9,
     textTransform: "uppercase",
+  },
+  modeTabs: {
+    flexDirection: "row",
+    gap: 4,
+    justifyContent: "center",
+    marginBottom: 12,
   },
   nameCol: {
     flex: 1,

@@ -169,7 +169,12 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     playJingle,
     startContinuousSound,
     stopContinuousSoundWithFade,
-  } = useAudioTones(activeColorMap, soundEnabled, options?.oscillatorType, options?.onAudioContextRecycle)
+  } = useAudioTones(
+    activeColorMap,
+    soundEnabled,
+    options?.oscillatorType,
+    options?.onAudioContextRecycle,
+  )
 
   // --- Timeout management (fixes orphaned timer bug) ---
 

@@ -1,13 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import {
-  Animated,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native"
+import { Animated, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 
 import type { GameTheme } from "@/config/themes"
@@ -22,13 +14,16 @@ interface InitialEntryModalProps {
   onDismiss: () => void
 }
 
-export function InitialEntryModal({ visible, score, level, theme, onSubmit, onDismiss }: InitialEntryModalProps) {
+export function InitialEntryModal({
+  visible,
+  score,
+  level,
+  theme,
+  onSubmit,
+  onDismiss,
+}: InitialEntryModalProps) {
   const [letters, setLetters] = useState(["", "", ""])
-  const inputRefs = [
-    useRef<TextInput>(null),
-    useRef<TextInput>(null),
-    useRef<TextInput>(null),
-  ]
+  const inputRefs = [useRef<TextInput>(null), useRef<TextInput>(null), useRef<TextInput>(null)]
   const cursorAnim = useRef(new Animated.Value(1)).current
 
   const accent = theme.buttonColors.green.color
@@ -62,7 +57,10 @@ export function InitialEntryModal({ visible, score, level, theme, onSubmit, onDi
   }, [cursorAnim])
 
   const handleChange = (text: string, index: number) => {
-    const letter = text.replace(/[^A-Za-z]/g, "").toUpperCase().slice(-1)
+    const letter = text
+      .replace(/[^A-Za-z]/g, "")
+      .toUpperCase()
+      .slice(-1)
     const next = [...letters]
     next[index] = letter
     setLetters(next)
@@ -90,14 +88,14 @@ export function InitialEntryModal({ visible, score, level, theme, onSubmit, onDi
   }
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      testID="modal-initial-entry"
-    >
+    <Modal visible={visible} transparent animationType="fade" testID="modal-initial-entry">
       <View style={styles.overlay}>
-        <View style={[styles.container, { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor }]}>
+        <View
+          style={[
+            styles.container,
+            { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor },
+          ]}
+        >
           <Pressable
             testID="btn-initial-dismiss"
             style={styles.dismissButton}
@@ -107,11 +105,15 @@ export function InitialEntryModal({ visible, score, level, theme, onSubmit, onDi
           >
             <Ionicons name="close" size={24} color={theme.secondaryTextColor} />
           </Pressable>
-          <Text style={[styles.title, { color: highlight }]}>{translate("game:newHighScoreEntry")}</Text>
+          <Text style={[styles.title, { color: highlight }]}>
+            {translate("game:newHighScoreEntry")}
+          </Text>
           <Text style={[styles.scoreText, { color: theme.textColor }]}>
             {score} PTS - LVL {level}
           </Text>
-          <Text style={[styles.subtitle, { color: theme.secondaryTextColor }]}>{translate("game:enterInitials")}</Text>
+          <Text style={[styles.subtitle, { color: theme.secondaryTextColor }]}>
+            {translate("game:enterInitials")}
+          </Text>
 
           <View style={styles.inputRow}>
             {[0, 1, 2].map((i) => (
@@ -141,11 +143,21 @@ export function InitialEntryModal({ visible, score, level, theme, onSubmit, onDi
 
           <Pressable
             testID="btn-initial-done"
-            style={[styles.doneButton, { backgroundColor: accent }, !allFilled && { backgroundColor: theme.surfaceColor }]}
+            style={[
+              styles.doneButton,
+              { backgroundColor: accent },
+              !allFilled && { backgroundColor: theme.surfaceColor },
+            ]}
             onPress={handleDone}
             disabled={!allFilled}
           >
-            <Text style={[styles.doneText, { color: theme.backgroundColor }, !allFilled && { color: theme.secondaryTextColor }]}>
+            <Text
+              style={[
+                styles.doneText,
+                { color: theme.backgroundColor },
+                !allFilled && { color: theme.secondaryTextColor },
+              ]}
+            >
               {translate("game:done")}
             </Text>
           </Pressable>
@@ -165,6 +177,13 @@ const styles = StyleSheet.create({
     paddingVertical: 28,
     width: "85%",
   },
+  cursor: {
+    bottom: 12,
+    height: 3,
+    left: "25%",
+    position: "absolute",
+    width: "50%",
+  },
   dismissButton: {
     alignItems: "center",
     height: 44,
@@ -174,13 +193,6 @@ const styles = StyleSheet.create({
     top: 8,
     width: 44,
     zIndex: 1,
-  },
-  cursor: {
-    bottom: 12,
-    height: 3,
-    left: "25%",
-    position: "absolute",
-    width: "50%",
   },
   doneButton: {
     borderRadius: 8,

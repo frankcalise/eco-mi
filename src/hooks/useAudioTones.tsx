@@ -79,9 +79,13 @@ export function useAudioTones(
       const ctx = audioContextRef.current
       if (!ctx) return
       if (state === "background") {
-        try { ctx.suspend() } catch {}
+        try {
+          ctx.suspend()
+        } catch {}
       } else if (state === "active" && contextReadyRef.current) {
-        try { ctx.resume() } catch {}
+        try {
+          ctx.resume()
+        } catch {}
       }
     })
     return () => sub.remove()
@@ -109,7 +113,9 @@ export function useAudioTones(
     suspendTimerRef.current = setTimeout(() => {
       const c = getContext()
       if (c && !activeSoundRef.current) {
-        try { c.suspend() } catch {}
+        try {
+          c.suspend()
+        } catch {}
       }
     }, SUSPEND_DELAY)
   }
@@ -144,8 +150,12 @@ export function useAudioTones(
       sound.gain.gain.setValueAtTime(EPSILON, 0)
       sound.oscillator.stop(0)
     } catch {}
-    try { sound.oscillator.disconnect() } catch {}
-    try { sound.gain.disconnect() } catch {}
+    try {
+      sound.oscillator.disconnect()
+    } catch {}
+    try {
+      sound.gain.disconnect()
+    } catch {}
   }
 
   // Schedule a clean fade-out using setTargetAtTime. Does NOT cancel
@@ -167,10 +177,17 @@ export function useAudioTones(
       sound.gain.gain.setTargetAtTime(0, now, fadeS / 3)
       sound.oscillator.stop(now + fadeS + 0.02)
 
-      setTimeout(() => {
-        try { sound.oscillator.disconnect() } catch {}
-        try { sound.gain.disconnect() } catch {}
-      }, Math.ceil((fadeS + 0.05) * 1000))
+      setTimeout(
+        () => {
+          try {
+            sound.oscillator.disconnect()
+          } catch {}
+          try {
+            sound.gain.disconnect()
+          } catch {}
+        },
+        Math.ceil((fadeS + 0.05) * 1000),
+      )
     } catch {
       silentDiscard(sound)
     }
@@ -228,10 +245,17 @@ export function useAudioTones(
     osc.stop(noteStart + duration + 0.02)
     nodeCountRef.current += 1
 
-    setTimeout(() => {
-      try { osc.disconnect() } catch {}
-      try { g.disconnect() } catch {}
-    }, (noteStart - ctx.currentTime + duration + 0.05) * 1000)
+    setTimeout(
+      () => {
+        try {
+          osc.disconnect()
+        } catch {}
+        try {
+          g.disconnect()
+        } catch {}
+      },
+      (noteStart - ctx.currentTime + duration + 0.05) * 1000,
+    )
   }
 
   async function initialize() {
@@ -254,7 +278,9 @@ export function useAudioTones(
       activeSoundRef.current = null
     }
     if (audioContextRef.current) {
-      try { await audioContextRef.current.close() } catch {}
+      try {
+        await audioContextRef.current.close()
+      } catch {}
       audioContextRef.current = null
       masterGainRef.current = null
     }
@@ -321,7 +347,15 @@ export function useAudioTones(
     const now = ctx.currentTime
 
     for (const note of PREVIEW_NOTES) {
-      scheduleNote(ctx, master, note.freq, type, now + note.delay, PREVIEW_NOTE_DURATION, TARGET_GAIN * 0.8)
+      scheduleNote(
+        ctx,
+        master,
+        note.freq,
+        type,
+        now + note.delay,
+        PREVIEW_NOTE_DURATION,
+        TARGET_GAIN * 0.8,
+      )
     }
   }
 
@@ -336,7 +370,15 @@ export function useAudioTones(
     const now = ctx.currentTime
 
     for (const note of JINGLE_NOTES) {
-      scheduleNote(ctx, master, note.freq, oscillatorType, now + note.delay, JINGLE_NOTE_DURATION, TARGET_GAIN * 0.6)
+      scheduleNote(
+        ctx,
+        master,
+        note.freq,
+        oscillatorType,
+        now + note.delay,
+        JINGLE_NOTE_DURATION,
+        TARGET_GAIN * 0.6,
+      )
     }
   }
 
