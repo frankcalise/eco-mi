@@ -401,6 +401,18 @@
 - [ ] **Enhanced initial input: gesture/drawing recognition**
       Phase 2 of the high score table. Replace the keyboard-based three-initial entry with a draw-to-letter input using `@shopify/react-native-skia`. Player draws each letter on a canvas, app converts the Skia path to a recognized character. Gives a unique, tactile arcade feel. Investigate ML-based handwriting recognition (on-device, lightweight) or a simpler template-matching approach for A-Z recognition. Could also explore gesture-based input (swipe patterns mapped to letters) as an alternative.
 
+- [ ] **Tablet-optimized layout (iPad / Android tablets)**
+      Current layout uses `useWindowDimensions()` and scales the game board relative to screen size, but the UI is phone-optimized. On tablets the game board floats in the center with excessive empty space, text is undersized, and modals feel small. Adapt for larger screens:
+  - Scale the game board to fill more of the available space while keeping it centered
+  - Increase font sizes and touch targets proportionally
+  - Widen modals (settings, mode selector, game over overlay, initial entry) — consider max-width constraints rather than full-width
+  - Leaderboard table: use wider columns, larger text, more comfortable row spacing
+  - Consider landscape support — the Simon board is square so it works naturally in both orientations
+  - Stats and achievements screens: multi-column grid layout on wider screens
+  - Test on iPad Mini, iPad Air, iPad Pro, and common Android tablet sizes
+  - Enable `supportsTablet: true` in `app.config.ts` once layout is ready
+  - Add iPad screenshots to App Store listing (required for iPad-supported apps)
+
 - [ ] **Localize App Store listings (ES, PT)**
       Translate subtitle, description, and keywords for Spanish and Portuguese in App Store Connect and Google Play Console.
   - Ref: VISION.md > ASO > Store Listing Copy, Localization > App Store Localization
