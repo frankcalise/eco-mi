@@ -22,8 +22,12 @@ const pt = {
     pressStart: "Pressione Iniciar Jogo para comecar!",
     continue: "Assistir Anuncio para Continuar",
     removeAds: "Remover Anuncios",
+    restorePurchases: "Restaurar Compras",
+    restoreSuccess: "Compras restauradas!",
+    restoreFailed: "Nada para restaurar",
     home: "Inicio",
-    shareMessage: "Cheguei ao Nivel {{level}} com {{score}} pontos no modo {{mode}} no Eco Mi! Consegue me superar?",
+    shareMessage:
+      "Cheguei ao Nivel {{level}} com {{score}} pontos no modo {{mode}} no Eco Mi! Consegue me superar?",
     timeRemaining: "{{time}}s",
     sequencesCompleted: "Sequencias: {{count}}",
     modes: {
@@ -79,6 +83,13 @@ const pt = {
     title: "Algo deu errado!",
     friendlySubtitle: "Ocorreu um erro inesperado. Por favor, tente reiniciar o aplicativo.",
     reset: "REINICIAR APP",
+  },
+  tracking: {
+    title: "Ajude a Melhorar o Eco Mi",
+    subtitle:
+      "Compartilhe estatisticas de uso anonimas para nos ajudar a melhorar o jogo. Nenhum dado pessoal e coletado.",
+    shareButton: "Compartilhar Estatisticas",
+    maybeLater: "Talvez Depois",
   },
   emptyStateComponent: {
     generic: {

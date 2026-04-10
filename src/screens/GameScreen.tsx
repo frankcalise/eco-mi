@@ -1,13 +1,21 @@
 import { useEffect, useRef, useState } from "react"
-import { View, Text, Pressable, Share, StyleSheet, useWindowDimensions, Modal } from "react-native"
+import {
+  View,
+  Text,
+  Pressable,
+  Share,
+  StyleSheet,
+  useWindowDimensions,
+  Modal,
+  Alert,
+} from "react-native"
 import * as Haptics from "expo-haptics"
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { GestureHandlerRootView } from "react-native-gesture-handler"
-
 import { EaseView } from "react-native-ease"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { AnimatedCountdown } from "@/components/AnimatedCountdown"
 import { GameButton } from "@/components/GameButton"
@@ -20,11 +28,11 @@ import { SOUND_PACKS } from "@/config/soundPacks"
 import { themeIds, gameThemes } from "@/config/themes"
 import { useAds } from "@/hooks/useAds"
 import { useGameEngine, colors, type GameMode } from "@/hooks/useGameEngine"
+import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useSoundPack } from "@/hooks/useSoundPack"
 import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
-import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
 import { useAnalytics } from "@/utils/analytics"
 import { loadString } from "@/utils/storage"
 
@@ -76,10 +84,7 @@ function ModeItem({
         transition={{
           default: { type: "timing", duration: PULSE_DURATION, easing: "easeOut" },
         }}
-        style={[
-          styles.modeItem,
-          { borderColor: showGreen ? "#22c55e" : theme.borderColor },
-        ]}
+        style={[styles.modeItem, { borderColor: showGreen ? "#22c55e" : theme.borderColor }]}
       >
         <Ionicons
           name={m.icon}
@@ -87,12 +92,7 @@ function ModeItem({
           color={showGreen ? "#22c55e" : theme.secondaryTextColor}
         />
         <View style={styles.modeItemText}>
-          <Text
-            style={[
-              styles.modeItemLabel,
-              { color: showGreen ? "#22c55e" : theme.textColor },
-            ]}
-          >
+          <Text style={[styles.modeItemLabel, { color: showGreen ? "#22c55e" : theme.textColor }]}>
             {t(`game:modes.${m.id}`)}
             {m.id === "daily" && streak > 0 ? ` (${streak}d)` : ""}
           </Text>
@@ -118,7 +118,8 @@ export function GameScreen() {
   const gameSize = Math.min(width * 0.8, height * 0.5)
   const buttonSize = gameSize * 0.4
 
-  const { soundPack, previewSoundPack, setSoundPack, setPreviewSoundPack, clearSoundPreview } = useSoundPack()
+  const { soundPack, previewSoundPack, setSoundPack, setPreviewSoundPack, clearSoundPreview } =
+    useSoundPack()
   const { theme, activeTheme, previewTheme, setTheme, setPreviewTheme, clearPreview } = useTheme()
   const analytics = useAnalytics()
 
@@ -167,6 +168,7 @@ export function GameScreen() {
     removeAds,
     purchaseRemoveAds,
     purchaseProduct,
+    restorePurchases,
     ownsTheme,
     ownsSoundPack,
     getThemeProductId,
@@ -235,9 +237,7 @@ export function GameScreen() {
     let delay = 0
     for (let i = 0; i < PULSE_COUNT; i++) {
       // dim phase
-      pulseTimers.current.push(
-        setTimeout(() => setPulsePhase("dim"), delay + PULSE_DURATION),
-      )
+      pulseTimers.current.push(setTimeout(() => setPulsePhase("dim"), delay + PULSE_DURATION))
       // bright phase (except after last pulse)
       if (i < PULSE_COUNT - 1) {
         pulseTimers.current.push(
@@ -443,7 +443,9 @@ export function GameScreen() {
                 </EaseView>
               ))
             ) : (
-              <Text style={[styles.title, { color: activeTheme.textColor }]}>{t("game:title")}</Text>
+              <Text style={[styles.title, { color: activeTheme.textColor }]}>
+                {t("game:title")}
+              </Text>
             )}
           </View>
           {(() => {
@@ -451,7 +453,11 @@ export function GameScreen() {
             if (!currentMode) return null
             return (
               <View style={styles.modeIndicator}>
-                <Ionicons name={currentMode.icon} size={12} color={activeTheme.secondaryTextColor} />
+                <Ionicons
+                  name={currentMode.icon}
+                  size={12}
+                  color={activeTheme.secondaryTextColor}
+                />
                 <Text style={[styles.modeIndicatorText, { color: activeTheme.secondaryTextColor }]}>
                   {t(`game:modes.${mode}`)}
                 </Text>
@@ -498,7 +504,10 @@ export function GameScreen() {
           <Text style={[styles.scoreLabel, { color: activeTheme.secondaryTextColor }]}>
             {t("game:best")}
           </Text>
-          <Text testID="text-high-score" style={[styles.scoreValue, { color: activeTheme.textColor }]}>
+          <Text
+            testID="text-high-score"
+            style={[styles.scoreValue, { color: activeTheme.textColor }]}
+          >
             {highScore}
           </Text>
         </View>
@@ -528,13 +537,21 @@ export function GameScreen() {
           <View style={styles.centerCircleWrapper}>
             {showTimerRing && (
               <View style={styles.timerRingContainer}>
-                <TimerRing progress={timeRemaining! / 60} size={80} strokeWidth={4} theme={activeTheme} />
+                <TimerRing
+                  progress={timeRemaining! / 60}
+                  size={80}
+                  strokeWidth={4}
+                  theme={activeTheme}
+                />
               </View>
             )}
             <View
               style={[
                 styles.centerCircle,
-                { backgroundColor: activeTheme.backgroundColor, borderColor: activeTheme.borderColor },
+                {
+                  backgroundColor: activeTheme.backgroundColor,
+                  borderColor: activeTheme.borderColor,
+                },
                 showTimerRing && styles.centerCircleNoRing,
               ]}
             >
@@ -621,7 +638,9 @@ export function GameScreen() {
             if (!pulsingMode) setModeModalVisible(false)
           }}
         >
-          <Pressable style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}>
+          <Pressable
+            style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}
+          >
             <Text style={[styles.modalTitle, { color: activeTheme.textColor }]}>
               {t("game:modeSelect")}
             </Text>
@@ -664,14 +683,18 @@ export function GameScreen() {
             setSettingsModalVisible(false)
           }}
         >
-          <Pressable style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}>
+          <Pressable
+            style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}
+          >
             <Text style={[styles.modalTitle, { color: activeTheme.textColor }]}>
               {t("game:settings")}
             </Text>
 
             {/* Sound Toggle */}
             <View style={styles.settingsSection}>
-              <Text style={[styles.settingsSectionLabel, { color: activeTheme.secondaryTextColor }]}>
+              <Text
+                style={[styles.settingsSectionLabel, { color: activeTheme.secondaryTextColor }]}
+              >
                 {t("game:soundToggle")}
               </Text>
               <Pressable
@@ -700,7 +723,9 @@ export function GameScreen() {
 
             {/* Sound Pack */}
             <View style={styles.settingsSection}>
-              <Text style={[styles.settingsSectionLabel, { color: activeTheme.secondaryTextColor }]}>
+              <Text
+                style={[styles.settingsSectionLabel, { color: activeTheme.secondaryTextColor }]}
+              >
                 {t("game:soundPack")}
               </Text>
               <View style={styles.settingsRow}>
@@ -733,7 +758,13 @@ export function GameScreen() {
                         }}
                         style={[
                           styles.selectorButton,
-                          { borderColor: isSelected ? "#22c55e" : isPreviewing ? "#f59e0b" : activeTheme.borderColor },
+                          {
+                            borderColor: isSelected
+                              ? "#22c55e"
+                              : isPreviewing
+                                ? "#f59e0b"
+                                : activeTheme.borderColor,
+                          },
                           isSelected && styles.selectorButtonActive,
                           isPreviewing && styles.selectorButtonPreviewing,
                         ]}
@@ -741,7 +772,11 @@ export function GameScreen() {
                         <View style={styles.selectorButtonInner}>
                           <Text
                             style={{
-                              color: isSelected ? "#22c55e" : isPreviewing ? "#f59e0b" : activeTheme.secondaryTextColor,
+                              color: isSelected
+                                ? "#22c55e"
+                                : isPreviewing
+                                  ? "#f59e0b"
+                                  : activeTheme.secondaryTextColor,
                               fontFamily: "Oxanium-Regular",
                               fontSize: 12,
                             }}
@@ -784,7 +819,9 @@ export function GameScreen() {
 
             {/* Theme */}
             <View style={styles.settingsSection}>
-              <Text style={[styles.settingsSectionLabel, { color: activeTheme.secondaryTextColor }]}>
+              <Text
+                style={[styles.settingsSectionLabel, { color: activeTheme.secondaryTextColor }]}
+              >
                 {t("game:theme")}
               </Text>
               <View style={styles.settingsRow}>
@@ -863,6 +900,23 @@ export function GameScreen() {
                 </Pressable>
               </View>
             )}
+
+            {/* Restore Purchases */}
+            <View style={styles.settingsSection}>
+              <Pressable
+                style={styles.restoreBtn}
+                onPress={async () => {
+                  const success = await restorePurchases()
+                  Alert.alert(
+                    t("game:restorePurchases"),
+                    success ? t("game:restoreSuccess") : t("game:restoreFailed"),
+                  )
+                }}
+              >
+                <Ionicons name="refresh" size={16} color="white" />
+                <Text style={styles.restoreBtnText}>{t("game:restorePurchases")}</Text>
+              </Pressable>
+            </View>
           </Pressable>
         </Pressable>
       </Modal>
@@ -902,12 +956,16 @@ export function GameScreen() {
         onRequestClose={() => setLeaderboardModalVisible(false)}
       >
         <GestureHandlerRootView style={styles.gestureRoot}>
-          <Pressable
-            style={styles.modalBackdrop}
-            onPress={() => setLeaderboardModalVisible(false)}
-          >
-            <Pressable style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}>
-              <HighScoreTable initialMode={mode} highlightIndex={highlightIndex} highlightMode={mode} theme={activeTheme} />
+          <Pressable style={styles.modalBackdrop} onPress={() => setLeaderboardModalVisible(false)}>
+            <Pressable
+              style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}
+            >
+              <HighScoreTable
+                initialMode={mode}
+                highlightIndex={highlightIndex}
+                highlightMode={mode}
+                theme={activeTheme}
+              />
             </Pressable>
           </Pressable>
         </GestureHandlerRootView>
@@ -977,13 +1035,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingHorizontal: 20,
   },
-  gestureRoot: {
-    flex: 1,
-  },
   gameBoard: {
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 30,
+  },
+  gestureRoot: {
+    flex: 1,
   },
   header: {
     alignItems: "center",
@@ -993,14 +1051,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     width: "100%",
   },
-  headerCenter: {
-    alignItems: "center",
-  },
   headerAction: {
     alignItems: "center",
     height: 44,
     justifyContent: "center",
     width: 44,
+  },
+  headerCenter: {
+    alignItems: "center",
+  },
+  lockIcon: {
+    opacity: 0.6,
   },
   modalBackdrop: {
     alignItems: "center",
@@ -1020,6 +1081,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginBottom: 16,
     textAlign: "center",
+  },
+  modeIndicator: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
+    marginTop: 2,
+  },
+  modeIndicatorText: {
+    fontFamily: "Oxanium-Medium",
+    fontSize: 12,
+    letterSpacing: 2,
+    textTransform: "uppercase",
   },
   modeItem: {
     alignItems: "center",
@@ -1074,25 +1147,6 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-SemiBold",
     fontSize: 14,
   },
-  lockIcon: {
-    opacity: 0.6,
-  },
-  unlockBtn: {
-    alignItems: "center",
-    backgroundColor: "#8b5cf6",
-    borderRadius: 8,
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "center",
-    marginTop: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  unlockBtnText: {
-    color: "white",
-    fontFamily: "Oxanium-SemiBold",
-    fontSize: 13,
-  },
   resetButton: {
     alignItems: "center",
     backgroundColor: "#ef4444",
@@ -1101,6 +1155,18 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 20,
     paddingVertical: 12,
+  },
+  restoreBtn: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6,
+    justifyContent: "center",
+    paddingVertical: 8,
+  },
+  restoreBtnText: {
+    color: "rgba(255,255,255,0.6)",
+    fontFamily: "Oxanium-Regular",
+    fontSize: 13,
   },
   scoreBox: {
     alignItems: "center",
@@ -1187,16 +1253,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
-  trophyButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(251, 191, 36, 0.15)",
-    borderColor: "#fbbf24",
-    borderRadius: 8,
-    borderWidth: 1,
-    justifyContent: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
   statusContainer: {
     alignItems: "center",
     paddingHorizontal: 20,
@@ -1236,24 +1292,38 @@ const styles = StyleSheet.create({
     fontSize: 36,
     letterSpacing: 4,
   },
+  titleLayerAbsolute: {
+    position: "absolute",
+  },
   titleStack: {
     alignItems: "center",
     justifyContent: "center",
   },
-  titleLayerAbsolute: {
-    position: "absolute",
-  },
-  modeIndicator: {
+  trophyButton: {
     alignItems: "center",
-    flexDirection: "row",
-    gap: 4,
-    marginTop: 2,
+    backgroundColor: "rgba(251, 191, 36, 0.15)",
+    borderColor: "#fbbf24",
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
-  modeIndicatorText: {
-    fontFamily: "Oxanium-Medium",
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 2,
+  unlockBtn: {
+    alignItems: "center",
+    backgroundColor: "#8b5cf6",
+    borderRadius: 8,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    marginTop: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  unlockBtnText: {
+    color: "white",
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 13,
   },
   waitingText: {
     color: "#22c55e",

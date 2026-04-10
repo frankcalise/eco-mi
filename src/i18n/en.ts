@@ -22,8 +22,12 @@ const en = {
     pressStart: "Press Start Game to begin!",
     continue: "Watch Ad to Continue",
     removeAds: "Remove Ads",
+    restorePurchases: "Restore Purchases",
+    restoreSuccess: "Purchases restored!",
+    restoreFailed: "Nothing to restore",
     home: "Home",
-    shareMessage: "I reached Level {{level}} with a score of {{score}} in {{mode}} mode on Eco Mi! Can you beat me?",
+    shareMessage:
+      "I reached Level {{level}} with a score of {{score}} in {{mode}} mode on Eco Mi! Can you beat me?",
     timeRemaining: "{{time}}s",
     sequencesCompleted: "Sequences: {{count}}",
     modes: {
@@ -80,6 +84,13 @@ const en = {
     friendlySubtitle:
       "This is the screen that your users will see in production when an error is thrown. You'll want to customize this message (located in `app/i18n/en.ts`) and probably the layout as well (`app/screens/ErrorScreen`). If you want to remove this entirely, check `app/app.tsx` for the <ErrorBoundary> component.",
     reset: "RESET APP",
+  },
+  tracking: {
+    title: "Help Improve Eco Mi",
+    subtitle:
+      "Share anonymous usage statistics to help us make the game better. No personal data is collected.",
+    shareButton: "Share Statistics",
+    maybeLater: "Maybe Later",
   },
   emptyStateComponent: {
     generic: {

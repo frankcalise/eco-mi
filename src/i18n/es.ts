@@ -22,8 +22,12 @@ const es = {
     pressStart: "Pulsa Iniciar Juego para empezar!",
     continue: "Ver Anuncio para Continuar",
     removeAds: "Eliminar Anuncios",
+    restorePurchases: "Restaurar Compras",
+    restoreSuccess: "Compras restauradas!",
+    restoreFailed: "Nada que restaurar",
     home: "Inicio",
-    shareMessage: "Llegue al Nivel {{level}} con {{score}} puntos en modo {{mode}} en Eco Mi! Puedes superarme?",
+    shareMessage:
+      "Llegue al Nivel {{level}} con {{score}} puntos en modo {{mode}} en Eco Mi! Puedes superarme?",
     timeRemaining: "{{time}}s",
     sequencesCompleted: "Secuencias: {{count}}",
     modes: {
@@ -80,6 +84,13 @@ const es = {
     friendlySubtitle:
       "Ha ocurrido un error inesperado. Por favor, intenta reiniciar la aplicacion.",
     reset: "REINICIAR APP",
+  },
+  tracking: {
+    title: "Ayuda a Mejorar Eco Mi",
+    subtitle:
+      "Comparte estadisticas de uso anonimas para ayudarnos a mejorar el juego. No se recopilan datos personales.",
+    shareButton: "Compartir Estadisticas",
+    maybeLater: "Quizas Despues",
   },
   emptyStateComponent: {
     generic: {

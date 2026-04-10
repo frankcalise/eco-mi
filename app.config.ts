@@ -94,6 +94,7 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
           androidPermissions: ["android.permission.MODIFY_AUDIO_SETTINGS"],
           iosMicrophonePermission:
             "This app does not use the microphone. This permission is required by the audio engine library.",
+          iosBackgroundMode: false,
         },
       ],
       "expo-tracking-transparency",
