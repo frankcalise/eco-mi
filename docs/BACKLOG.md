@@ -33,6 +33,39 @@
 - [ ] **Buttons stay lit during fast sequence playback at high levels (~14-15+)**
       At higher levels where tone duration and sequence interval are very short, consecutive same-color notes (e.g., 3 blues in a row) play the audio correctly but the button never visually returns to its unpressed state between notes. The active/lit state persists across all 3 tones, making it impossible to visually count repeated colors. Likely cause: the deactivation delay in `showSequence` is longer than or equal to the interval between notes, so the button never flashes off before the next activation. Fix by ensuring a minimum gap between the active state turning off and the next note turning it on — even at the fastest speeds, there should be a brief visible "off" frame. Need to verify the timing math in `src/config/difficulty.ts` (`getToneDuration`, `getSequenceInterval`) and the flash logic in `useGameEngine`. Add a Maestro or manual test scenario that reaches level 15+ with a seeded sequence containing consecutive same-color notes to verify the fix.
 
+- [ ] **Rewarded ad grants continue before ad completes (AdMob policy risk)**
+      `showRewarded()` in `useAds.ts` returns `true` immediately after calling `.show()` without waiting for the `EARNED_REWARD` event. Player gets the continue even if they dismiss the ad early. This violates AdMob policy (reward only after callback). Fix by awaiting the reward event listener before resolving the promise. Also creates a jarring transition — game replays sequence while ad overlay may still be visible.
+
+- [ ] **Dual high score system causes incorrect "New High Score!" celebrations**
+      `useGameEngine.ts` stores a single cross-mode `highScore` via `"simon-high-score"` key, while `useHighScores.ts` stores per-mode top-10 leaderboards via `"ecomi:highScores:{mode}"`. The single-value high score is not mode-aware — beating your classic score in timed mode triggers the celebration incorrectly, and setting a new mode-specific record may not trigger it at all. Consolidate to use the per-mode leaderboard as the source of truth for `isNewHighScore`.
+
+- [ ] **Race condition: rapid button taps register multiple inputs**
+      In `useGameEngine.ts`, touching button B before releasing button A processes both as inputs. At higher levels, fast players accidentally register extra inputs, and the visual state (which button is lit) disagrees with what was processed. Add input debouncing or lock out new touches until the current touch is released.
+
+- [ ] **Audio context silently dies after backgrounding with no recovery**
+      `ctx.resume()` failures in `useAudioTones.tsx` are swallowed by empty catch blocks. If the AudioContext enters an unrecoverable state after prolonged backgrounding (common on iOS), all audio dies with no indicator or recovery mechanism. The game becomes visual-only without the player understanding why. Add a health check and context recreation fallback.
+
+- [ ] **`playPreview` ignores `soundEnabled` flag**
+      `useAudioTones.tsx` `playPreview()` only checks `contextReadyRef.current` but not `soundEnabled`. Sound pack previews play audio even when the player has explicitly muted. Compare with `playSound` and `playJingle` which both respect the flag.
+
+- [ ] **`continueGame` double-counts stats**
+      When a player uses a rewarded ad to continue and then fails again, `recordGameResult(score)` is called a second time. This inflates `gamesPlayed` and deflates `averageScore` in stats. Guard against recording a game result if the previous game-over already recorded it, or flag continued games distinctly.
+
+- [ ] **`continueGame` doesn't reset `isNewHighScore` flag**
+      If a player gets a new high score, sees the celebration, continues via rewarded ad, then fails again, the game-over screen shows the high score celebration a second time for the same score.
+
+- [ ] **Daily streak counter leaks into non-daily mode stats**
+      `recordGameResult()` in `useStats.ts` copies the daily streak to `longestStreak` on every game-over, including non-daily modes. Playing a classic game after a daily streak snapshots the daily streak as `longestStreak` even though classic has nothing to do with streaks.
+
+- [ ] **Reset button mid-game should be "End Game" with game-over flow**
+      The Reset button during active gameplay destroys the current run with zero confirmation — score is lost, no game-over overlay, no stats recorded, no high score entry. During active gameplay, replace "Reset" with "End Game" that triggers the normal game-over flow (score recorded, overlay shown, high score entry if qualified). "Reset" is fine on the idle screen.
+
+- [ ] **ReviewPrompt has no dismiss option**
+      `ReviewPrompt.tsx` forces users into a binary choice ("Love it" / "Not really") with no close button, no backdrop dismiss, no "Maybe Later." Tapping "Not Really" immediately opens a Google Form in the browser with no warning. Add a dismiss/skip option and a confirmation before opening the external URL.
+
+- [ ] **No splash screen management — blank frame on cold start**
+      No `SplashScreen.preventAutoHideAsync()` call anywhere. The native splash auto-hides immediately, then users see a blank/black screen while i18n and fonts load. Add splash screen hold in `_layout.tsx` and hide it once `loaded` is true.
+
 - [x] **Manually test review pre-prompt flow on device**
       The review prompt requires 5+ games played, no ad shown this session, and 30-day cooldown. Temporarily lower `MIN_GAMES_FOR_REVIEW` to 1 and bypass the `adShownThisSession` check to verify the "Love it!" and "Not really" paths work correctly. Verify the "Not really" path opens the feedback channel. Revert thresholds after testing.
 
@@ -57,8 +90,48 @@
 - [x] **Timed mode: circular progress ring around center circle**
       Replace the plain center circle border with a circular progress ring that depletes as time runs out. The ring should animate smoothly from full (green) to empty (red) over 60 seconds. Could use `react-native-svg` (already installed) with an animated `strokeDashoffset` on a `Circle` element, driven by `react-native-ease` or a simple interpolation from `timeRemaining / 60`.
 
+- [ ] **Animated score/level counters in stat pill boxes**
+      The Level, Score, and Best pill boxes currently hard-swap numbers. Animate the transition so values smoothly increment (rolling counter / odometer effect) when they change during gameplay. Use `react-native-ease` to tween from old value to new value over ~300ms. Gives a polished, juicy feel to scoring without adding visual noise.
+
+- [ ] **Add press feedback to all Pressable elements**
+      Every `Pressable` outside game buttons uses static styles with no press state. No opacity change, scale, or color shift on tap. This is the single most obvious "indie app" tell. Create a shared `style={({ pressed }) => [...]}` pattern or wrapper component that adds subtle opacity/scale feedback. Apply to: start button, play again, share, reset, settings items, mode items, sound toggles, theme selectors, unlock buttons, restore purchases, header icons.
+
+- [ ] **Game Over overlay entry/exit animation**
+      `GameOverOverlay` conditionally renders with `if (!visible) return null` — no fade-in, slide-up, or scale animation. The overlay snaps on/off instantly at the most emotionally charged moment. Add a staggered reveal: backdrop fade → card scale-up → stats cascade in. Use `react-native-ease`.
+
+- [ ] **Screen transition animations**
+      Root layout uses bare `<Slot />` with no `<Stack>` navigator. Navigation between screens (game → achievements, game → stats, index → tracking) is an instant hard cut. Convert to `<Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }}>` or similar.
+
+- [ ] **Score box layout jitter on digit changes**
+      Score/Level/Best pill boxes use `minWidth: 80` but no fixed width. When values jump from 9→10 or 99→100, the box width changes and the row reflows. Use tabular-number font features or fixed-width containers to prevent layout shifts during gameplay.
+
+- [ ] **HighScoreTable highlight row indistinguishable from zebra-stripe**
+      The highlighted "your new score" row gets `backgroundColor: theme.surfaceColor`, which is identical to even-row zebra-stripe coloring. The pulsing opacity partially compensates but the background should be distinctly different (e.g., a tinted accent color).
+
+- [ ] **Achievement unlock notification/toast**
+      `useAchievements.ts` tracks `newlyUnlocked` state but nothing reads it. No toast, banner, or animation when earning an achievement. The entire point of achievements is the moment of recognition — without visible feedback they have zero motivational value. Add a brief celebration toast that appears over gameplay.
+
+- [ ] **Upgrade high score celebration with premium Lottie animation**
+      The current high score celebration is basic. Browse [LottieFiles](https://lottiefiles.com/) for a higher-quality trophy/confetti animation that better matches the game's aesthetic. Look for animations with:
+  - Gold trophy or medal with particle confetti burst
+  - Dark background compatibility (transparent or dark-themed)
+  - Smooth looping or a clean one-shot with a satisfying ending
+  - Compact file size (< 100KB JSON)
+  Replace the existing animation in `assets/animations/` and verify it renders well across the different game themes (Classic dark, Neon dark, Retro dark, Pastel light).
+
 - [ ] **Escalating haptic feedback for timed mode countdown**
-      Under 10s: light tick each second. Under 5s: medium. Under 3s: heavy double-pulse (heartbeat). Need to evaluate whether `expo-haptics` has enough granularity or if `react-native-nitro-haptics` is needed for finer control. Also need to ensure countdown haptics don't conflict with the existing button tap and sequence playback haptics — may need to suppress timer haptics during active input.
+      Under 10s: light tick each second. Under 5s: medium. Under 3s: heavy double-pulse (heartbeat). Current `expo-haptics` is limited to basic impact/notification styles. Evaluate richer haptic libraries for finer control:
+  - **[Pulsar](https://github.com/software-mansion/pulsar)** (Software Mansion) — cross-platform haptic SDK with pattern composer, realtime composer, and Reanimated worklet support. Built-in presets (earthquake, success, fail, tap) plus custom amplitude/frequency envelopes. Best option for game feel.
+  - **react-native-nitro-haptics** — lighter alternative with more granularity than expo-haptics
+  Ensure countdown haptics don't conflict with existing button tap and sequence playback haptics — may need to suppress timer haptics during active input.
+
+- [ ] **Haptics overhaul: migrate from expo-haptics to Pulsar**
+      Replace `expo-haptics` across the app with [Pulsar](https://github.com/software-mansion/pulsar) for richer, more nuanced haptic feedback. Pulsar's pattern composer enables custom haptic sequences per game event (button press, round complete, game over, high score) and its realtime composer could drive gesture-driven feedback. Evaluate:
+  - Custom patterns for each game button color (different amplitude/frequency per color)
+  - Escalating intensity patterns for streak combos
+  - Distinct game-over vs high-score celebration haptics
+  - Whether worklet integration improves responsiveness during animations
+  - Backward compatibility — ensure Android API 24+ coverage is acceptable
 
 - [ ] **Explore Expo UI adaptive/dynamic colors as a theme option**
       Investigate `expo-ui` adaptive colors (iOS dynamic colors, Android Material You). Could be a "System" theme that pulls the device's accent colors for the game buttons and UI chrome. Evaluate whether this works as the default theme (free, adapts to every user's device) or as a separate purchasable theme. Research: does `@expo/ui` expose adaptive color primitives that work cross-platform? What does it look like on Android Material You vs iOS?
@@ -82,6 +155,94 @@
 
 - [x] **Idle screen: one-shot retro chiptune jingle**
       Compose a short (3–5 second) retro chiptune jingle using the existing `react-native-audio-api` oscillator engine. Play it once when the game returns to idle state (app launch, after game over → home, after reset). The jingle should use the currently selected sound pack's `oscillatorType` (sine, square, sawtooth, triangle) so it changes character with the player's choice. Respect the existing `soundEnabled` toggle — no sound when muted. Keep the melody simple: 6–10 notes in a major key, ascending pattern, classic arcade "ready!" feel.
+
+---
+
+## UX Polish & Accessibility
+
+- [ ] **Add accessibility labels and roles to all interactive elements**
+      Zero `accessibilityLabel`, `accessibilityRole`, or `accessibilityHint` props on any interactive element app-wide (except 2 instances in GameOverOverlay). VoiceOver/TalkBack users cannot use the app. Systematically annotate every Pressable, button, display, and modal. Prioritize game buttons, header actions, settings controls, and navigation.
+
+- [ ] **Fix touch targets below 44pt minimum (Apple HIG)**
+      Theme circles are 32x32pt, sound pack selector buttons ~30pt, back buttons on achievements/stats ~32pt. Add `hitSlop` or increase padding to meet the 44x44pt minimum. These are IAP purchase entry points — missed taps directly cost revenue.
+
+- [ ] **Make GameOverOverlay and ReviewPrompt theme-aware**
+      Both components hardcode dark colors (`#1a1a2e`, `#ef4444`, etc.) and don't accept a theme prop. When playing on the Pastel theme (light background), overlays still render dark. Pass the active game theme and adapt colors to maintain visual consistency.
+
+- [ ] **Make settings modal scrollable**
+      Settings modal content (sound toggle, sound packs, themes, remove ads, restore purchases) is in a non-scrollable container. On iPhone SE or with larger dynamic type, content overflows and the Restore Purchases button (legally required) gets clipped. Wrap in a `ScrollView`.
+
+- [ ] **Replace `Alert.alert` for Restore Purchases with themed feedback**
+      Restore purchases success/failure uses native `Alert.alert()`, which breaks the dark-themed experience. Replace with an inline toast or themed dialog matching the rest of the UI.
+
+- [ ] **Standardize modal dimensions and border radii**
+      Three different modal width strategies (80%, 85%, maxWidth 360) and two border radii (12, 16) across overlays. Create a shared modal base component with consistent sizing for a unified visual language.
+
+- [ ] **Use safe area insets on achievements and stats screens**
+      Both screens hardcode `paddingTop: 60` instead of using `useSafeAreaInsets().top`. Breaks on Dynamic Island iPhones and varies across Android devices.
+
+- [ ] **Add keyboard avoidance to InitialEntryModal**
+      No `KeyboardAvoidingView` wrapping the modal content. On iPhone SE or with larger keyboards, the "Done" button may be obscured behind the keyboard.
+
+- [ ] **Add encouraging empty state for leaderboard**
+      Brand new users see 10 identical placeholder rows ("---" / "----"). Replace with an illustration or motivational message ("Play your first game to see your scores here!") when no scores exist.
+
+- [ ] **Fix progress dots overflow at high levels**
+      One 10px dot per sequence item in a non-wrapping horizontal row. At level 20+, dots overflow on narrow screens. Switch to a fraction display (e.g., "12/20") or cap visible dots with a "+N" indicator at higher levels.
+
+- [ ] **Add "not yet" feedback when tapping during sequence playback**
+      During the "showing" phase, eager player taps are silently ignored. Add a brief haptic buzz or subtle visual pulse to communicate "input received but not ready yet" instead of dead silence.
+
+- [ ] **Locked achievement text fails WCAG AA contrast ratio**
+      `#6b6b7b` text on effective `#121222` background is ~3.8:1 contrast. WCAG AA requires 4.5:1 for normal text (13px/11px). Lighten the locked text color or darken less aggressively.
+
+- [ ] **Tracking screen "Share Statistics" copy is misleading**
+      "Share Statistics" implies game stats but actually triggers ATT ad tracking consent. Apple has rejected apps for misleading pre-permission language. Revise to something like "Allow Tracking" or "Support with Ads" that accurately describes the IDFA consent being requested.
+
+---
+
+## i18n Quality
+
+- [ ] **Fix missing diacritical marks in Spanish and Portuguese**
+      Systematic missing accents: ES "Estadisticas" → "Estadísticas", "Puntuacion" → "Puntuación", "dia" → "día", etc. PT "Configuracoes" → "Configurações", "Pontuacao" → "Pontuação", "comecar" → "começar", etc. Looks machine-translated to native speakers and undermines trust.
+
+- [ ] **Translate hardcoded English strings in settings modal**
+      `GameScreen.tsx` "On"/"Off" toggle text, "Unlock Sound ({name})", "Unlock Theme ({name})" are literal English, not i18n keys. Also "SCORE"/"LVL" in `HighScoreTable.tsx` and "PTS - LVL" in `InitialEntryModal.tsx`. Add translation keys for all.
+
+- [ ] **Localize achievement titles and descriptions**
+      All 15 achievement titles ("First Steps", "Triple Digits", etc.) and descriptions in `achievements.ts` are hardcoded English strings, bypassing the i18n system. Move to translation keys so ES/PT users see localized achievements.
+
+---
+
+## Game Design
+
+- [ ] **Add input timeout to "waiting" state**
+      `getInputTimeout()` is defined in `difficulty.ts` but never called. Players can idle forever mid-sequence with no timer or penalty. This eliminates the memory challenge (could write down the sequence). Add a generous but firm timeout that triggers game-over, with a visual countdown indicator in the last few seconds.
+
+- [ ] **Extend difficulty curve beyond level 16**
+      Tone duration and sequence interval both hit their floor (~300ms) at level 16-17. Game stops escalating and becomes monotonous. Consider secondary challenge escalation: reducing input timeout, adding visual distractions, shortening the replay window, or introducing partial sequence hints that fade at higher levels.
+
+- [ ] **Reconsider interstitial ad placement**
+      Currently shows after "Play Again" tap — player makes a positive choice to continue, immediately gets punished with an ad. Consider showing during the natural game-over pause (before player takes action) or after the game-over overlay dismisses but before the new game starts. The 3-min gap and 2-game frequency cap help, but placement right after the "play again" intent is the most flow-breaking moment.
+
+- [ ] **Add time penalty for wrong input in timed mode**
+      Wrong input replays the current sequence with no score or time penalty — effectively a free hint. Add a small time penalty (e.g., -3 seconds) so wrong inputs feel like a genuine setback rather than a free replay.
+
+- [ ] **Fill achievement pacing gap between levels 10-15**
+      Level achievements jump 5→10→15→20 with no intermediate milestones. The 5-level gap during the hardest progression creates a feedback drought. Add a level 12 or 13 achievement to maintain motivation.
+
+---
+
+## Navigation & Features
+
+- [ ] **Wire up achievements and stats screen navigation**
+      Routes exist at `/achievements` and `/stats` but zero navigation points to them from anywhere in the app. Add entry points from the idle game screen header (trophy icon already exists for leaderboard — add stats/achievements icons) and from the game-over overlay ("View Stats" link). These are entire features that users cannot currently access.
+
+- [ ] **Invoke achievement unlock logic during gameplay**
+      `checkAchievements()` exists in `useAchievements.ts` but is never called. Import and call it from `GameScreen.tsx` on relevant game events (game over, round complete). Without this, achievements never unlock even if navigation is added.
+
+- [ ] **Add achievements/stats links to Game Over overlay**
+      The game-over moment is the highest-engagement point for showing progress. Add a "View Stats" or "Achievements" link to the overlay so players who just beat their high score can see their overall progress.
 
 ---
 
@@ -297,7 +458,7 @@
 - [x] **Integrate expo-observe for performance monitoring**
       `npx expo install expo-eas-observe` — currently in technical preview / early access. Tracks session performance (TTI, frame drops, device breakdown), before/after release comparisons, and outlier detection. Minimal setup. **Note:** User has early access with Notion notes containing setup details — prompt for those when executing this task.
 
-- [ ] **Submit v1.0 to App Store and Google Play**
+- [x] **Submit v1.0 to App Store and Google Play**
   - `eas build --profile production --platform all`
   - `eas submit --platform ios` + `eas submit --platform android`
   - Blocked by: All Phase 1 tasks complete, store accounts set up, ASO assets ready
@@ -413,7 +574,7 @@
   - Enable `supportsTablet: true` in `app.config.ts` once layout is ready
   - Add iPad screenshots to App Store listing (required for iPad-supported apps)
 
-- [ ] **Localize App Store listings (ES, PT)**
+- [x] **Localize App Store listings (ES, PT)**
       Translate subtitle, description, and keywords for Spanish and Portuguese in App Store Connect and Google Play Console.
   - Ref: VISION.md > ASO > Store Listing Copy, Localization > App Store Localization
 
