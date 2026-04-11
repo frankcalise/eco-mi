@@ -22,6 +22,7 @@
       "@/*": ["./src/*"],
       "@assets/*": ["./assets/*"]
     },
+    "types": ["jest"],
     "typeRoots": ["./node_modules/@types", "./types"]
   },
   "ts-node": {

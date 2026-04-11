@@ -209,7 +209,7 @@ describe("useGameEngine", () => {
   })
 
   it("cleans up timeouts on unmount", () => {
-    const clearTimeoutSpy = jest.spyOn(global, "clearTimeout")
+    const clearTimeoutSpy = jest.spyOn(globalThis, "clearTimeout")
 
     const { result, unmount } = renderHook(() => useGameEngine())
 
