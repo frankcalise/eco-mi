@@ -51,12 +51,6 @@ export function recordGameResult(score: number) {
     saveString(KEYS.bestScore, score.toString())
   }
 
-  const currentStreak = getNum(KEYS.currentStreak)
-  const longestStreak = getNum(KEYS.longestStreak)
-  if (currentStreak > longestStreak) {
-    saveString(KEYS.longestStreak, currentStreak.toString())
-  }
-
   const today = new Date().toISOString().split("T")[0]
   saveString(KEYS.lastPlayedDate, today)
 }

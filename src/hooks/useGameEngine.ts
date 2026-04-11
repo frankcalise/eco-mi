@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import * as Haptics from "expo-haptics"
 import type { OscillatorType } from "react-native-audio-api"
 
-import { getToneDuration, getSequenceInterval } from "@/config/difficulty"
+import { getToneDuration, getSequenceInterval, getInputTimeout } from "@/config/difficulty"
 import { pickShuffleSequence, getShuffleStepDelay } from "@/config/shuffleAnimations"
 import { type GameTheme, gameThemes } from "@/config/themes"
 import { useAudioTones } from "@/hooks/useAudioTones"
@@ -155,6 +155,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
   const scoreRef = useRef(0)
   const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
+  const inputTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const buttonPressStartTime = useRef<number | null>(null)
   const testSeed = getTestSeed()
   const seededRng = useRef(testSeed !== null ? mulberry32(testSeed) : null)
@@ -192,6 +193,10 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       clearTimeout(id)
     }
     timeoutsRef.current.clear()
+    if (inputTimeoutRef.current) {
+      clearTimeout(inputTimeoutRef.current)
+      inputTimeoutRef.current = null
+    }
   }
 
   // --- Sequence generation (seeded or random) ---
@@ -231,9 +236,18 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
     if (lastPlayed === yesterdayKey) {
       const streak = parseInt(loadString(DAILY_STREAK_KEY) ?? "1", 10)
-      saveString(DAILY_STREAK_KEY, (streak + 1).toString())
+      const newStreak = streak + 1
+      saveString(DAILY_STREAK_KEY, newStreak.toString())
+      const longestStreak = parseInt(loadString("ecomi:stats:longestStreak") ?? "0", 10)
+      if (newStreak > longestStreak) {
+        saveString("ecomi:stats:longestStreak", newStreak.toString())
+      }
     } else if (lastPlayed !== todayKey) {
       saveString(DAILY_STREAK_KEY, "1")
+      const longestStreak = parseInt(loadString("ecomi:stats:longestStreak") ?? "0", 10)
+      if (longestStreak === 0) {
+        saveString("ecomi:stats:longestStreak", "1")
+      }
     }
 
     saveString(DAILY_LAST_PLAYED_KEY, todayKey)
@@ -281,6 +295,22 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
           if (index === seq.length - 1) {
             addTimeout(() => {
               setGameState("waiting")
+              if (mode !== "timed") {
+                if (inputTimeoutRef.current) clearTimeout(inputTimeoutRef.current)
+                inputTimeoutRef.current = setTimeout(() => {
+                  inputTimeoutRef.current = null
+                  setGameState("gameover")
+                  stopTimer()
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+                  const currentScore = scoreRef.current
+                  if (currentScore > highScore) {
+                    setHighScore(currentScore)
+                    setIsNewHighScore(true)
+                    saveHighScore(currentScore)
+                  }
+                  recordGameResult(currentScore)
+                }, getInputTimeout(seq.length))
+              }
             }, toneDuration + 100)
           }
         },
@@ -398,6 +428,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     if (gameState !== "gameover") return
     clearAllTimeouts()
     setContinuedThisGame(true)
+    setIsNewHighScore(false)
     setPlayerSequence([])
     setActiveButton(null)
 
@@ -443,6 +474,12 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
     const newPlayerSequence = [...playerSequence, color]
     setPlayerSequence(newPlayerSequence)
+
+    // Clear input timeout on any tap
+    if (inputTimeoutRef.current) {
+      clearTimeout(inputTimeoutRef.current)
+      inputTimeoutRef.current = null
+    }
 
     // Wrong move — check for expected color based on mode
     const expectedIndex =

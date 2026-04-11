@@ -51,10 +51,10 @@
 - [ ] **`continueGame` double-counts stats**
       When a player uses a rewarded ad to continue and then fails again, `recordGameResult(score)` is called a second time. This inflates `gamesPlayed` and deflates `averageScore` in stats. Guard against recording a game result if the previous game-over already recorded it, or flag continued games distinctly.
 
-- [ ] **`continueGame` doesn't reset `isNewHighScore` flag**
+- [x] **`continueGame` doesn't reset `isNewHighScore` flag**
       If a player gets a new high score, sees the celebration, continues via rewarded ad, then fails again, the game-over screen shows the high score celebration a second time for the same score.
 
-- [ ] **Daily streak counter leaks into non-daily mode stats**
+- [x] **Daily streak counter leaks into non-daily mode stats**
       `recordGameResult()` in `useStats.ts` copies the daily streak to `longestStreak` on every game-over, including non-daily modes. Playing a classic game after a daily streak snapshots the daily streak as `longestStreak` even though classic has nothing to do with streaks.
 
 - [ ] **Reset button mid-game should be "End Game" with game-over flow**
@@ -96,8 +96,11 @@
 - [ ] **Add press feedback to all Pressable elements**
       Every `Pressable` outside game buttons uses static styles with no press state. No opacity change, scale, or color shift on tap. This is the single most obvious "indie app" tell. Create a shared `style={({ pressed }) => [...]}` pattern or wrapper component that adds subtle opacity/scale feedback. Apply to: start button, play again, share, reset, settings items, mode items, sound toggles, theme selectors, unlock buttons, restore purchases, header icons.
 
-- [ ] **Game Over overlay entry/exit animation**
-      `GameOverOverlay` conditionally renders with `if (!visible) return null` — no fade-in, slide-up, or scale animation. The overlay snaps on/off instantly at the most emotionally charged moment. Add a staggered reveal: backdrop fade → card scale-up → stats cascade in. Use `react-native-ease`.
+- [ ] **Game Over: full sensory treatment (animation + sound + haptics)**
+      The game-over moment lacks punch. Currently: overlay snaps on instantly (no animation), a basic `notificationAsync(Error)` haptic fires, and there's no game-over sound. This is the most emotionally charged moment in the game and needs a full sensory treatment:
+  - **Animation**: Staggered overlay reveal — backdrop fade → card scale-up → stats cascade in. Use `react-native-ease`. Differentiate between regular game-over and new-high-score game-over (the latter should feel celebratory, not punishing).
+  - **Sound**: Compose a short (~1-2s) game-over jingle using the existing `react-native-audio-api` oscillator engine, similar to the idle jingle but descending/minor key. For new high score, play a triumphant ascending jingle instead. Respect `soundEnabled` toggle and use the active sound pack's `oscillatorType`.
+  - **Haptics**: Escalate beyond the single error notification — consider a double-pulse "thud" for regular game-over and a success notification pattern for new high score. Evaluate Pulsar (once migrated) for richer patterns.
 
 - [ ] **Screen transition animations**
       Root layout uses bare `<Slot />` with no `<Stack>` navigator. Navigation between screens (game → achievements, game → stats, index → tracking) is an instant hard cut. Convert to `<Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }}>` or similar.
@@ -216,7 +219,7 @@
 
 ## Game Design
 
-- [ ] **Add input timeout to "waiting" state**
+- [x] **Add input timeout to "waiting" state**
       `getInputTimeout()` is defined in `difficulty.ts` but never called. Players can idle forever mid-sequence with no timer or penalty. This eliminates the memory challenge (could write down the sequence). Add a generous but firm timeout that triggers game-over, with a visual countdown indicator in the last few seconds.
 
 - [ ] **Extend difficulty curve beyond level 16**
