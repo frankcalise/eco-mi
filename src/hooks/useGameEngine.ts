@@ -305,11 +305,15 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     setGameState("showing")
     const toneDuration = getToneDuration(currentLevel)
     const interval = getSequenceInterval(currentLevel)
+    // Ensure an 80ms visual gap between flashes so consecutive same-color
+    // notes produce a visible "off" frame even at high speeds.
+    const MIN_GAP = 80
+    const flashDuration = Math.min(toneDuration, interval - MIN_GAP)
 
     seq.forEach((color, index) => {
       addTimeout(
         () => {
-          flashButton(color, toneDuration)
+          flashButton(color, flashDuration)
 
           if (index === seq.length - 1) {
             addTimeout(() => {
@@ -349,7 +353,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
                   }
                 }, totalMs)
               }
-            }, toneDuration + 100)
+            }, flashDuration + 100)
           }
         },
         (index + 1) * interval,
