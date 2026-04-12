@@ -57,7 +57,7 @@
 - [x] **Daily streak counter leaks into non-daily mode stats**
       `recordGameResult()` in `useStats.ts` copies the daily streak to `longestStreak` on every game-over, including non-daily modes. Playing a classic game after a daily streak snapshots the daily streak as `longestStreak` even though classic has nothing to do with streaks.
 
-- [ ] **Reset button mid-game should be "End Game" with game-over flow**
+- [x] **Reset button mid-game should be "End Game" with game-over flow**
       The Reset button during active gameplay destroys the current run with zero confirmation — score is lost, no game-over overlay, no stats recorded, no high score entry. During active gameplay, replace "Reset" with "End Game" that triggers the normal game-over flow (score recorded, overlay shown, high score entry if qualified). "Reset" is fine on the idle screen.
 
 - [x] **ReviewPrompt has no dismiss option**

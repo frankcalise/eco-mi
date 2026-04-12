@@ -11,6 +11,7 @@ const es = {
     subtitle: "Juego de Memoria",
     startGame: "Iniciar Juego",
     reset: "Reiniciar",
+    endGame: "Terminar",
     sound: "Sonido",
     playAgain: "Jugar de Nuevo",
     share: "Compartir",

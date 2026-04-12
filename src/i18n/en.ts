@@ -11,6 +11,7 @@ const en = {
     subtitle: "Memory Challenge Game",
     startGame: "Start Game",
     reset: "Reset",
+    endGame: "End Game",
     sound: "Sound",
     playAgain: "Play Again",
     share: "Share",

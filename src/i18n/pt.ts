@@ -11,6 +11,7 @@ const pt = {
     subtitle: "Jogo de Memória",
     startGame: "Iniciar Jogo",
     reset: "Reiniciar",
+    endGame: "Encerrar",
     sound: "Som",
     playAgain: "Jogar Novamente",
     share: "Compartilhar",

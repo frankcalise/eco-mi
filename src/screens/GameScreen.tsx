@@ -144,6 +144,7 @@ export function GameScreen() {
     playerSequence,
     startGame,
     resetGame,
+    endGame,
     continueGame,
     handleButtonTouch,
     handleButtonRelease,
@@ -672,9 +673,9 @@ export function GameScreen() {
         )}
 
         {(gameState === "showing" || gameState === "waiting") && (
-          <PressableScale testID="btn-reset" style={styles.resetButton} onPress={resetGame}>
+          <PressableScale testID="btn-reset" style={styles.resetButton} onPress={endGame}>
             <Ionicons name="stop" size={24} color="white" />
-            <Text style={styles.buttonText}>{t("game:reset")}</Text>
+            <Text style={styles.buttonText}>{t("game:endGame")}</Text>
           </PressableScale>
         )}
       </View>

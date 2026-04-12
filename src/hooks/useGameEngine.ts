@@ -87,6 +87,7 @@ interface UseGameEngineReturn {
 
   startGame: () => void
   resetGame: () => void
+  endGame: () => void
   continueGame: () => void
   handleButtonTouch: (color: Color) => void
   handleButtonRelease: (color: Color) => void
@@ -456,6 +457,27 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     buttonPressStartTime.current = null
   }
 
+  function endGame() {
+    if (gameState !== "showing" && gameState !== "waiting") return
+    clearAllTimeouts()
+    stopTimer()
+    setGameState("gameover")
+    setActiveButton(null)
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+
+    if (score > highScore) {
+      setHighScore(score)
+      setIsNewHighScore(true)
+      saveHighScore(score)
+    }
+
+    recordGameResult(score)
+
+    if (mode === "daily") {
+      saveDailyResult(score)
+    }
+  }
+
   function continueGame() {
     if (gameState !== "gameover") return
     clearAllTimeouts()
@@ -614,6 +636,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
     startGame,
     resetGame,
+    endGame,
     continueGame,
     handleButtonTouch,
     handleButtonRelease,
