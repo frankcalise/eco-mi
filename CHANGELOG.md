@@ -10,6 +10,20 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 - `isNewHighScore` flag now resets when using rewarded ad continue — previously showed the high score celebration a second time on the subsequent game-over
 - Added input timeout to "waiting" state — players can no longer idle indefinitely mid-sequence. After `sequenceLength * 2000ms` with no input, the game ends. Timer clears on any button tap.
 - Daily streak no longer leaks into non-daily mode stats — `recordGameResult()` was reading the daily streak key and copying it to `longestStreak` on every game-over regardless of mode. Streak-to-longest logic now only runs inside `saveDailyResult()` (daily mode only).
+- Fix all missing diacritical marks in ES/PT translations (accents, cedillas, tildes)
+- Replace hardcoded English "On"/"Off", "Unlock Sound/Theme" with i18n keys across settings
+- Localize all 15 achievement titles and descriptions into ES/PT (previously English-only)
+- Fix misleading ATT tracking screen copy: "Share Statistics" → "Allow Tracking"
+- Add "Maybe Later" dismiss option and backdrop tap-to-dismiss on ReviewPrompt (previously forced binary choice)
+- Add `SplashScreen.preventAutoHideAsync()` / `hideAsync()` — eliminates blank frame on cold start
+- Wire up achievements and stats screen navigation from idle screen
+- Invoke `checkAchievements()` on game over — achievements now actually unlock during gameplay
+- Wrap settings modal content in `ScrollView` — Restore Purchases reachable on small screens
+
+### Test
+- 68 unit tests (useGameEngine bugs, useHighScores, useStats, useAchievements, useStoreReview, game flow integration)
+- 9 Maestro E2E flows: app-launches, happy-path, game-over, game-over-home, navigation, settings, mode-switch, leaderboard, tracking-screen — all passing
+- Accessibility labels on back buttons (stats, achievements) — Maestro finds via a11y, doubles as VoiceOver support
 
 ### Feat
 - `82368ac` — Gate themes and sound packs behind IAP with live preview UX. Classic free, others require purchase. Preview behind settings overlay, revert on dismiss, unlock buttons with RevenueCat purchase flow.
