@@ -7,7 +7,6 @@ import {
   StyleSheet,
   useWindowDimensions,
   Modal,
-  Alert,
   ScrollView,
 } from "react-native"
 import * as Haptics from "expo-haptics"
@@ -202,6 +201,7 @@ export function GameScreen() {
   const pulseTimers = useRef<ReturnType<typeof setTimeout>[]>([])
   const [poppingSoundPack, setPoppingSoundPack] = useState<string | null>(null)
   const [soundHint, setSoundHint] = useState(false)
+  const [restoreMessage, setRestoreMessage] = useState<string | null>(null)
   const [poppingTheme, setPoppingTheme] = useState<string | null>(null)
   const [achievementToast, setAchievementToast] = useState<{
     title: string
@@ -1046,15 +1046,27 @@ export function GameScreen() {
                   accessibilityRole="button"
                   onPress={async () => {
                     const success = await restorePurchases()
-                    Alert.alert(
-                      t("game:restorePurchases"),
+                    setRestoreMessage(
                       success ? t("game:restoreSuccess") : t("game:restoreFailed"),
                     )
+                    setTimeout(() => setRestoreMessage(null), 3000)
                   }}
                 >
                   <Ionicons name="refresh" size={16} color="white" />
                   <Text style={styles.restoreBtnText}>{t("game:restorePurchases")}</Text>
                 </PressableScale>
+                <EaseView
+                  animate={{
+                    opacity: restoreMessage ? 1 : 0,
+                    scale: restoreMessage ? 1 : 0.95,
+                  }}
+                  transition={{
+                    default: { type: "timing", duration: 200, easing: "easeOut" },
+                  }}
+                  style={restoreMessage ? undefined : styles.hintHidden}
+                >
+                  <Text style={styles.restoreHintText}>{restoreMessage}</Text>
+                </EaseView>
               </View>
             </ScrollView>
           </Pressable>
@@ -1081,6 +1093,7 @@ export function GameScreen() {
         isNewHighScore={isNewHighScore}
         showRemoveAds={!removeAds && adShownThisSession}
         showContinue={rewardedReady && !continuedThisGame}
+        theme={activeTheme}
         onPlayAgain={handleStartGame}
         onContinue={handleContinue}
         onShare={handleShare}
@@ -1115,6 +1128,7 @@ export function GameScreen() {
 
       <ReviewPrompt
         visible={showReviewPrompt}
+        theme={activeTheme}
         onDismiss={dismissReviewPrompt}
         onResponse={handleReviewResponse}
       />
@@ -1229,9 +1243,9 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     borderRadius: 16,
-    maxWidth: 360,
+    maxWidth: 380,
     padding: 20,
-    width: "100%",
+    width: "85%",
   },
   modalTitle: {
     fontFamily: "Oxanium-Bold",
@@ -1329,6 +1343,13 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.6)",
     fontFamily: "Oxanium-Regular",
     fontSize: 13,
+  },
+  restoreHintText: {
+    color: "rgba(255, 255, 255, 0.5)",
+    fontFamily: "Oxanium-Regular",
+    fontSize: 12,
+    paddingTop: 6,
+    textAlign: "center",
   },
   scoreBox: {
     alignItems: "center",

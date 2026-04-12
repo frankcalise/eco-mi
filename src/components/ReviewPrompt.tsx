@@ -3,14 +3,16 @@ import * as StoreReview from "expo-store-review"
 import { useTranslation } from "react-i18next"
 
 import { PressableScale } from "@/components/PressableScale"
+import type { GameTheme } from "@/config/themes"
 
 type ReviewPromptProps = {
   visible: boolean
+  theme: GameTheme
   onDismiss: () => void
   onResponse?: (response: "love_it" | "not_really") => void
 }
 
-export function ReviewPrompt({ visible, onDismiss, onResponse }: ReviewPromptProps) {
+export function ReviewPrompt({ visible, theme, onDismiss, onResponse }: ReviewPromptProps) {
   const { t } = useTranslation()
 
   if (!visible) return null
@@ -32,9 +34,17 @@ export function ReviewPrompt({ visible, onDismiss, onResponse }: ReviewPromptPro
 
   return (
     <Pressable style={styles.backdrop} onPress={onDismiss}>
-      <Pressable style={styles.card} onPress={() => {}}>
-        <Text style={styles.title}>{t("review:title")}</Text>
-        <Text style={styles.subtitle}>{t("review:subtitle")}</Text>
+      <Pressable
+        style={[
+          styles.card,
+          { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor },
+        ]}
+        onPress={() => {}}
+      >
+        <Text style={[styles.title, { color: theme.textColor }]}>{t("review:title")}</Text>
+        <Text style={[styles.subtitle, { color: theme.secondaryTextColor }]}>
+          {t("review:subtitle")}
+        </Text>
         <View style={styles.buttons}>
           <PressableScale
             testID="review-love-it"
@@ -79,13 +89,12 @@ const styles = StyleSheet.create({
   },
   card: {
     alignItems: "center",
-    backgroundColor: "#1a1a2e",
-    borderColor: "rgba(255, 255, 255, 0.15)",
     borderRadius: 16,
     borderWidth: 1,
+    maxWidth: 380,
     paddingHorizontal: 28,
     paddingVertical: 24,
-    width: "80%",
+    width: "85%",
   },
   loveItButton: {
     backgroundColor: "#22c55e",

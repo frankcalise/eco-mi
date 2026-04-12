@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { EaseView } from "react-native-ease"
 
 import { PressableScale } from "@/components/PressableScale"
+import type { GameTheme } from "@/config/themes"
 
 type GameOverOverlayProps = {
   visible: boolean
@@ -14,6 +15,7 @@ type GameOverOverlayProps = {
   isNewHighScore: boolean
   showRemoveAds?: boolean
   showContinue?: boolean
+  theme: GameTheme
   onPlayAgain: () => void
   onContinue?: () => void
   onShare?: () => void
@@ -31,6 +33,7 @@ export function GameOverOverlay({
   isNewHighScore,
   showRemoveAds,
   showContinue,
+  theme,
   onPlayAgain,
   onContinue,
   onShare,
@@ -52,7 +55,10 @@ export function GameOverOverlay({
       transition={{ default: { type: "timing", duration: 200 } }}
     >
       <EaseView
-        style={styles.card}
+        style={[
+          styles.card,
+          { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor },
+        ]}
         initialAnimate={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ default: { type: "spring", stiffness: 300, damping: 20 } }}
@@ -66,7 +72,7 @@ export function GameOverOverlay({
             accessibilityRole="button"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="close" size={24} color="#a0a0a0" />
+            <Ionicons name="close" size={24} color={theme.secondaryTextColor} />
           </PressableScale>
         )}
 
@@ -74,16 +80,22 @@ export function GameOverOverlay({
 
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text style={styles.statLabel}>{t("game:score")}</Text>
-            <Text style={styles.statValue}>{score}</Text>
+            <Text style={[styles.statLabel, { color: theme.secondaryTextColor }]}>
+              {t("game:score")}
+            </Text>
+            <Text style={[styles.statValue, { color: theme.textColor }]}>{score}</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statLabel}>{t("game:level")}</Text>
-            <Text style={styles.statValue}>{level}</Text>
+            <Text style={[styles.statLabel, { color: theme.secondaryTextColor }]}>
+              {t("game:level")}
+            </Text>
+            <Text style={[styles.statValue, { color: theme.textColor }]}>{level}</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statLabel}>{t("game:best")}</Text>
-            <Text style={styles.statValue}>{highScore}</Text>
+            <Text style={[styles.statLabel, { color: theme.secondaryTextColor }]}>
+              {t("game:best")}
+            </Text>
+            <Text style={[styles.statValue, { color: theme.textColor }]}>{highScore}</Text>
           </View>
         </View>
 
@@ -150,7 +162,9 @@ export function GameOverOverlay({
                 accessibilityLabel={t("stats:title")}
                 accessibilityRole="button"
               >
-                <Text style={styles.linkText}>{t("stats:title")}</Text>
+                <Text style={[styles.linkText, { color: theme.secondaryTextColor }]}>
+                  {t("stats:title")}
+                </Text>
               </PressableScale>
             )}
             {onViewAchievements && (
@@ -160,7 +174,9 @@ export function GameOverOverlay({
                 accessibilityLabel={t("achievements:title")}
                 accessibilityRole="button"
               >
-                <Text style={styles.linkText}>{t("achievements:title")}</Text>
+                <Text style={[styles.linkText, { color: theme.secondaryTextColor }]}>
+                  {t("achievements:title")}
+                </Text>
               </PressableScale>
             )}
           </View>
@@ -214,11 +230,9 @@ const styles = StyleSheet.create({
   },
   card: {
     alignItems: "center",
-    backgroundColor: "#1a1a2e",
-    borderColor: "rgba(255, 255, 255, 0.15)",
     borderRadius: 16,
     borderWidth: 1,
-    marginHorizontal: 32,
+    maxWidth: 380,
     paddingHorizontal: 24,
     paddingVertical: 28,
     width: "85%",
