@@ -47,6 +47,11 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 - Empty leaderboard shows encouraging message instead of 10 placeholder rows
 - KeyboardAvoidingView on InitialEntryModal (iOS padding, Android height)
 - Game Over overlay shows "Statistics" and "Achievements" navigation links
+- GameOverOverlay and ReviewPrompt now adapt to active game theme (no more dark-only overlays on Pastel theme)
+- Restore Purchases uses inline themed feedback instead of native Alert.alert
+- Standardized all modal widths (85%, max 380) and border radii (16)
+- Input race condition fixed — rapid taps no longer register multiple inputs
+- Light haptic feedback when tapping buttons during sequence playback ("not yet")
 
 ### Test
 - 68 unit tests (useGameEngine bugs, useHighScores, useStats, useAchievements, useStoreReview, game flow integration)

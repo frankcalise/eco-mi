@@ -39,7 +39,7 @@
 - [x] **Dual high score system causes incorrect "New High Score!" celebrations**
       `useGameEngine.ts` stores a single cross-mode `highScore` via `"simon-high-score"` key, while `useHighScores.ts` stores per-mode top-10 leaderboards via `"ecomi:highScores:{mode}"`. The single-value high score is not mode-aware — beating your classic score in timed mode triggers the celebration incorrectly, and setting a new mode-specific record may not trigger it at all. Consolidate to use the per-mode leaderboard as the source of truth for `isNewHighScore`.
 
-- [ ] **Race condition: rapid button taps register multiple inputs**
+- [x] **Race condition: rapid button taps register multiple inputs**
       In `useGameEngine.ts`, touching button B before releasing button A processes both as inputs. At higher levels, fast players accidentally register extra inputs, and the visual state (which button is lit) disagrees with what was processed. Add input debouncing or lock out new touches until the current touch is released.
 
 - [ ] **Audio context silently dies after backgrounding with no recovery**
@@ -169,16 +169,16 @@
 - [x] **Fix touch targets below 44pt minimum (Apple HIG)**
       Theme circles are 32x32pt, sound pack selector buttons ~30pt, back buttons on achievements/stats ~32pt. Add `hitSlop` or increase padding to meet the 44x44pt minimum. These are IAP purchase entry points — missed taps directly cost revenue.
 
-- [ ] **Make GameOverOverlay and ReviewPrompt theme-aware**
+- [x] **Make GameOverOverlay and ReviewPrompt theme-aware**
       Both components hardcode dark colors (`#1a1a2e`, `#ef4444`, etc.) and don't accept a theme prop. When playing on the Pastel theme (light background), overlays still render dark. Pass the active game theme and adapt colors to maintain visual consistency.
 
 - [x] **Make settings modal scrollable**
       Settings modal content (sound toggle, sound packs, themes, remove ads, restore purchases) is in a non-scrollable container. On iPhone SE or with larger dynamic type, content overflows and the Restore Purchases button (legally required) gets clipped. Wrap in a `ScrollView`.
 
-- [ ] **Replace `Alert.alert` for Restore Purchases with themed feedback**
+- [x] **Replace `Alert.alert` for Restore Purchases with themed feedback**
       Restore purchases success/failure uses native `Alert.alert()`, which breaks the dark-themed experience. Replace with an inline toast or themed dialog matching the rest of the UI.
 
-- [ ] **Standardize modal dimensions and border radii**
+- [x] **Standardize modal dimensions and border radii**
       Three different modal width strategies (80%, 85%, maxWidth 360) and two border radii (12, 16) across overlays. Create a shared modal base component with consistent sizing for a unified visual language.
 
 - [x] **Use safe area insets on achievements and stats screens**
@@ -193,7 +193,7 @@
 - [x] **Fix progress dots overflow at high levels**
       One 10px dot per sequence item in a non-wrapping horizontal row. At level 20+, dots overflow on narrow screens. Switch to a fraction display (e.g., "12/20") or cap visible dots with a "+N" indicator at higher levels.
 
-- [ ] **Add "not yet" feedback when tapping during sequence playback**
+- [x] **Add "not yet" feedback when tapping during sequence playback**
       During the "showing" phase, eager player taps are silently ignored. Add a brief haptic buzz or subtle visual pulse to communicate "input received but not ready yet" instead of dead silence.
 
 - [x] **Locked achievement text fails WCAG AA contrast ratio**
