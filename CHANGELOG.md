@@ -20,6 +20,9 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 - Invoke `checkAchievements()` on game over — achievements now actually unlock during gameplay
 - Wrap settings modal content in `ScrollView` — Restore Purchases reachable on small screens
 
+### Feat
+- `PressableScale` reusable component — animated spring scale (0.96) + opacity (0.85) press feedback on all 26 action buttons across the app. Eliminates "dead tap" feel on every interactive element. Built on `react-native-ease` EaseView.
+
 ### Test
 - 68 unit tests (useGameEngine bugs, useHighScores, useStats, useAchievements, useStoreReview, game flow integration)
 - 9 Maestro E2E flows: app-launches, happy-path, game-over, game-over-home, navigation, settings, mode-switch, leaderboard, tracking-screen — all passing
