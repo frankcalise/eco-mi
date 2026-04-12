@@ -39,6 +39,7 @@ import { usePurchases } from "@/hooks/usePurchases"
 import { useSoundPack } from "@/hooks/useSoundPack"
 import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
+import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { useAnalytics } from "@/utils/analytics"
 import { loadString } from "@/utils/storage"
 
@@ -428,17 +429,18 @@ export function GameScreen() {
   }
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: activeTheme.backgroundColor,
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-        },
-      ]}
-    >
-      <StatusBar style={activeTheme.statusBarStyle} backgroundColor={activeTheme.backgroundColor} />
+    <GameThemeProvider value={activeTheme}>
+      <View
+        style={[
+          styles.container,
+          {
+            backgroundColor: activeTheme.backgroundColor,
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+          },
+        ]}
+      >
+        <StatusBar style={activeTheme.statusBarStyle} backgroundColor={activeTheme.backgroundColor} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -1140,7 +1142,8 @@ export function GameScreen() {
         visible={achievementToast !== null}
         onHide={() => setAchievementToast(null)}
       />
-    </View>
+      </View>
+    </GameThemeProvider>
   )
 }
 

@@ -7,15 +7,19 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { PressableScale } from "@/components/PressableScale"
 import { ACHIEVEMENTS } from "@/config/achievements"
 import { useAchievements } from "@/hooks/useAchievements"
+import { useTheme } from "@/hooks/useTheme"
 
 export default function AchievementsScreen() {
   const { t } = useTranslation()
   const router = useRouter()
   const { isUnlocked } = useAchievements()
   const insets = useSafeAreaInsets()
+  const { activeTheme } = useTheme()
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View
+      style={[styles.container, { paddingTop: insets.top, backgroundColor: activeTheme.backgroundColor }]}
+    >
       <View style={styles.header}>
         <PressableScale
           accessibilityLabel={t("common:back")}
@@ -23,25 +27,40 @@ export default function AchievementsScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="arrow-back" size={24} color={activeTheme.textColor} />
         </PressableScale>
-        <Text style={styles.title}>{t("achievements:title")}</Text>
+        <Text style={[styles.title, { color: activeTheme.textColor }]}>
+          {t("achievements:title")}
+        </Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.grid}>
         {ACHIEVEMENTS.map((achievement) => {
           const unlocked = isUnlocked(achievement.id)
           return (
-            <View key={achievement.id} style={[styles.badge, unlocked && styles.badgeUnlocked]}>
+            <View
+              key={achievement.id}
+              style={[
+                styles.badge,
+                { backgroundColor: activeTheme.surfaceColor, borderColor: activeTheme.borderColor },
+                unlocked && styles.badgeUnlocked,
+              ]}
+            >
               <Ionicons
                 name={achievement.icon as keyof typeof Ionicons.glyphMap}
                 size={28}
                 color={unlocked ? "#fbbf24" : "#4a4a5a"}
               />
-              <Text style={[styles.badgeTitle, unlocked && styles.badgeTitleUnlocked]}>
+              <Text
+                style={[
+                  styles.badgeTitle,
+                  { color: activeTheme.secondaryTextColor },
+                  unlocked && { color: activeTheme.textColor },
+                ]}
+              >
                 {t(`achievements:${achievement.id}`)}
               </Text>
-              <Text style={styles.badgeDescription}>
+              <Text style={[styles.badgeDescription, { color: activeTheme.secondaryTextColor }]}>
                 {t(`achievements:${achievement.id}_desc`)}
               </Text>
             </View>
@@ -59,8 +78,6 @@ const styles = StyleSheet.create({
   },
   badge: {
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
-    borderColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 12,
     borderWidth: 1,
     minWidth: "45%",
@@ -68,27 +85,21 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   badgeDescription: {
-    color: "#7e7e8e",
     fontFamily: "Oxanium-Regular",
     fontSize: 11,
     marginTop: 4,
     textAlign: "center",
   },
   badgeTitle: {
-    color: "#8e8e9e",
     fontFamily: "Oxanium-SemiBold",
     fontSize: 13,
     marginTop: 8,
     textAlign: "center",
   },
-  badgeTitleUnlocked: {
-    color: "white",
-  },
   badgeUnlocked: {
     borderColor: "rgba(251, 191, 36, 0.3)",
   },
   container: {
-    backgroundColor: "#1a1a2e",
     flex: 1,
     paddingHorizontal: 20,
   },
@@ -105,7 +116,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   title: {
-    color: "white",
     fontFamily: "Oxanium-Bold",
     fontSize: 28,
   },

@@ -4,6 +4,8 @@ import { Ionicons } from "@expo/vector-icons"
 import { EaseView } from "react-native-ease"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { useGameTheme } from "@/theme/GameThemeContext"
+
 type AchievementToastProps = {
   title: string
   description: string
@@ -12,8 +14,15 @@ type AchievementToastProps = {
   onHide: () => void
 }
 
-export function AchievementToast({ title, description, icon, visible, onHide }: AchievementToastProps) {
+export function AchievementToast({
+  title,
+  description,
+  icon,
+  visible,
+  onHide,
+}: AchievementToastProps) {
   const insets = useSafeAreaInsets()
+  const theme = useGameTheme()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -39,17 +48,20 @@ export function AchievementToast({ title, description, icon, visible, onHide }: 
       }}
       style={[styles.container, { top: insets.top + 8 }]}
     >
-      <View style={styles.toast}>
+      <View
+        style={[
+          styles.toast,
+          { backgroundColor: theme.surfaceColor, borderColor: theme.borderColor },
+        ]}
+      >
         {icon && (
-          <Ionicons
-            name={icon as keyof typeof Ionicons.glyphMap}
-            size={20}
-            color="#fbbf24"
-          />
+          <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={20} color="#fbbf24" />
         )}
         <View style={styles.text}>
           <Text style={styles.title}>{title}</Text>
-          <Text style={styles.description}>{description}</Text>
+          <Text style={[styles.description, { color: theme.secondaryTextColor }]}>
+            {description}
+          </Text>
         </View>
       </View>
     </EaseView>
@@ -64,7 +76,6 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
   description: {
-    color: "rgba(255, 255, 255, 0.7)",
     fontFamily: "Oxanium-Regular",
     fontSize: 12,
   },
@@ -78,8 +89,6 @@ const styles = StyleSheet.create({
   },
   toast: {
     alignItems: "center",
-    backgroundColor: "#1a1a2e",
-    borderColor: "rgba(251, 191, 36, 0.3)",
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: "row",

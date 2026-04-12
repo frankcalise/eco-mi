@@ -6,12 +6,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { PressableScale } from "@/components/PressableScale"
 import { useStats } from "@/hooks/useStats"
+import { useTheme } from "@/hooks/useTheme"
 
 export default function StatsScreen() {
   const { t } = useTranslation()
   const router = useRouter()
   const stats = useStats()
   const insets = useSafeAreaInsets()
+  const { activeTheme } = useTheme()
 
   const dayUnit = (n: number) => (n !== 1 ? t("stats:daysUnit") : t("stats:dayUnit"))
 
@@ -31,19 +33,31 @@ export default function StatsScreen() {
   ]
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View
+      style={[styles.container, { paddingTop: insets.top, backgroundColor: activeTheme.backgroundColor }]}
+    >
       <View style={styles.header}>
-        <PressableScale accessibilityLabel={t("common:back")} accessibilityRole="button" style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="white" />
+        <PressableScale
+          accessibilityLabel={t("common:back")}
+          accessibilityRole="button"
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color={activeTheme.textColor} />
         </PressableScale>
-        <Text style={styles.title}>{t("stats:title")}</Text>
+        <Text style={[styles.title, { color: activeTheme.textColor }]}>{t("stats:title")}</Text>
       </View>
 
       <View style={styles.grid}>
         {statItems.map((item) => (
-          <View key={item.label} style={styles.statCard}>
-            <Text style={styles.statValue}>{item.value}</Text>
-            <Text style={styles.statLabel}>{item.label}</Text>
+          <View
+            key={item.label}
+            style={[styles.statCard, { backgroundColor: activeTheme.surfaceColor }]}
+          >
+            <Text style={[styles.statValue, { color: activeTheme.textColor }]}>{item.value}</Text>
+            <Text style={[styles.statLabel, { color: activeTheme.secondaryTextColor }]}>
+              {item.label}
+            </Text>
           </View>
         ))}
       </View>
@@ -57,7 +71,6 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   container: {
-    backgroundColor: "#1a1a2e",
     flex: 1,
     paddingHorizontal: 20,
   },
@@ -74,26 +87,22 @@ const styles = StyleSheet.create({
   },
   statCard: {
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
     borderRadius: 12,
     minWidth: "45%",
     paddingHorizontal: 16,
     paddingVertical: 20,
   },
   statLabel: {
-    color: "#a0a0a0",
     fontFamily: "Oxanium-Regular",
     fontSize: 12,
     marginTop: 6,
     textAlign: "center",
   },
   statValue: {
-    color: "white",
     fontFamily: "Oxanium-Bold",
     fontSize: 28,
   },
   title: {
-    color: "white",
     fontFamily: "Oxanium-Bold",
     fontSize: 28,
   },
