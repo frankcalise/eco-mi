@@ -229,26 +229,29 @@
       Resolved by the full-screen game-over redesign below — ad fires on Play Again but the full-screen context makes the transition to a full-screen ad feel natural rather than jarring.
 
 - [ ] **Full-screen game-over experience (Duolingo-style)**
-      Replace the small overlay card with a full-screen game-over route/screen. Inspired by Duolingo's end-of-lesson screen. Chunked tasks:
+      Replace the small overlay card with a full-screen game-over screen. Reference: Duolingo's "Perfect lesson!" end screen — big centered animation, title/subtitle, colored stat pills, share + CTA pinned to bottom. Single screen, no streak interstitial.
 
-  **Phase 1 — Layout & Stats**
-  - [ ] Create full-screen game-over component (or Expo Router modal route)
-  - [ ] Track session play time in useGameEngine (start timer on startGame, stop on gameover)
-  - [ ] Display 3 stat pill boxes (reuse existing score box component): Time Played, Level Reached, Score
-  - [ ] Add game-over Lottie animation at top (browse LottieFiles for a polished one)
-  - [ ] Theme-aware using GameThemeContext
+  **Layout (top to bottom):**
+  - Lottie animation centered (game-over animation, or celebration for new high score)
+  - Title: "Game Over!" or "New High Score!" with subtitle
+  - 3 colored stat pill boxes in a row (reuse/adapt existing score box style): Score, Level, Time Played
+  - Stats/Achievements navigation links (subtle, secondary text)
+  - Bottom bar: platform-specific share icon (left) + "Play Again" primary CTA (full width)
+  - "Watch Ad to Continue" above the CTA (conditional, rewarded ad)
 
-  **Phase 2 — Actions & Polish**
-  - [ ] Platform-specific share icon button (iOS share icon vs Android share icon)
-  - [ ] "Play Again" primary action button
-  - [ ] "Watch Ad to Continue" secondary button (conditional, rewarded ad)
-  - [ ] "View Stats" and "Achievements" navigation links
-  - [ ] New high score celebration variant (different layout/animation when isNewHighScore)
-
-  **Phase 3 — Transitions**
-  - [ ] Entry animation: staggered reveal (background → animation → stats cascade → buttons slide up)
-  - [ ] Exit animation on Play Again before interstitial check
-  - [ ] Preserve existing game-over jingles and haptics
+  **Implementation tasks:**
+  - [ ] Track session play time in useGameEngine (start on startGame, stop on gameover, expose as `sessionTime`)
+  - [ ] Create full-screen GameOverScreen component (replaces GameOverOverlay)
+  - [ ] 3 stat pills with icons: Score (⚡), Level (🎯), Time (⏱) — colored borders like Duo's XP/Amazing/Speedy
+  - [ ] Platform-specific share button: `Platform.select({ ios: "share-outline", android: "share-social" })` Ionicons
+  - [ ] "Play Again" as wide primary button (green, matches Start Game style)
+  - [ ] "Watch Ad to Continue" conditional secondary button
+  - [ ] New high score variant: different Lottie animation, gold accent, celebration title
+  - [ ] Theme-aware via GameThemeContext
+  - [ ] Entry animation: staggered reveal (bg → animation → title → pills cascade → buttons slide up)
+  - [ ] Preserve existing game-over/high-score jingles and haptics
+  - [ ] Browse LottieFiles for game-over and celebration animations
+  - [ ] Update Maestro E2E flows for new game-over screen
 
 - [ ] **Add time penalty for wrong input in timed mode**
       Wrong input replays the current sequence with no score or time penalty — effectively a free hint. Add a small time penalty (e.g., -3 seconds) so wrong inputs feel like a genuine setback rather than a free replay.
