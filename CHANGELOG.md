@@ -34,7 +34,7 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 
 ### Polish
 - Safe area insets on achievements and stats screens (fixes Dynamic Island/Android cutouts)
-- Touch targets: hitSlop on theme circles and sound pack selectors to meet 44pt Apple HIG minimum
+- Touch targets: hitSlop on all small tap targets — header icons, idle action buttons, close/dismiss buttons, review prompt, tracking skip, leaderboard mode tabs, theme circles, sound pack selectors
 - Progress dots switch to fraction display ("12/20") when sequence exceeds 15 items
 - `playPreview` now respects `soundEnabled` toggle — no more unexpected audio when muted
 
