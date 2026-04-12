@@ -20,6 +20,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { AnimatedCountdown } from "@/components/AnimatedCountdown"
+import { AnimatedNumber } from "@/components/AnimatedNumber"
 import { PressableScale } from "@/components/PressableScale"
 import { GameButton } from "@/components/GameButton"
 import { GameOverOverlay } from "@/components/GameOverOverlay"
@@ -506,28 +507,31 @@ export function GameScreen() {
           <Text style={[styles.scoreLabel, { color: activeTheme.secondaryTextColor }]}>
             {t("game:level")}
           </Text>
-          <Text testID="text-level" style={[styles.scoreValue, { color: activeTheme.textColor }]}>
-            {level}
-          </Text>
+          <AnimatedNumber
+            testID="text-level"
+            value={level}
+            style={[styles.scoreValue, { color: activeTheme.textColor }]}
+          />
         </View>
         <View style={[styles.scoreBox, { backgroundColor: activeTheme.surfaceColor }]}>
           <Text style={[styles.scoreLabel, { color: activeTheme.secondaryTextColor }]}>
             {t("game:score")}
           </Text>
-          <Text testID="text-score" style={[styles.scoreValue, { color: activeTheme.textColor }]}>
-            {score}
-          </Text>
+          <AnimatedNumber
+            testID="text-score"
+            value={score}
+            style={[styles.scoreValue, { color: activeTheme.textColor }]}
+          />
         </View>
         <View style={[styles.scoreBox, { backgroundColor: activeTheme.surfaceColor }]}>
           <Text style={[styles.scoreLabel, { color: activeTheme.secondaryTextColor }]}>
             {t("game:best")}
           </Text>
-          <Text
+          <AnimatedNumber
             testID="text-high-score"
+            value={highScore}
             style={[styles.scoreValue, { color: activeTheme.textColor }]}
-          >
-            {highScore}
-          </Text>
+          />
         </View>
       </View>
 
