@@ -148,6 +148,8 @@ export function GameScreen() {
     toggleSound,
     playPreview,
     playJingle,
+    playGameOverJingle,
+    playHighScoreJingle,
     setMode,
     mode,
     timeRemaining,
@@ -292,8 +294,12 @@ export function GameScreen() {
       analytics.trackGameOver(score, level)
 
       if (isNewHighScore) {
+        playHighScoreJingle()
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
         analytics.trackGameCompleted(score, level, true)
         triggerReviewCheck("new_high_score", adShownThisSession)
+      } else {
+        playGameOverJingle()
       }
 
       // Check daily streak milestones (3-day, 7-day)

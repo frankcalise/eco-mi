@@ -92,6 +92,8 @@ interface UseGameEngineReturn {
   toggleSound: () => void
   playPreview: (overrideType?: OscillatorType) => void
   playJingle: () => void
+  playGameOverJingle: () => void
+  playHighScoreJingle: () => void
   setMode: (mode: GameMode) => void
 }
 
@@ -168,6 +170,8 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     playSound,
     playPreview,
     playJingle,
+    playGameOverJingle,
+    playHighScoreJingle,
     startContinuousSound,
     stopContinuousSoundWithFade,
   } = useAudioTones(
@@ -582,6 +586,8 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     toggleSound,
     playPreview,
     playJingle,
+    playGameOverJingle,
+    playHighScoreJingle,
     setMode,
   }
 }

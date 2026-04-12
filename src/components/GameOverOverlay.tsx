@@ -2,6 +2,7 @@ import { View, Text, StyleSheet } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import LottieView from "lottie-react-native"
 import { useTranslation } from "react-i18next"
+import { EaseView } from "react-native-ease"
 
 import { PressableScale } from "@/components/PressableScale"
 
@@ -39,8 +40,19 @@ export function GameOverOverlay({
   if (!visible) return null
 
   return (
-    <View testID="overlay-game-over" style={styles.backdrop}>
-      <View style={styles.card}>
+    <EaseView
+      testID="overlay-game-over"
+      style={styles.backdrop}
+      initialAnimate={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ default: { type: "timing", duration: 200 } }}
+    >
+      <EaseView
+        style={styles.card}
+        initialAnimate={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ default: { type: "spring", stiffness: 300, damping: 20 } }}
+      >
         {onHome && (
           <PressableScale
             testID="btn-home"
@@ -112,8 +124,8 @@ export function GameOverOverlay({
             <Text style={styles.removeAdsText}>{t("game:removeAds")}</Text>
           </PressableScale>
         )}
-      </View>
-    </View>
+      </EaseView>
+    </EaseView>
   )
 }
 

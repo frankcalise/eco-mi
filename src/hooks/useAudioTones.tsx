@@ -41,6 +41,24 @@ const JINGLE_NOTES = [
 ]
 const JINGLE_NOTE_DURATION = 0.15
 
+const GAMEOVER_NOTES = [
+  { freq: 659, delay: 0 },
+  { freq: 587, delay: 0.2 },
+  { freq: 523, delay: 0.4 },
+  { freq: 440, delay: 0.6 },
+]
+const GAMEOVER_NOTE_DURATION = 0.2
+
+const HIGHSCORE_NOTES = [
+  { freq: 523, delay: 0 },
+  { freq: 659, delay: 0.12 },
+  { freq: 784, delay: 0.24 },
+  { freq: 1047, delay: 0.36 },
+  { freq: 1319, delay: 0.48 },
+  { freq: 1568, delay: 0.6 },
+]
+const HIGHSCORE_NOTE_DURATION = 0.12
+
 const NODE_LIMIT = 60
 
 interface AudioTonesHook {
@@ -49,6 +67,8 @@ interface AudioTonesHook {
   playSound: (color: Color, duration?: number) => void
   playPreview: (overrideType?: OscillatorType) => void
   playJingle: () => void
+  playGameOverJingle: () => void
+  playHighScoreJingle: () => void
   startContinuousSound: (color: Color) => void
   stopContinuousSound: (color: Color) => void
   stopContinuousSoundWithFade: (color: Color, fadeDuration?: number) => void
@@ -382,12 +402,60 @@ export function useAudioTones(
     }
   }
 
+  function playGameOverJingle() {
+    if (!soundEnabled || !contextReadyRef.current) return
+    trackNodeCount()
+    ensureResumed()
+    const ctx = getContext()
+    const master = getMasterGain()
+    if (!ctx || !master) return
+
+    const now = ctx.currentTime
+
+    for (const note of GAMEOVER_NOTES) {
+      scheduleNote(
+        ctx,
+        master,
+        note.freq,
+        oscillatorType,
+        now + note.delay,
+        GAMEOVER_NOTE_DURATION,
+        TARGET_GAIN * 0.4,
+      )
+    }
+  }
+
+  function playHighScoreJingle() {
+    if (!soundEnabled || !contextReadyRef.current) return
+    trackNodeCount()
+    ensureResumed()
+    const ctx = getContext()
+    const master = getMasterGain()
+    if (!ctx || !master) return
+
+    const now = ctx.currentTime
+
+    for (const note of HIGHSCORE_NOTES) {
+      scheduleNote(
+        ctx,
+        master,
+        note.freq,
+        oscillatorType,
+        now + note.delay,
+        HIGHSCORE_NOTE_DURATION,
+        TARGET_GAIN * 0.7,
+      )
+    }
+  }
+
   return {
     initialize,
     cleanup,
     playSound,
     playPreview,
     playJingle,
+    playGameOverJingle,
+    playHighScoreJingle,
     startContinuousSound,
     stopContinuousSound,
     stopContinuousSoundWithFade,
