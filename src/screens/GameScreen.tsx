@@ -713,10 +713,10 @@ export function GameScreen() {
       {/* Game Status */}
       <View style={styles.statusContainer}>
         {gameState === "showing" && (
-          <Text style={[styles.statusText, styles.showingText]}>{t("game:watchSequence")}</Text>
+          <Text style={[styles.statusText, { color: activeTheme.secondaryTextColor }]}>{t("game:watchSequence")}</Text>
         )}
         {gameState === "waiting" && (
-          <Text style={[styles.statusText, styles.waitingText]}>{t("game:repeatSequence")}</Text>
+          <Text style={[styles.statusText, { color: activeTheme.textColor }]}>{t("game:repeatSequence")}</Text>
         )}
         <View style={styles.progressRow}>
           {(gameState === "showing" || gameState === "waiting") &&
@@ -726,6 +726,7 @@ export function GameScreen() {
                   key={i}
                   style={[
                     styles.progressDot,
+                    { backgroundColor: activeTheme.borderColor },
                     gameState === "waiting" &&
                       i < playerSequence.length &&
                       styles.progressDotFilled,
@@ -733,7 +734,7 @@ export function GameScreen() {
                 />
               ))
             ) : (
-              <Text style={styles.progressFraction}>
+              <Text style={[styles.progressFraction, { color: activeTheme.secondaryTextColor }]}>
                 {playerSequence.length}/{sequence.length}
               </Text>
             ))}
@@ -943,7 +944,7 @@ export function GameScreen() {
                 transition={{ default: { type: "timing", duration: 200, easing: "easeOut" } }}
                 style={soundHint ? undefined : styles.hintHidden}
               >
-                <Text style={styles.soundHintText}>{t("game:soundDisabledHint")}</Text>
+                <Text style={[styles.soundHintText, { color: activeTheme.secondaryTextColor }]}>{t("game:soundDisabledHint")}</Text>
               </EaseView>
 
               {/* Theme */}
@@ -1052,8 +1053,8 @@ export function GameScreen() {
                     setTimeout(() => setRestoreMessage(null), 3000)
                   }}
                 >
-                  <Ionicons name="refresh" size={16} color="white" />
-                  <Text style={styles.restoreBtnText}>{t("game:restorePurchases")}</Text>
+                  <Ionicons name="refresh" size={16} color={activeTheme.secondaryTextColor} />
+                  <Text style={[styles.restoreBtnText, { color: activeTheme.secondaryTextColor }]}>{t("game:restorePurchases")}</Text>
                 </PressableScale>
                 <EaseView
                   animate={{
@@ -1065,7 +1066,7 @@ export function GameScreen() {
                   }}
                   style={restoreMessage ? undefined : styles.hintHidden}
                 >
-                  <Text style={styles.restoreHintText}>{restoreMessage}</Text>
+                  <Text style={[styles.restoreHintText, { color: activeTheme.secondaryTextColor }]}>{restoreMessage}</Text>
                 </EaseView>
               </View>
             </ScrollView>
