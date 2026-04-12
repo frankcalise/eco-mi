@@ -450,6 +450,7 @@ export function GameScreen() {
           }}
           disabled={!isIdle}
           style={styles.headerAction}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons
             name="game-controller"
@@ -520,6 +521,7 @@ export function GameScreen() {
           }}
           disabled={!isIdle}
           style={styles.headerAction}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons
             name="settings-outline"
@@ -640,6 +642,7 @@ export function GameScreen() {
               <PressableScale
                 testID="btn-leaderboard"
                 style={styles.trophyButton}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
                   setHighlightIndex(undefined)
@@ -651,6 +654,7 @@ export function GameScreen() {
               <PressableScale
                 testID="btn-stats"
                 style={styles.trophyButton}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
                   router.push("/stats")
@@ -661,6 +665,7 @@ export function GameScreen() {
               <PressableScale
                 testID="btn-achievements"
                 style={styles.trophyButton}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
                   router.push("/achievements")

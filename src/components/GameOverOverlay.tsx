@@ -60,6 +60,7 @@ export function GameOverOverlay({
             onPress={onHome}
             accessibilityLabel={t("game:home")}
             accessibilityRole="button"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="close" size={24} color="#a0a0a0" />
           </PressableScale>

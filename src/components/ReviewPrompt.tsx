@@ -47,7 +47,7 @@ export function ReviewPrompt({ visible, onDismiss, onResponse }: ReviewPromptPro
             <Text style={styles.notReallyText}>{t("review:notReally")}</Text>
           </PressableScale>
         </View>
-        <PressableScale testID="review-maybe-later" style={styles.maybeLaterButton} onPress={onDismiss}>
+        <PressableScale testID="review-maybe-later" style={styles.maybeLaterButton} onPress={onDismiss} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.maybeLaterText}>{t("review:maybeLater")}</Text>
         </PressableScale>
       </Pressable>

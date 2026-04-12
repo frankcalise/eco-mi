@@ -112,6 +112,7 @@ export function HighScoreTable({
               key={m.id}
               style={[styles.modeTab, isActive && { backgroundColor: theme.surfaceColor }]}
               onPress={() => setSelectedMode(m.id)}
+              hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
             >
               <Ionicons
                 name={m.icon}
