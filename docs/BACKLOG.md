@@ -45,7 +45,7 @@
 - [ ] **Audio context silently dies after backgrounding with no recovery**
       `ctx.resume()` failures in `useAudioTones.tsx` are swallowed by empty catch blocks. If the AudioContext enters an unrecoverable state after prolonged backgrounding (common on iOS), all audio dies with no indicator or recovery mechanism. The game becomes visual-only without the player understanding why. Add a health check and context recreation fallback.
 
-- [ ] **`playPreview` ignores `soundEnabled` flag**
+- [x] **`playPreview` ignores `soundEnabled` flag**
       `useAudioTones.tsx` `playPreview()` only checks `contextReadyRef.current` but not `soundEnabled`. Sound pack previews play audio even when the player has explicitly muted. Compare with `playSound` and `playJingle` which both respect the flag.
 
 - [ ] **`continueGame` double-counts stats**
@@ -90,28 +90,28 @@
 - [x] **Timed mode: circular progress ring around center circle**
       Replace the plain center circle border with a circular progress ring that depletes as time runs out. The ring should animate smoothly from full (green) to empty (red) over 60 seconds. Could use `react-native-svg` (already installed) with an animated `strokeDashoffset` on a `Circle` element, driven by `react-native-ease` or a simple interpolation from `timeRemaining / 60`.
 
-- [ ] **Animated score/level counters in stat pill boxes**
+- [x] **Animated score/level counters in stat pill boxes**
       The Level, Score, and Best pill boxes currently hard-swap numbers. Animate the transition so values smoothly increment (rolling counter / odometer effect) when they change during gameplay. Use `react-native-ease` to tween from old value to new value over ~300ms. Gives a polished, juicy feel to scoring without adding visual noise.
 
-- [ ] **Add press feedback to all Pressable elements**
+- [x] **Add press feedback to all Pressable elements**
       Every `Pressable` outside game buttons uses static styles with no press state. No opacity change, scale, or color shift on tap. This is the single most obvious "indie app" tell. Create a shared `style={({ pressed }) => [...]}` pattern or wrapper component that adds subtle opacity/scale feedback. Apply to: start button, play again, share, reset, settings items, mode items, sound toggles, theme selectors, unlock buttons, restore purchases, header icons.
 
-- [ ] **Game Over: full sensory treatment (animation + sound + haptics)**
+- [x] **Game Over: full sensory treatment (animation + sound + haptics)**
       The game-over moment lacks punch. Currently: overlay snaps on instantly (no animation), a basic `notificationAsync(Error)` haptic fires, and there's no game-over sound. This is the most emotionally charged moment in the game and needs a full sensory treatment:
   - **Animation**: Staggered overlay reveal — backdrop fade → card scale-up → stats cascade in. Use `react-native-ease`. Differentiate between regular game-over and new-high-score game-over (the latter should feel celebratory, not punishing).
   - **Sound**: Compose a short (~1-2s) game-over jingle using the existing `react-native-audio-api` oscillator engine, similar to the idle jingle but descending/minor key. For new high score, play a triumphant ascending jingle instead. Respect `soundEnabled` toggle and use the active sound pack's `oscillatorType`.
   - **Haptics**: Escalate beyond the single error notification — consider a double-pulse "thud" for regular game-over and a success notification pattern for new high score. Evaluate Pulsar (once migrated) for richer patterns.
 
-- [ ] **Screen transition animations**
+- [x] **Screen transition animations**
       Root layout uses bare `<Slot />` with no `<Stack>` navigator. Navigation between screens (game → achievements, game → stats, index → tracking) is an instant hard cut. Convert to `<Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }}>` or similar.
 
-- [ ] **Score box layout jitter on digit changes**
+- [x] **Score box layout jitter on digit changes**
       Score/Level/Best pill boxes use `minWidth: 80` but no fixed width. When values jump from 9→10 or 99→100, the box width changes and the row reflows. Use tabular-number font features or fixed-width containers to prevent layout shifts during gameplay.
 
 - [ ] **HighScoreTable highlight row indistinguishable from zebra-stripe**
       The highlighted "your new score" row gets `backgroundColor: theme.surfaceColor`, which is identical to even-row zebra-stripe coloring. The pulsing opacity partially compensates but the background should be distinctly different (e.g., a tinted accent color).
 
-- [ ] **Achievement unlock notification/toast**
+- [x] **Achievement unlock notification/toast**
       `useAchievements.ts` tracks `newlyUnlocked` state but nothing reads it. No toast, banner, or animation when earning an achievement. The entire point of achievements is the moment of recognition — without visible feedback they have zero motivational value. Add a brief celebration toast that appears over gameplay.
 
 - [ ] **Upgrade high score celebration with premium Lottie animation**
@@ -166,7 +166,7 @@
 - [ ] **Add accessibility labels and roles to all interactive elements**
       Zero `accessibilityLabel`, `accessibilityRole`, or `accessibilityHint` props on any interactive element app-wide (except 2 instances in GameOverOverlay). VoiceOver/TalkBack users cannot use the app. Systematically annotate every Pressable, button, display, and modal. Prioritize game buttons, header actions, settings controls, and navigation.
 
-- [ ] **Fix touch targets below 44pt minimum (Apple HIG)**
+- [x] **Fix touch targets below 44pt minimum (Apple HIG)**
       Theme circles are 32x32pt, sound pack selector buttons ~30pt, back buttons on achievements/stats ~32pt. Add `hitSlop` or increase padding to meet the 44x44pt minimum. These are IAP purchase entry points — missed taps directly cost revenue.
 
 - [ ] **Make GameOverOverlay and ReviewPrompt theme-aware**
@@ -181,7 +181,7 @@
 - [ ] **Standardize modal dimensions and border radii**
       Three different modal width strategies (80%, 85%, maxWidth 360) and two border radii (12, 16) across overlays. Create a shared modal base component with consistent sizing for a unified visual language.
 
-- [ ] **Use safe area insets on achievements and stats screens**
+- [x] **Use safe area insets on achievements and stats screens**
       Both screens hardcode `paddingTop: 60` instead of using `useSafeAreaInsets().top`. Breaks on Dynamic Island iPhones and varies across Android devices.
 
 - [ ] **Add keyboard avoidance to InitialEntryModal**
@@ -190,7 +190,7 @@
 - [ ] **Add encouraging empty state for leaderboard**
       Brand new users see 10 identical placeholder rows ("---" / "----"). Replace with an illustration or motivational message ("Play your first game to see your scores here!") when no scores exist.
 
-- [ ] **Fix progress dots overflow at high levels**
+- [x] **Fix progress dots overflow at high levels**
       One 10px dot per sequence item in a non-wrapping horizontal row. At level 20+, dots overflow on narrow screens. Switch to a fraction display (e.g., "12/20") or cap visible dots with a "+N" indicator at higher levels.
 
 - [ ] **Add "not yet" feedback when tapping during sequence playback**

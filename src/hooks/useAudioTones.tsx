@@ -356,6 +356,7 @@ export function useAudioTones(
   }
 
   function playPreview(overrideType?: OscillatorType) {
+    if (!soundEnabled) return
     if (!contextReadyRef.current) return
     trackNodeCount()
     ensureResumed()

@@ -2,6 +2,7 @@ import { View, Text, StyleSheet } from "react-native"
 import { useRouter } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { PressableScale } from "@/components/PressableScale"
 import { useStats } from "@/hooks/useStats"
@@ -10,6 +11,7 @@ export default function StatsScreen() {
   const { t } = useTranslation()
   const router = useRouter()
   const stats = useStats()
+  const insets = useSafeAreaInsets()
 
   const dayUnit = (n: number) => (n !== 1 ? t("stats:daysUnit") : t("stats:dayUnit"))
 
@@ -29,7 +31,7 @@ export default function StatsScreen() {
   ]
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <PressableScale accessibilityLabel={t("common:back")} accessibilityRole="button" style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="white" />
@@ -52,13 +54,12 @@ export default function StatsScreen() {
 const styles = StyleSheet.create({
   backButton: {
     marginRight: 16,
-    padding: 4,
+    padding: 10,
   },
   container: {
     backgroundColor: "#1a1a2e",
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 60,
   },
   grid: {
     flexDirection: "row",

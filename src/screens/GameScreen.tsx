@@ -681,14 +681,20 @@ export function GameScreen() {
         )}
         <View style={styles.progressRow}>
           {(gameState === "showing" || gameState === "waiting") &&
-            sequence.map((_, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.progressDot,
-                  gameState === "waiting" && i < playerSequence.length && styles.progressDotFilled,
-                ]}
-              />
+            (sequence.length <= 15 ? (
+              sequence.map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.progressDot,
+                    gameState === "waiting" && i < playerSequence.length && styles.progressDotFilled,
+                  ]}
+                />
+              ))
+            ) : (
+              <Text style={styles.progressFraction}>
+                {playerSequence.length}/{sequence.length}
+              </Text>
             ))}
         </View>
       </View>
@@ -802,6 +808,7 @@ export function GameScreen() {
                     <Pressable
                       key={pack.id}
                       testID={`btn-sound-pack-${pack.id}`}
+                      hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
                       onPress={() => {
                         if (isOwned && pack.id === soundPack.id) return
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -898,6 +905,7 @@ export function GameScreen() {
                     <Pressable
                       key={id}
                       testID={`btn-theme-${id}`}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       onPress={() => {
                         if (isOwned && id === theme.id) return
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -1196,6 +1204,11 @@ const styles = StyleSheet.create({
   },
   progressDotFilled: {
     backgroundColor: "#22c55e",
+  },
+  progressFraction: {
+    color: "#a0a0a0",
+    fontFamily: "Oxanium-Regular",
+    fontSize: 14,
   },
   progressRow: {
     flexDirection: "row",
