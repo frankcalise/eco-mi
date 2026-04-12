@@ -23,6 +23,7 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 ### Feat
 - `PressableScale` reusable component — animated spring scale (0.96) + opacity (0.85) press feedback on all 26 action buttons across the app. Eliminates "dead tap" feel on every interactive element. Built on `react-native-ease` EaseView.
 - `AnimatedNumber` component — rolling digit counter effect on Level, Score, and Best pill boxes. Numbers slide up/fade out and slide in/fade in on value change via spring animation (~300ms).
+- Native screen transitions via Expo Router `<Stack>` — screens slide in from right (iOS native), tracking screen fades. No more hard cuts between routes.
 
 ### Test
 - 68 unit tests (useGameEngine bugs, useHighScores, useStats, useAchievements, useStoreReview, game flow integration)
