@@ -53,6 +53,7 @@ const es = {
       reverse: "Repite la secuencia al revés",
       chaos: "Los botones cambian cada ronda",
     },
+    soundDisabledHint: "Activa el sonido para escuchar",
     soundPack: "Paquete de Sonido",
     theme: "Tema",
     soundToggle: "Sonido",

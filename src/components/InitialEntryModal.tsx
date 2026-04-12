@@ -99,7 +99,7 @@ export function InitialEntryModal({
         >
           <PressableScale
             testID="btn-initial-dismiss"
-            style={styles.dismissButton}
+            wrapperStyle={styles.dismissButton}
             onPress={onDismiss}
             accessibilityLabel="Dismiss"
             accessibilityRole="button"
@@ -190,10 +190,10 @@ const styles = StyleSheet.create({
     height: 44,
     justifyContent: "center",
     position: "absolute",
-    right: 8,
-    top: 8,
+    right: 4,
+    top: 4,
     width: 44,
-    zIndex: 1,
+    zIndex: 10,
   },
   doneButton: {
     borderRadius: 8,

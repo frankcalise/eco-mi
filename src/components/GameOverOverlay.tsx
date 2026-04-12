@@ -56,7 +56,7 @@ export function GameOverOverlay({
         {onHome && (
           <PressableScale
             testID="btn-home"
-            style={styles.homeButton}
+            wrapperStyle={styles.homeButton}
             onPress={onHome}
             accessibilityLabel={t("game:home")}
             accessibilityRole="button"

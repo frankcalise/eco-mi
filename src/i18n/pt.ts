@@ -53,6 +53,7 @@ const pt = {
       reverse: "Repita a sequência ao contrário",
       chaos: "Os botões mudam a cada rodada",
     },
+    soundDisabledHint: "Ative o som para ouvir",
     soundPack: "Pacote de Som",
     theme: "Tema",
     soundToggle: "Som",

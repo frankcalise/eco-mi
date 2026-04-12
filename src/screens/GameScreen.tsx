@@ -158,6 +158,7 @@ export function GameScreen() {
     sequencesCompleted,
     buttonPositions,
     isShuffling,
+    inputTimeRemaining,
   } = useGameEngine({
     oscillatorType: soundPack.oscillatorType,
     theme: activeTheme,
@@ -199,6 +200,7 @@ export function GameScreen() {
   const [pulsePhase, setPulsePhase] = useState<"bright" | "dim">("bright")
   const pulseTimers = useRef<ReturnType<typeof setTimeout>[]>([])
   const [poppingSoundPack, setPoppingSoundPack] = useState<string | null>(null)
+  const [soundHint, setSoundHint] = useState(false)
   const [poppingTheme, setPoppingTheme] = useState<string | null>(null)
   const [achievementToast, setAchievementToast] = useState<{
     title: string
@@ -609,6 +611,12 @@ export function GameScreen() {
                   color={timeRemaining <= 10 ? "#ef4444" : activeTheme.textColor}
                   style={styles.centerTimer}
                 />
+              ) : inputTimeRemaining !== null ? (
+                <AnimatedCountdown
+                  value={inputTimeRemaining}
+                  color={inputTimeRemaining <= 3 ? "#ef4444" : "#fbbf24"}
+                  style={styles.centerTimer}
+                />
               ) : (
                 <Text style={[styles.centerText, { color: activeTheme.textColor }]}>
                   {t("game:title")}
@@ -812,6 +820,10 @@ export function GameScreen() {
                       onPress={() => {
                         if (isOwned && pack.id === soundPack.id) return
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                        if (!soundEnabled) {
+                          setSoundHint(true)
+                          setTimeout(() => setSoundHint(false), 2000)
+                        }
                         playPreview(pack.oscillatorType)
                         setPoppingSoundPack(pack.id)
                         setTimeout(() => setPoppingSoundPack(null), 150)
@@ -887,6 +899,13 @@ export function GameScreen() {
                 </PressableScale>
               )}
             </View>
+            <EaseView
+              animate={{ opacity: soundHint ? 1 : 0, scale: soundHint ? 1 : 0.95 }}
+              transition={{ default: { type: "timing", duration: 200, easing: "easeOut" } }}
+              style={soundHint ? undefined : styles.hintHidden}
+            >
+              <Text style={styles.soundHintText}>{t("game:soundDisabledHint")}</Text>
+            </EaseView>
 
             {/* Theme */}
             <View style={styles.settingsSection}>
@@ -1408,6 +1427,17 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingHorizontal: 16,
     paddingVertical: 10,
+  },
+  soundHintText: {
+    color: "rgba(255, 255, 255, 0.5)",
+    fontFamily: "Oxanium-Regular",
+    fontSize: 12,
+    paddingTop: 6,
+    textAlign: "center",
+  },
+  hintHidden: {
+    height: 0,
+    overflow: "hidden",
   },
   unlockBtnText: {
     color: "white",

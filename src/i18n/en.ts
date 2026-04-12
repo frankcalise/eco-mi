@@ -53,6 +53,7 @@ const en = {
       reverse: "Repeat the sequence backwards",
       chaos: "Buttons shuffle after each round",
     },
+    soundDisabledHint: "Enable sound to preview",
     soundPack: "Sound Pack",
     theme: "Theme",
     soundToggle: "Sound",

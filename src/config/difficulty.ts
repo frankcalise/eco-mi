@@ -27,8 +27,8 @@ export function getSequenceInterval(level: number): number {
 
 /**
  * Returns the input timeout — how long the player has to complete the sequence.
- * Proportional to sequence length so longer sequences get more time.
+ * Base of 5 seconds plus 2 seconds per item in the sequence.
  */
 export function getInputTimeout(sequenceLength: number): number {
-  return sequenceLength * 2000
+  return 5000 + sequenceLength * 2000
 }

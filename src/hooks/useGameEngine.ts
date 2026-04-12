@@ -83,6 +83,7 @@ interface UseGameEngineReturn {
   sequencesCompleted: number
   buttonPositions: Color[]
   isShuffling: boolean
+  inputTimeRemaining: number | null
 
   startGame: () => void
   resetGame: () => void
@@ -97,7 +98,9 @@ interface UseGameEngineReturn {
   setMode: (mode: GameMode) => void
 }
 
-const HIGH_SCORE_KEY = "simon-high-score"
+function highScoreKey(mode: string): string {
+  return `ecomi:highScore:${mode}`
+}
 const DAILY_HIGH_SCORE_PREFIX = "ecomi:daily:"
 const DAILY_STREAK_KEY = "ecomi:daily:currentStreak"
 const DAILY_LAST_PLAYED_KEY = "ecomi:daily:lastPlayed"
@@ -154,6 +157,8 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [buttonPositions, setButtonPositions] = useState<Color[]>([...colors])
   const [isShuffling, setIsShuffling] = useState(false)
+  const [inputTimeRemaining, setInputTimeRemaining] = useState<number | null>(null)
+  const inputCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const scoreRef = useRef(0)
   const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
@@ -201,6 +206,11 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       clearTimeout(inputTimeoutRef.current)
       inputTimeoutRef.current = null
     }
+    if (inputCountdownRef.current) {
+      clearInterval(inputCountdownRef.current)
+      inputCountdownRef.current = null
+    }
+    setInputTimeRemaining(null)
   }
 
   // --- Sequence generation (seeded or random) ---
@@ -215,14 +225,12 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   // --- Persistence ---
 
   function loadHighScore() {
-    const saved = loadString(HIGH_SCORE_KEY)
-    if (saved) {
-      setHighScore(parseInt(saved, 10))
-    }
+    const saved = loadString(highScoreKey(mode))
+    setHighScore(saved ? parseInt(saved, 10) : 0)
   }
 
   function saveHighScore(newScore: number) {
-    saveString(HIGH_SCORE_KEY, newScore.toString())
+    saveString(highScoreKey(mode), newScore.toString())
   }
 
   function saveDailyResult(finalScore: number) {
@@ -264,6 +272,10 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   }, [score])
 
   useEffect(() => {
+    loadHighScore()
+  }, [mode])
+
+  useEffect(() => {
     initialize()
     loadHighScore()
 
@@ -301,8 +313,24 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
               setGameState("waiting")
               if (mode !== "timed") {
                 if (inputTimeoutRef.current) clearTimeout(inputTimeoutRef.current)
+                if (inputCountdownRef.current) clearInterval(inputCountdownRef.current)
+                const totalMs = getInputTimeout(seq.length)
+                const startTime = Date.now()
+                setInputTimeRemaining(null)
+                inputCountdownRef.current = setInterval(() => {
+                  const elapsed = Date.now() - startTime
+                  const remaining = Math.ceil((totalMs - elapsed) / 1000)
+                  if (remaining <= 5 && remaining > 0) {
+                    setInputTimeRemaining(remaining)
+                  }
+                }, 200)
                 inputTimeoutRef.current = setTimeout(() => {
                   inputTimeoutRef.current = null
+                  if (inputCountdownRef.current) {
+                    clearInterval(inputCountdownRef.current)
+                    inputCountdownRef.current = null
+                  }
+                  setInputTimeRemaining(null)
                   setGameState("gameover")
                   stopTimer()
                   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
@@ -313,7 +341,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
                     saveHighScore(currentScore)
                   }
                   recordGameResult(currentScore)
-                }, getInputTimeout(seq.length))
+                }, totalMs)
               }
             }, toneDuration + 100)
           }
@@ -479,11 +507,16 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     const newPlayerSequence = [...playerSequence, color]
     setPlayerSequence(newPlayerSequence)
 
-    // Clear input timeout on any tap
+    // Clear input timeout and countdown on any tap
     if (inputTimeoutRef.current) {
       clearTimeout(inputTimeoutRef.current)
       inputTimeoutRef.current = null
     }
+    if (inputCountdownRef.current) {
+      clearInterval(inputCountdownRef.current)
+      inputCountdownRef.current = null
+    }
+    setInputTimeRemaining(null)
 
     // Wrong move — check for expected color based on mode
     const expectedIndex =
@@ -577,6 +610,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     sequencesCompleted,
     buttonPositions,
     isShuffling,
+    inputTimeRemaining,
 
     startGame,
     resetGame,
