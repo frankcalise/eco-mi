@@ -162,6 +162,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const inputCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const scoreRef = useRef(0)
+  const gameResultRecorded = useRef(false)
   const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
   const inputTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const buttonPressStartTime = useRef<number | null>(null)
@@ -341,7 +342,10 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
                     setIsNewHighScore(true)
                     saveHighScore(currentScore)
                   }
-                  recordGameResult(currentScore)
+                  if (!gameResultRecorded.current) {
+                    gameResultRecorded.current = true
+                    recordGameResult(currentScore)
+                  }
                 }, totalMs)
               }
             }, toneDuration + 100)
@@ -379,7 +383,10 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
           setIsNewHighScore(true)
           saveHighScore(currentScore)
         }
-        recordGameResult(currentScore)
+        if (!gameResultRecorded.current) {
+          gameResultRecorded.current = true
+          recordGameResult(currentScore)
+        }
       } else {
         setTimeRemaining(remaining)
       }
@@ -425,6 +432,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     setGameState("idle")
     setIsNewHighScore(false)
     setContinuedThisGame(false)
+    gameResultRecorded.current = false
     setSequencesCompleted(0)
     setButtonPositions([...colors])
     setIsShuffling(false)
@@ -471,7 +479,10 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       saveHighScore(score)
     }
 
-    recordGameResult(score)
+    if (!gameResultRecorded.current) {
+      gameResultRecorded.current = true
+      recordGameResult(score)
+    }
 
     if (mode === "daily") {
       saveDailyResult(score)
@@ -567,7 +578,10 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
         saveHighScore(score)
       }
 
-      recordGameResult(score)
+      if (!gameResultRecorded.current) {
+        gameResultRecorded.current = true
+        recordGameResult(score)
+      }
 
       if (mode === "daily") {
         saveDailyResult(score)

@@ -17,7 +17,12 @@ export default function AchievementsScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <PressableScale accessibilityLabel={t("common:back")} accessibilityRole="button" style={styles.backButton} onPress={() => router.back()}>
+        <PressableScale
+          accessibilityLabel={t("common:back")}
+          accessibilityRole="button"
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
           <Ionicons name="arrow-back" size={24} color="white" />
         </PressableScale>
         <Text style={styles.title}>{t("achievements:title")}</Text>
@@ -63,14 +68,14 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   badgeDescription: {
-    color: "#6b6b7b",
+    color: "#7e7e8e",
     fontFamily: "Oxanium-Regular",
     fontSize: 11,
     marginTop: 4,
     textAlign: "center",
   },
   badgeTitle: {
-    color: "#6b6b7b",
+    color: "#8e8e9e",
     fontFamily: "Oxanium-SemiBold",
     fontSize: 13,
     marginTop: 8,
