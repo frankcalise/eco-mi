@@ -27,6 +27,12 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 - Game over sensory treatment: overlay fades/scales in (spring animation), descending minor jingle for regular game-over, triumphant ascending jingle for new high score, Success haptic on high score.
 - Achievement unlock toasts — custom `AchievementToast` component (no reanimated dependency) with spring slide-in animation, auto-dismiss, achievement icon, and localized title/description in gold theme.
 
+### Polish
+- Safe area insets on achievements and stats screens (fixes Dynamic Island/Android cutouts)
+- Touch targets: hitSlop on theme circles and sound pack selectors to meet 44pt Apple HIG minimum
+- Progress dots switch to fraction display ("12/20") when sequence exceeds 15 items
+- `playPreview` now respects `soundEnabled` toggle — no more unexpected audio when muted
+
 ### Test
 - 68 unit tests (useGameEngine bugs, useHighScores, useStats, useAchievements, useStoreReview, game flow integration)
 - 9 Maestro E2E flows: app-launches, happy-path, game-over, game-over-home, navigation, settings, mode-switch, leaderboard, tracking-screen — all passing
