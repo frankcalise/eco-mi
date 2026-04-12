@@ -12,9 +12,8 @@ onFlowStart:
 - assertVisible:
     id: "btn-start"
 
-# Open mode selector
-- tapOn:
-    id: "btn-mode-selector"
+# Open mode selector via accessibility label
+- tapOn: "Select game mode"
 - waitForAnimationToEnd
 - waitForAnimationToEnd
 

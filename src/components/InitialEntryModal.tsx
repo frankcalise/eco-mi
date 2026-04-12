@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from "react"
-import { Animated, Modal, StyleSheet, Text, TextInput, View } from "react-native"
+import {
+  Animated,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 
 import { PressableScale } from "@/components/PressableScale"
@@ -91,79 +100,86 @@ export function InitialEntryModal({
   return (
     <Modal visible={visible} transparent animationType="fade" testID="modal-initial-entry">
       <View style={styles.overlay}>
-        <View
-          style={[
-            styles.container,
-            { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor },
-          ]}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardAvoid}
         >
-          <PressableScale
-            testID="btn-initial-dismiss"
-            wrapperStyle={styles.dismissButton}
-            onPress={onDismiss}
-            accessibilityLabel="Dismiss"
-            accessibilityRole="button"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="close" size={24} color={theme.secondaryTextColor} />
-          </PressableScale>
-          <Text style={[styles.title, { color: highlight }]}>
-            {translate("game:newHighScoreEntry")}
-          </Text>
-          <Text style={[styles.scoreText, { color: theme.textColor }]}>
-            {score} {translate("game:scoreLbl")} - {translate("game:levelLbl")} {level}
-          </Text>
-          <Text style={[styles.subtitle, { color: theme.secondaryTextColor }]}>
-            {translate("game:enterInitials")}
-          </Text>
-
-          <View style={styles.inputRow}>
-            {[0, 1, 2].map((i) => (
-              <View key={i} style={[styles.inputBox, { borderColor: accent }]}>
-                <TextInput
-                  ref={inputRefs[i]}
-                  testID={`input-initial-${i + 1}`}
-                  style={[styles.inputText, { color: inputColor }]}
-                  value={letters[i]}
-                  onChangeText={(t) => handleChange(t, i)}
-                  onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
-                  maxLength={1}
-                  autoCapitalize="characters"
-                  autoCorrect={false}
-                  textAlign="center"
-                  selectionColor={accent}
-                />
-                {!letters[i] && (
-                  <Animated.View
-                    style={[styles.cursor, { backgroundColor: accent, opacity: cursorAnim }]}
-                    pointerEvents="none"
-                  />
-                )}
-              </View>
-            ))}
-          </View>
-
-          <PressableScale
-            testID="btn-initial-done"
+          <View
             style={[
-              styles.doneButton,
-              { backgroundColor: accent },
-              !allFilled && { backgroundColor: theme.surfaceColor },
+              styles.container,
+              { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor },
             ]}
-            onPress={handleDone}
-            disabled={!allFilled}
           >
-            <Text
-              style={[
-                styles.doneText,
-                { color: theme.backgroundColor },
-                !allFilled && { color: theme.secondaryTextColor },
-              ]}
+            <PressableScale
+              testID="btn-initial-dismiss"
+              wrapperStyle={styles.dismissButton}
+              onPress={onDismiss}
+              accessibilityLabel="Dismiss"
+              accessibilityRole="button"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              {translate("game:done")}
+              <Ionicons name="close" size={24} color={theme.secondaryTextColor} />
+            </PressableScale>
+            <Text style={[styles.title, { color: highlight }]}>
+              {translate("game:newHighScoreEntry")}
             </Text>
-          </PressableScale>
-        </View>
+            <Text style={[styles.scoreText, { color: theme.textColor }]}>
+              {score} {translate("game:scoreLbl")} - {translate("game:levelLbl")} {level}
+            </Text>
+            <Text style={[styles.subtitle, { color: theme.secondaryTextColor }]}>
+              {translate("game:enterInitials")}
+            </Text>
+
+            <View style={styles.inputRow}>
+              {[0, 1, 2].map((i) => (
+                <View key={i} style={[styles.inputBox, { borderColor: accent }]}>
+                  <TextInput
+                    ref={inputRefs[i]}
+                    testID={`input-initial-${i + 1}`}
+                    style={[styles.inputText, { color: inputColor }]}
+                    value={letters[i]}
+                    onChangeText={(t) => handleChange(t, i)}
+                    onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
+                    maxLength={1}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    textAlign="center"
+                    selectionColor={accent}
+                  />
+                  {!letters[i] && (
+                    <Animated.View
+                      style={[styles.cursor, { backgroundColor: accent, opacity: cursorAnim }]}
+                      pointerEvents="none"
+                    />
+                  )}
+                </View>
+              ))}
+            </View>
+
+            <PressableScale
+              testID="btn-initial-done"
+              style={[
+                styles.doneButton,
+                { backgroundColor: accent },
+                !allFilled && { backgroundColor: theme.surfaceColor },
+              ]}
+              onPress={handleDone}
+              disabled={!allFilled}
+              accessibilityLabel={translate("game:done")}
+              accessibilityRole="button"
+            >
+              <Text
+                style={[
+                  styles.doneText,
+                  { color: theme.backgroundColor },
+                  !allFilled && { color: theme.secondaryTextColor },
+                ]}
+              >
+                {translate("game:done")}
+              </Text>
+            </PressableScale>
+          </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   )
@@ -227,6 +243,10 @@ const styles = StyleSheet.create({
     height: 60,
     textAlign: "center",
     width: 52,
+  },
+  keyboardAvoid: {
+    alignItems: "center",
+    width: "100%",
   },
   overlay: {
     alignItems: "center",

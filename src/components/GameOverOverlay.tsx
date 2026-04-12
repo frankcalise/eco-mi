@@ -19,6 +19,8 @@ type GameOverOverlayProps = {
   onShare?: () => void
   onRemoveAds?: () => void
   onHome?: () => void
+  onViewStats?: () => void
+  onViewAchievements?: () => void
 }
 
 export function GameOverOverlay({
@@ -34,6 +36,8 @@ export function GameOverOverlay({
   onShare,
   onRemoveAds,
   onHome,
+  onViewStats,
+  onViewAchievements,
 }: GameOverOverlayProps) {
   const { t } = useTranslation()
 
@@ -99,13 +103,25 @@ export function GameOverOverlay({
         )}
 
         <View style={styles.actions}>
-          <PressableScale testID="btn-play-again" style={styles.playAgainButton} onPress={onPlayAgain}>
+          <PressableScale
+            testID="btn-play-again"
+            style={styles.playAgainButton}
+            onPress={onPlayAgain}
+            accessibilityLabel={t("game:playAgain")}
+            accessibilityRole="button"
+          >
             <Ionicons name="refresh" size={20} color="white" />
             <Text style={styles.buttonText}>{t("game:playAgain")}</Text>
           </PressableScale>
 
           {onShare && (
-            <PressableScale testID="btn-share" style={styles.shareButton} onPress={onShare}>
+            <PressableScale
+              testID="btn-share"
+              style={styles.shareButton}
+              onPress={onShare}
+              accessibilityLabel={t("game:share")}
+              accessibilityRole="button"
+            >
               <Ionicons name="share-outline" size={20} color="white" />
               <Text style={styles.buttonText}>{t("game:share")}</Text>
             </PressableScale>
@@ -113,14 +129,51 @@ export function GameOverOverlay({
         </View>
 
         {showContinue && onContinue && (
-          <PressableScale testID="btn-continue" style={styles.continueButton} onPress={onContinue}>
+          <PressableScale
+            testID="btn-continue"
+            style={styles.continueButton}
+            onPress={onContinue}
+            accessibilityLabel={t("game:continue")}
+            accessibilityRole="button"
+          >
             <Ionicons name="play-forward" size={18} color="white" />
             <Text style={styles.continueText}>{t("game:continue")}</Text>
           </PressableScale>
         )}
 
+        {(onViewStats || onViewAchievements) && (
+          <View style={styles.linkRow}>
+            {onViewStats && (
+              <PressableScale
+                testID="btn-view-stats"
+                onPress={onViewStats}
+                accessibilityLabel={t("stats:title")}
+                accessibilityRole="button"
+              >
+                <Text style={styles.linkText}>{t("stats:title")}</Text>
+              </PressableScale>
+            )}
+            {onViewAchievements && (
+              <PressableScale
+                testID="btn-view-achievements"
+                onPress={onViewAchievements}
+                accessibilityLabel={t("achievements:title")}
+                accessibilityRole="button"
+              >
+                <Text style={styles.linkText}>{t("achievements:title")}</Text>
+              </PressableScale>
+            )}
+          </View>
+        )}
+
         {showRemoveAds && onRemoveAds && (
-          <PressableScale testID="btn-remove-ads" style={styles.removeAdsButton} onPress={onRemoveAds}>
+          <PressableScale
+            testID="btn-remove-ads"
+            style={styles.removeAdsButton}
+            onPress={onRemoveAds}
+            accessibilityLabel={t("game:removeAds")}
+            accessibilityRole="button"
+          >
             <Ionicons name="close-circle-outline" size={18} color="#fbbf24" />
             <Text style={styles.removeAdsText}>{t("game:removeAds")}</Text>
           </PressableScale>
@@ -198,6 +251,17 @@ const styles = StyleSheet.create({
     top: 8,
     width: 44,
     zIndex: 1,
+  },
+  linkRow: {
+    flexDirection: "row",
+    gap: 20,
+    justifyContent: "center",
+    marginTop: 16,
+  },
+  linkText: {
+    color: "#a0a0a0",
+    fontFamily: "Oxanium-Medium",
+    fontSize: 13,
   },
   lottie: {
     height: 80,

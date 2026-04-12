@@ -24,13 +24,8 @@ onFlowStart:
     id: "btn-green"
 - assertVisible:
     id: "btn-yellow"
-- assertVisible:
-    id: "btn-leaderboard"
-- assertVisible:
-    id: "btn-stats"
-- assertVisible:
-    id: "btn-achievements"
-- assertVisible:
-    id: "btn-mode-selector"
-- assertVisible:
-    id: "btn-settings"
+- assertVisible: "Leaderboard"
+- assertVisible: "Statistics"
+- assertVisible: "Achievements"
+- assertVisible: "Select game mode"
+- assertVisible: "Settings"

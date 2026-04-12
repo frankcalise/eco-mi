@@ -66,6 +66,7 @@ const en = {
     initials: "NAME",
     emptyInitials: "---",
     emptyScore: "----",
+    emptyLeaderboard: "Play a game to set your first score!",
   },
   stats: {
     title: "Statistics",
@@ -131,6 +132,18 @@ const en = {
       "Allow anonymous tracking to help us personalize ads and improve the app experience. No personal data is shared.",
     shareButton: "Allow Tracking",
     maybeLater: "Maybe Later",
+  },
+  a11y: {
+    modeSelector: "Select game mode",
+    settings: "Settings",
+    leaderboard: "Leaderboard",
+    stats: "Statistics",
+    achievements: "Achievements",
+    startGame: "Start game",
+    endGame: "End game",
+    soundToggle: "Toggle sound",
+    restorePurchases: "Restore purchases",
+    removeAds: "Remove ads",
   },
   emptyStateComponent: {
     generic: {

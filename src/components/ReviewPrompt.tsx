@@ -36,7 +36,11 @@ export function ReviewPrompt({ visible, onDismiss, onResponse }: ReviewPromptPro
         <Text style={styles.title}>{t("review:title")}</Text>
         <Text style={styles.subtitle}>{t("review:subtitle")}</Text>
         <View style={styles.buttons}>
-          <PressableScale testID="review-love-it" style={styles.loveItButton} onPress={handleLoveIt}>
+          <PressableScale
+            testID="review-love-it"
+            style={styles.loveItButton}
+            onPress={handleLoveIt}
+          >
             <Text style={styles.loveItText}>{t("review:loveIt")}</Text>
           </PressableScale>
           <PressableScale
@@ -47,7 +51,12 @@ export function ReviewPrompt({ visible, onDismiss, onResponse }: ReviewPromptPro
             <Text style={styles.notReallyText}>{t("review:notReally")}</Text>
           </PressableScale>
         </View>
-        <PressableScale testID="review-maybe-later" style={styles.maybeLaterButton} onPress={onDismiss} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <PressableScale
+          testID="review-maybe-later"
+          style={styles.maybeLaterButton}
+          onPress={onDismiss}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
           <Text style={styles.maybeLaterText}>{t("review:maybeLater")}</Text>
         </PressableScale>
       </Pressable>
@@ -78,15 +87,6 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     width: "80%",
   },
-  maybeLaterButton: {
-    marginTop: 12,
-    paddingVertical: 8,
-  },
-  maybeLaterText: {
-    color: "rgba(255, 255, 255, 0.5)",
-    fontFamily: "Oxanium-Regular",
-    fontSize: 14,
-  },
   loveItButton: {
     backgroundColor: "#22c55e",
     borderRadius: 8,
@@ -97,6 +97,15 @@ const styles = StyleSheet.create({
     color: "white",
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
+  },
+  maybeLaterButton: {
+    marginTop: 12,
+    paddingVertical: 8,
+  },
+  maybeLaterText: {
+    color: "rgba(255, 255, 255, 0.5)",
+    fontFamily: "Oxanium-Regular",
+    fontSize: 14,
   },
   notReallyButton: {
     backgroundColor: "#6b7280",

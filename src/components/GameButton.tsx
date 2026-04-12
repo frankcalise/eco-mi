@@ -112,6 +112,8 @@ export function GameButton({
         disabled={disabled}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
+        accessibilityLabel={color}
+        accessibilityRole="button"
       />
     </EaseView>
   )

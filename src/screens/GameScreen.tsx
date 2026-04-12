@@ -11,9 +11,9 @@ import {
   ScrollView,
 } from "react-native"
 import * as Haptics from "expo-haptics"
+import { useRouter } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
-import { useRouter } from "expo-router"
 import { useTranslation } from "react-i18next"
 import { EaseView } from "react-native-ease"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
@@ -22,22 +22,22 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { AchievementToast } from "@/components/AchievementToast"
 import { AnimatedCountdown } from "@/components/AnimatedCountdown"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
-import { PressableScale } from "@/components/PressableScale"
 import { GameButton } from "@/components/GameButton"
 import { GameOverOverlay } from "@/components/GameOverOverlay"
 import { HighScoreTable } from "@/components/HighScoreTable"
 import { InitialEntryModal } from "@/components/InitialEntryModal"
+import { PressableScale } from "@/components/PressableScale"
 import { ReviewPrompt } from "@/components/ReviewPrompt"
 import { TimerRing } from "@/components/TimerRing"
 import { ACHIEVEMENTS } from "@/config/achievements"
 import { SOUND_PACKS } from "@/config/soundPacks"
 import { themeIds, gameThemes } from "@/config/themes"
+import { useAchievements } from "@/hooks/useAchievements"
 import { useAds } from "@/hooks/useAds"
 import { useGameEngine, colors, type GameMode } from "@/hooks/useGameEngine"
 import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useSoundPack } from "@/hooks/useSoundPack"
-import { useAchievements } from "@/hooks/useAchievements"
 import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
 import { useAnalytics } from "@/utils/analytics"
@@ -444,6 +444,8 @@ export function GameScreen() {
       <View style={styles.header}>
         <PressableScale
           testID="btn-mode-selector"
+          accessibilityLabel={t("a11y:modeSelector")}
+          accessibilityRole="button"
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
             setModeModalVisible(true)
@@ -515,6 +517,8 @@ export function GameScreen() {
         </EaseView>
         <PressableScale
           testID="btn-settings"
+          accessibilityLabel={t("a11y:settings")}
+          accessibilityRole="button"
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
             setSettingsModalVisible(true)
@@ -540,6 +544,7 @@ export function GameScreen() {
           </Text>
           <AnimatedNumber
             testID="text-level"
+            accessibilityLabel={t("game:level")}
             value={level}
             style={[styles.scoreValue, { color: activeTheme.textColor }]}
           />
@@ -550,6 +555,7 @@ export function GameScreen() {
           </Text>
           <AnimatedNumber
             testID="text-score"
+            accessibilityLabel={t("game:score")}
             value={score}
             style={[styles.scoreValue, { color: activeTheme.textColor }]}
           />
@@ -560,6 +566,7 @@ export function GameScreen() {
           </Text>
           <AnimatedNumber
             testID="text-high-score"
+            accessibilityLabel={t("game:best")}
             value={highScore}
             style={[styles.scoreValue, { color: activeTheme.textColor }]}
           />
@@ -634,13 +641,21 @@ export function GameScreen() {
       <View style={styles.controlsContainer}>
         {gameState === "idle" && (
           <>
-            <PressableScale testID="btn-start" style={styles.startButton} onPress={handleStartGame}>
+            <PressableScale
+              testID="btn-start"
+              accessibilityLabel={t("a11y:startGame")}
+              accessibilityRole="button"
+              style={styles.startButton}
+              onPress={handleStartGame}
+            >
               <Ionicons name="play" size={24} color="white" />
               <Text style={styles.buttonText}>{t("game:startGame")}</Text>
             </PressableScale>
             <View style={styles.idleActions}>
               <PressableScale
                 testID="btn-leaderboard"
+                accessibilityLabel={t("a11y:leaderboard")}
+                accessibilityRole="button"
                 style={styles.trophyButton}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() => {
@@ -653,6 +668,8 @@ export function GameScreen() {
               </PressableScale>
               <PressableScale
                 testID="btn-stats"
+                accessibilityLabel={t("a11y:stats")}
+                accessibilityRole="button"
                 style={styles.trophyButton}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() => {
@@ -664,6 +681,8 @@ export function GameScreen() {
               </PressableScale>
               <PressableScale
                 testID="btn-achievements"
+                accessibilityLabel={t("a11y:achievements")}
+                accessibilityRole="button"
                 style={styles.trophyButton}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() => {
@@ -678,7 +697,13 @@ export function GameScreen() {
         )}
 
         {(gameState === "showing" || gameState === "waiting") && (
-          <PressableScale testID="btn-reset" style={styles.resetButton} onPress={endGame}>
+          <PressableScale
+            testID="btn-reset"
+            accessibilityLabel={t("a11y:endGame")}
+            accessibilityRole="button"
+            style={styles.resetButton}
+            onPress={endGame}
+          >
             <Ionicons name="stop" size={24} color="white" />
             <Text style={styles.buttonText}>{t("game:endGame")}</Text>
           </PressableScale>
@@ -701,7 +726,9 @@ export function GameScreen() {
                   key={i}
                   style={[
                     styles.progressDot,
-                    gameState === "waiting" && i < playerSequence.length && styles.progressDotFilled,
+                    gameState === "waiting" &&
+                      i < playerSequence.length &&
+                      styles.progressDotFilled,
                   ]}
                 />
               ))
@@ -777,243 +804,258 @@ export function GameScreen() {
             style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}
           >
             <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={[styles.modalTitle, { color: activeTheme.textColor }]}>
-              {t("game:settings")}
-            </Text>
-
-            {/* Sound Toggle */}
-            <View style={styles.settingsSection}>
-              <Text
-                style={[styles.settingsSectionLabel, { color: activeTheme.secondaryTextColor }]}
-              >
-                {t("game:soundToggle")}
+              <Text style={[styles.modalTitle, { color: activeTheme.textColor }]}>
+                {t("game:settings")}
               </Text>
-              <PressableScale
-                testID="btn-sound-toggle"
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                  toggleSound()
-                }}
-                style={[styles.soundToggleBtn, soundEnabled && styles.soundToggleBtnActive]}
-              >
+
+              {/* Sound Toggle */}
+              <View style={styles.settingsSection}>
+                <Text
+                  style={[styles.settingsSectionLabel, { color: activeTheme.secondaryTextColor }]}
+                >
+                  {t("game:soundToggle")}
+                </Text>
+                <PressableScale
+                  testID="btn-sound-toggle"
+                  accessibilityLabel={t("a11y:soundToggle")}
+                  accessibilityRole="button"
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                    toggleSound()
+                  }}
+                  style={[styles.soundToggleBtn, soundEnabled && styles.soundToggleBtnActive]}
+                >
                   <Ionicons
                     name={soundEnabled ? "volume-high" : "volume-mute"}
                     size={20}
                     color="white"
                   />
-                  <Text style={styles.soundToggleText}>{soundEnabled ? t("common:on") : t("common:off")}</Text>
-              </PressableScale>
-            </View>
+                  <Text style={styles.soundToggleText}>
+                    {soundEnabled ? t("common:on") : t("common:off")}
+                  </Text>
+                </PressableScale>
+              </View>
 
-            {/* Sound Pack */}
-            <View style={styles.settingsSection}>
-              <Text
-                style={[styles.settingsSectionLabel, { color: activeTheme.secondaryTextColor }]}
-              >
-                {t("game:soundPack")}
-              </Text>
-              <View style={styles.settingsRow}>
-                {SOUND_PACKS.map((pack) => {
-                  const isOwned = pack.free || ownsSoundPack(pack.id)
-                  const isSelected = pack.id === soundPack.id
-                  const isPreviewing = !isOwned && pack.id === (previewSoundPack?.id ?? null)
-                  const isPopping = poppingSoundPack === pack.id
-                  return (
-                    <Pressable
-                      key={pack.id}
-                      testID={`btn-sound-pack-${pack.id}`}
-                      hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
-                      onPress={() => {
-                        if (isOwned && pack.id === soundPack.id) return
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                        if (!soundEnabled) {
-                          setSoundHint(true)
-                          setTimeout(() => setSoundHint(false), 2000)
-                        }
-                        playPreview(pack.oscillatorType)
-                        setPoppingSoundPack(pack.id)
-                        setTimeout(() => setPoppingSoundPack(null), 150)
-                        if (isOwned) {
-                          setSoundPack(pack.id)
-                        } else {
-                          setPreviewSoundPack(pack.id)
-                        }
-                      }}
-                    >
-                      <EaseView
-                        animate={{ scale: isPopping ? 1.08 : 1 }}
-                        transition={{
-                          default: { type: "spring", stiffness: 400, damping: 15 },
+              {/* Sound Pack */}
+              <View style={styles.settingsSection}>
+                <Text
+                  style={[styles.settingsSectionLabel, { color: activeTheme.secondaryTextColor }]}
+                >
+                  {t("game:soundPack")}
+                </Text>
+                <View style={styles.settingsRow}>
+                  {SOUND_PACKS.map((pack) => {
+                    const isOwned = pack.free || ownsSoundPack(pack.id)
+                    const isSelected = pack.id === soundPack.id
+                    const isPreviewing = !isOwned && pack.id === (previewSoundPack?.id ?? null)
+                    const isPopping = poppingSoundPack === pack.id
+                    return (
+                      <Pressable
+                        key={pack.id}
+                        testID={`btn-sound-pack-${pack.id}`}
+                        hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+                        onPress={() => {
+                          if (isOwned && pack.id === soundPack.id) return
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                          if (!soundEnabled) {
+                            setSoundHint(true)
+                            setTimeout(() => setSoundHint(false), 2000)
+                          }
+                          playPreview(pack.oscillatorType)
+                          setPoppingSoundPack(pack.id)
+                          setTimeout(() => setPoppingSoundPack(null), 150)
+                          if (isOwned) {
+                            setSoundPack(pack.id)
+                          } else {
+                            setPreviewSoundPack(pack.id)
+                          }
                         }}
-                        style={[
-                          styles.selectorButton,
-                          {
-                            borderColor: isSelected
-                              ? "#22c55e"
-                              : isPreviewing
-                                ? "#f59e0b"
-                                : activeTheme.borderColor,
-                          },
-                          isSelected && styles.selectorButtonActive,
-                          isPreviewing && styles.selectorButtonPreviewing,
-                        ]}
                       >
-                        <View style={styles.selectorButtonInner}>
-                          <Text
-                            style={{
-                              color: isSelected
+                        <EaseView
+                          animate={{ scale: isPopping ? 1.08 : 1 }}
+                          transition={{
+                            default: { type: "spring", stiffness: 400, damping: 15 },
+                          }}
+                          style={[
+                            styles.selectorButton,
+                            {
+                              borderColor: isSelected
                                 ? "#22c55e"
                                 : isPreviewing
                                   ? "#f59e0b"
-                                  : activeTheme.secondaryTextColor,
-                              fontFamily: "Oxanium-Regular",
-                              fontSize: 12,
-                            }}
-                          >
-                            {pack.name}
-                          </Text>
+                                  : activeTheme.borderColor,
+                            },
+                            isSelected && styles.selectorButtonActive,
+                            isPreviewing && styles.selectorButtonPreviewing,
+                          ]}
+                        >
+                          <View style={styles.selectorButtonInner}>
+                            <Text
+                              style={{
+                                color: isSelected
+                                  ? "#22c55e"
+                                  : isPreviewing
+                                    ? "#f59e0b"
+                                    : activeTheme.secondaryTextColor,
+                                fontFamily: "Oxanium-Regular",
+                                fontSize: 12,
+                              }}
+                            >
+                              {pack.name}
+                            </Text>
+                            {!isOwned && (
+                              <Ionicons
+                                name="lock-closed"
+                                size={10}
+                                color={activeTheme.secondaryTextColor}
+                                style={styles.lockIcon}
+                              />
+                            )}
+                          </View>
+                        </EaseView>
+                      </Pressable>
+                    )
+                  })}
+                </View>
+                {previewSoundPack && !ownsSoundPack(previewSoundPack.id) && (
+                  <PressableScale
+                    style={styles.unlockBtn}
+                    onPress={async () => {
+                      const productId = getSoundProductId(previewSoundPack.id)
+                      if (!productId) return
+                      analytics.trackIapInitiated(productId)
+                      const success = await purchaseProduct(productId)
+                      if (success) {
+                        analytics.trackIapCompleted(productId)
+                        setSoundPack(previewSoundPack.id)
+                      }
+                    }}
+                  >
+                    <Ionicons name="lock-open" size={14} color="white" />
+                    <Text style={styles.unlockBtnText}>
+                      {t("game:unlockSound", { name: previewSoundPack.name })}
+                    </Text>
+                  </PressableScale>
+                )}
+              </View>
+              <EaseView
+                animate={{ opacity: soundHint ? 1 : 0, scale: soundHint ? 1 : 0.95 }}
+                transition={{ default: { type: "timing", duration: 200, easing: "easeOut" } }}
+                style={soundHint ? undefined : styles.hintHidden}
+              >
+                <Text style={styles.soundHintText}>{t("game:soundDisabledHint")}</Text>
+              </EaseView>
+
+              {/* Theme */}
+              <View style={styles.settingsSection}>
+                <Text
+                  style={[styles.settingsSectionLabel, { color: activeTheme.secondaryTextColor }]}
+                >
+                  {t("game:theme")}
+                </Text>
+                <View style={styles.settingsRow}>
+                  {themeIds.map((id) => {
+                    const isOwned = gameThemes[id].free || ownsTheme(id)
+                    const isSelected = id === theme.id
+                    const isPreviewing = previewTheme?.id === id
+                    const isPopping = poppingTheme === id
+                    return (
+                      <Pressable
+                        key={id}
+                        testID={`btn-theme-${id}`}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        onPress={() => {
+                          if (isOwned && id === theme.id) return
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                          setPoppingTheme(id)
+                          setTimeout(() => setPoppingTheme(null), 150)
+                          if (isOwned) {
+                            setTheme(id)
+                          } else {
+                            setPreviewTheme(id)
+                          }
+                        }}
+                      >
+                        <EaseView
+                          animate={{ scale: isPopping ? 1.08 : 1 }}
+                          transition={{
+                            default: { type: "spring", stiffness: 400, damping: 15 },
+                          }}
+                          style={[
+                            styles.themeCircle,
+                            { backgroundColor: gameThemes[id].buttonColors.red.color },
+                            isSelected && styles.themeCircleSelected,
+                            isPreviewing && styles.themeCirclePreviewing,
+                          ]}
+                        >
                           {!isOwned && (
                             <Ionicons
                               name="lock-closed"
-                              size={10}
-                              color={activeTheme.secondaryTextColor}
-                              style={styles.lockIcon}
+                              size={12}
+                              color="rgba(255, 255, 255, 0.7)"
+                              style={styles.themeLockIcon}
                             />
                           )}
-                        </View>
-                      </EaseView>
-                    </Pressable>
-                  )
-                })}
+                        </EaseView>
+                      </Pressable>
+                    )
+                  })}
+                </View>
+                {previewTheme && !ownsTheme(previewTheme.id) && (
+                  <PressableScale
+                    style={styles.unlockBtn}
+                    onPress={async () => {
+                      const productId = getThemeProductId(previewTheme.id)
+                      if (!productId) return
+                      analytics.trackIapInitiated(productId)
+                      const success = await purchaseProduct(productId)
+                      if (success) {
+                        analytics.trackIapCompleted(productId)
+                        setTheme(previewTheme.id)
+                      }
+                    }}
+                  >
+                    <Ionicons name="lock-open" size={14} color="white" />
+                    <Text style={styles.unlockBtnText}>
+                      {t("game:unlockTheme", { name: previewTheme.name })}
+                    </Text>
+                  </PressableScale>
+                )}
               </View>
-              {previewSoundPack && !ownsSoundPack(previewSoundPack.id) && (
-                <PressableScale
-                  style={styles.unlockBtn}
-                  onPress={async () => {
-                    const productId = getSoundProductId(previewSoundPack.id)
-                    if (!productId) return
-                    analytics.trackIapInitiated(productId)
-                    const success = await purchaseProduct(productId)
-                    if (success) {
-                      analytics.trackIapCompleted(productId)
-                      setSoundPack(previewSoundPack.id)
-                    }
-                  }}
-                >
-                  <Ionicons name="lock-open" size={14} color="white" />
-                  <Text style={styles.unlockBtnText}>{t("game:unlockSound", { name: previewSoundPack.name })}</Text>
-                </PressableScale>
-              )}
-            </View>
-            <EaseView
-              animate={{ opacity: soundHint ? 1 : 0, scale: soundHint ? 1 : 0.95 }}
-              transition={{ default: { type: "timing", duration: 200, easing: "easeOut" } }}
-              style={soundHint ? undefined : styles.hintHidden}
-            >
-              <Text style={styles.soundHintText}>{t("game:soundDisabledHint")}</Text>
-            </EaseView>
 
-            {/* Theme */}
-            <View style={styles.settingsSection}>
-              <Text
-                style={[styles.settingsSectionLabel, { color: activeTheme.secondaryTextColor }]}
-              >
-                {t("game:theme")}
-              </Text>
-              <View style={styles.settingsRow}>
-                {themeIds.map((id) => {
-                  const isOwned = gameThemes[id].free || ownsTheme(id)
-                  const isSelected = id === theme.id
-                  const isPreviewing = previewTheme?.id === id
-                  const isPopping = poppingTheme === id
-                  return (
-                    <Pressable
-                      key={id}
-                      testID={`btn-theme-${id}`}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      onPress={() => {
-                        if (isOwned && id === theme.id) return
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                        setPoppingTheme(id)
-                        setTimeout(() => setPoppingTheme(null), 150)
-                        if (isOwned) {
-                          setTheme(id)
-                        } else {
-                          setPreviewTheme(id)
-                        }
-                      }}
-                    >
-                      <EaseView
-                        animate={{ scale: isPopping ? 1.08 : 1 }}
-                        transition={{
-                          default: { type: "spring", stiffness: 400, damping: 15 },
-                        }}
-                        style={[
-                          styles.themeCircle,
-                          { backgroundColor: gameThemes[id].buttonColors.red.color },
-                          isSelected && styles.themeCircleSelected,
-                          isPreviewing && styles.themeCirclePreviewing,
-                        ]}
-                      >
-                        {!isOwned && (
-                          <Ionicons
-                            name="lock-closed"
-                            size={12}
-                            color="rgba(255, 255, 255, 0.7)"
-                            style={styles.themeLockIcon}
-                          />
-                        )}
-                      </EaseView>
-                    </Pressable>
-                  )
-                })}
-              </View>
-              {previewTheme && !ownsTheme(previewTheme.id) && (
-                <PressableScale
-                  style={styles.unlockBtn}
-                  onPress={async () => {
-                    const productId = getThemeProductId(previewTheme.id)
-                    if (!productId) return
-                    analytics.trackIapInitiated(productId)
-                    const success = await purchaseProduct(productId)
-                    if (success) {
-                      analytics.trackIapCompleted(productId)
-                      setTheme(previewTheme.id)
-                    }
-                  }}
-                >
-                  <Ionicons name="lock-open" size={14} color="white" />
-                  <Text style={styles.unlockBtnText}>{t("game:unlockTheme", { name: previewTheme.name })}</Text>
-                </PressableScale>
+              {/* Remove Ads */}
+              {!removeAds && (
+                <View style={styles.settingsSection}>
+                  <PressableScale
+                    style={styles.removeAdsBtn}
+                    accessibilityLabel={t("a11y:removeAds")}
+                    accessibilityRole="button"
+                    onPress={handleRemoveAds}
+                  >
+                    <Ionicons name="shield-checkmark" size={18} color="white" />
+                    <Text style={styles.removeAdsBtnText}>{t("game:removeAds")}</Text>
+                  </PressableScale>
+                </View>
               )}
-            </View>
 
-            {/* Remove Ads */}
-            {!removeAds && (
+              {/* Restore Purchases */}
               <View style={styles.settingsSection}>
-                <PressableScale style={styles.removeAdsBtn} onPress={handleRemoveAds}>
-                  <Ionicons name="shield-checkmark" size={18} color="white" />
-                  <Text style={styles.removeAdsBtnText}>{t("game:removeAds")}</Text>
+                <PressableScale
+                  style={styles.restoreBtn}
+                  accessibilityLabel={t("a11y:restorePurchases")}
+                  accessibilityRole="button"
+                  onPress={async () => {
+                    const success = await restorePurchases()
+                    Alert.alert(
+                      t("game:restorePurchases"),
+                      success ? t("game:restoreSuccess") : t("game:restoreFailed"),
+                    )
+                  }}
+                >
+                  <Ionicons name="refresh" size={16} color="white" />
+                  <Text style={styles.restoreBtnText}>{t("game:restorePurchases")}</Text>
                 </PressableScale>
               </View>
-            )}
-
-            {/* Restore Purchases */}
-            <View style={styles.settingsSection}>
-              <PressableScale
-                style={styles.restoreBtn}
-                onPress={async () => {
-                  const success = await restorePurchases()
-                  Alert.alert(
-                    t("game:restorePurchases"),
-                    success ? t("game:restoreSuccess") : t("game:restoreFailed"),
-                  )
-                }}
-              >
-                <Ionicons name="refresh" size={16} color="white" />
-                <Text style={styles.restoreBtnText}>{t("game:restorePurchases")}</Text>
-              </PressableScale>
-            </View>
             </ScrollView>
           </Pressable>
         </Pressable>
@@ -1044,6 +1086,8 @@ export function GameScreen() {
         onShare={handleShare}
         onRemoveAds={handleRemoveAds}
         onHome={resetGame}
+        onViewStats={() => router.push("/stats")}
+        onViewAchievements={() => router.push("/achievements")}
       />
 
       {/* Leaderboard Modal */}
@@ -1164,6 +1208,14 @@ const styles = StyleSheet.create({
   },
   headerCenter: {
     alignItems: "center",
+  },
+  hintHidden: {
+    height: 0,
+    overflow: "hidden",
+  },
+  idleActions: {
+    flexDirection: "row",
+    gap: 10,
   },
   lockIcon: {
     opacity: 0.6,
@@ -1337,6 +1389,13 @@ const styles = StyleSheet.create({
     color: "#fbbf24",
     fontFamily: "Oxanium-Regular",
   },
+  soundHintText: {
+    color: "rgba(255, 255, 255, 0.5)",
+    fontFamily: "Oxanium-Regular",
+    fontSize: 12,
+    paddingTop: 6,
+    textAlign: "center",
+  },
   soundToggleBtn: {
     alignItems: "center",
     backgroundColor: "#6b7280",
@@ -1409,10 +1468,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  idleActions: {
-    flexDirection: "row",
-    gap: 10,
-  },
   trophyButton: {
     alignItems: "center",
     backgroundColor: "rgba(251, 191, 36, 0.15)",
@@ -1433,17 +1488,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingHorizontal: 16,
     paddingVertical: 10,
-  },
-  soundHintText: {
-    color: "rgba(255, 255, 255, 0.5)",
-    fontFamily: "Oxanium-Regular",
-    fontSize: 12,
-    paddingTop: 6,
-    textAlign: "center",
-  },
-  hintHidden: {
-    height: 0,
-    overflow: "hidden",
   },
   unlockBtnText: {
     color: "white",

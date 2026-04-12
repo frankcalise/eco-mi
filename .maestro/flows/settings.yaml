@@ -14,9 +14,8 @@ onFlowStart:
 - assertVisible:
     id: "btn-start"
 
-# Open settings
-- tapOn:
-    id: "btn-settings"
+# Open settings via accessibility label
+- tapOn: "Settings"
 - waitForAnimationToEnd
 - waitForAnimationToEnd
 

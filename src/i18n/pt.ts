@@ -66,6 +66,7 @@ const pt = {
     initials: "NOME",
     emptyInitials: "---",
     emptyScore: "----",
+    emptyLeaderboard: "Jogue uma partida para conseguir sua primeira pontuação!",
   },
   stats: {
     title: "Estatísticas",
@@ -130,6 +131,18 @@ const pt = {
       "Permita o rastreamento anônimo para nos ajudar a personalizar anúncios e melhorar a experiência. Nenhum dado pessoal é compartilhado.",
     shareButton: "Permitir Rastreamento",
     maybeLater: "Talvez Depois",
+  },
+  a11y: {
+    modeSelector: "Selecionar modo",
+    settings: "Configurações",
+    leaderboard: "Placar",
+    stats: "Estatísticas",
+    achievements: "Conquistas",
+    startGame: "Iniciar jogo",
+    endGame: "Encerrar jogo",
+    soundToggle: "Ativar/desativar som",
+    restorePurchases: "Restaurar compras",
+    removeAds: "Remover anúncios",
   },
   emptyStateComponent: {
     generic: {

@@ -12,9 +12,8 @@ onFlowStart:
 - assertVisible:
     id: "btn-start"
 
-# Navigate to stats
-- tapOn:
-    id: "btn-stats"
+# Navigate to stats via accessibility label
+- tapOn: "Statistics"
 - waitForAnimationToEnd
 
 # Stats screen should be visible
@@ -28,9 +27,8 @@ onFlowStart:
 - assertVisible:
     id: "btn-start"
 
-# Navigate to achievements
-- tapOn:
-    id: "btn-achievements"
+# Navigate to achievements via accessibility label
+- tapOn: "Achievements"
 - waitForAnimationToEnd
 
 # Achievements screen should be visible

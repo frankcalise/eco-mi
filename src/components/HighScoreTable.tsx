@@ -113,6 +113,8 @@ export function HighScoreTable({
               style={[styles.modeTab, isActive && { backgroundColor: theme.surfaceColor }]}
               onPress={() => setSelectedMode(m.id)}
               hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+              accessibilityLabel={translate(`game:modes.${m.id}`)}
+              accessibilityRole="button"
             >
               <Ionicons
                 name={m.icon}
@@ -149,65 +151,78 @@ export function HighScoreTable({
             </Text>
           </View>
 
-          {rows.map((row, i) => {
-            const isHighlighted = activeHighlight === i
-            const rowContent = (
-              <View
-                key={i}
-                style={[
-                  styles.row,
-                  isHighlighted && { backgroundColor: theme.surfaceColor, borderRadius: 4 },
-                  i % 2 === 0 && { backgroundColor: theme.surfaceColor },
-                ]}
-              >
-                <Text
+          {scores.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={[styles.emptyStateText, { color: theme.secondaryTextColor }]}>
+                {translate("game:emptyLeaderboard")}
+              </Text>
+            </View>
+          ) : (
+            rows.map((row, i) => {
+              const isHighlighted = activeHighlight === i
+              const rowContent = (
+                <View
+                  key={i}
                   style={[
-                    styles.cell,
-                    styles.rankCol,
-                    { color: cellColor },
-                    isHighlighted && { color: highlight },
+                    styles.row,
+                    i % 2 === 0 && { backgroundColor: theme.surfaceColor },
+                    isHighlighted && {
+                      backgroundColor: "rgba(251, 191, 36, 0.15)",
+                      borderColor: "rgba(251, 191, 36, 0.3)",
+                      borderWidth: 1,
+                      borderRadius: 4,
+                    },
                   ]}
                 >
-                  {String(row.rank).padStart(2, " ")}.
-                </Text>
-                <Text
-                  style={[
-                    styles.cell,
-                    styles.nameCol,
-                    { color: cellColor },
-                    isHighlighted && { color: highlight },
-                  ]}
-                >
-                  {row.initials}
-                </Text>
-                <Text
-                  style={[
-                    styles.cell,
-                    styles.scoreCol,
-                    { color: cellColor },
-                    isHighlighted && { color: highlight },
-                  ]}
-                >
-                  {row.score}
-                </Text>
-                <Text
-                  style={[
-                    styles.cell,
-                    styles.levelCol,
-                    { color: cellColor },
-                    isHighlighted && { color: highlight },
-                  ]}
-                >
-                  {row.level}
-                </Text>
-              </View>
-            )
+                  <Text
+                    style={[
+                      styles.cell,
+                      styles.rankCol,
+                      { color: cellColor },
+                      isHighlighted && { color: highlight },
+                    ]}
+                  >
+                    {String(row.rank).padStart(2, " ")}.
+                  </Text>
+                  <Text
+                    style={[
+                      styles.cell,
+                      styles.nameCol,
+                      { color: cellColor },
+                      isHighlighted && { color: highlight },
+                    ]}
+                  >
+                    {row.initials}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.cell,
+                      styles.scoreCol,
+                      { color: cellColor },
+                      isHighlighted && { color: highlight },
+                    ]}
+                  >
+                    {row.score}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.cell,
+                      styles.levelCol,
+                      { color: cellColor },
+                      isHighlighted && { color: highlight },
+                    ]}
+                  >
+                    {row.level}
+                  </Text>
+                </View>
+              )
 
-            if (isHighlighted) {
-              return <HighlightRow key={i}>{rowContent}</HighlightRow>
-            }
-            return rowContent
-          })}
+              if (isHighlighted) {
+                return <HighlightRow key={i}>{rowContent}</HighlightRow>
+              }
+              return rowContent
+            })
+          )}
         </View>
       </GestureDetector>
     </View>
@@ -221,6 +236,16 @@ const styles = StyleSheet.create({
   },
   container: {
     paddingVertical: 8,
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontFamily: "Oxanium-Regular",
+    fontSize: 14,
+    textAlign: "center",
   },
   headerCell: {
     fontFamily: "Oxanium-Regular",

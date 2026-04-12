@@ -11,9 +11,10 @@ type AnimatedNumberProps = {
   value: number
   style?: StyleProp<TextStyle>
   testID?: string
+  accessibilityLabel?: string
 }
 
-export function AnimatedNumber({ value, style, testID }: AnimatedNumberProps) {
+export function AnimatedNumber({ value, style, testID, accessibilityLabel }: AnimatedNumberProps) {
   const prevValue = useRef(value)
   const [displayValue, setDisplayValue] = useState(value)
   const [phase, setPhase] = useState<Phase>("idle")
@@ -64,7 +65,7 @@ export function AnimatedNumber({ value, style, testID }: AnimatedNumberProps) {
           },
         }}
       >
-        <Text testID={testID} style={style}>
+        <Text testID={testID} accessibilityLabel={accessibilityLabel} style={style}>
           {displayValue}
         </Text>
       </EaseView>

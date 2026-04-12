@@ -11,9 +11,8 @@ onFlowStart:
 - assertVisible:
     id: "btn-start"
 
-# Open leaderboard
-- tapOn:
-    id: "btn-leaderboard"
+# Open leaderboard via accessibility label
+- tapOn: "Leaderboard"
 - waitForAnimationToEnd
 - waitForAnimationToEnd
 
