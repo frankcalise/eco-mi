@@ -457,7 +457,7 @@ export function GameScreen() {
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons
-            name="game-controller"
+            name="game-controller-outline"
             size={26}
             color={isIdle ? activeTheme.textColor : activeTheme.secondaryTextColor}
             style={{ opacity: isIdle ? 1 : 0.4 }}
