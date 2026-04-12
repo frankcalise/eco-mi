@@ -225,8 +225,30 @@
 - [ ] **Extend difficulty curve beyond level 16**
       Tone duration and sequence interval both hit their floor (~300ms) at level 16-17. Game stops escalating and becomes monotonous. Consider secondary challenge escalation: reducing input timeout, adding visual distractions, shortening the replay window, or introducing partial sequence hints that fade at higher levels.
 
-- [ ] **Reconsider interstitial ad placement**
-      Currently shows after "Play Again" tap — player makes a positive choice to continue, immediately gets punished with an ad. Consider showing during the natural game-over pause (before player takes action) or after the game-over overlay dismisses but before the new game starts. The 3-min gap and 2-game frequency cap help, but placement right after the "play again" intent is the most flow-breaking moment.
+- [x] **Reconsider interstitial ad placement**
+      Resolved by the full-screen game-over redesign below — ad fires on Play Again but the full-screen context makes the transition to a full-screen ad feel natural rather than jarring.
+
+- [ ] **Full-screen game-over experience (Duolingo-style)**
+      Replace the small overlay card with a full-screen game-over route/screen. Inspired by Duolingo's end-of-lesson screen. Chunked tasks:
+
+  **Phase 1 — Layout & Stats**
+  - [ ] Create full-screen game-over component (or Expo Router modal route)
+  - [ ] Track session play time in useGameEngine (start timer on startGame, stop on gameover)
+  - [ ] Display 3 stat pill boxes (reuse existing score box component): Time Played, Level Reached, Score
+  - [ ] Add game-over Lottie animation at top (browse LottieFiles for a polished one)
+  - [ ] Theme-aware using GameThemeContext
+
+  **Phase 2 — Actions & Polish**
+  - [ ] Platform-specific share icon button (iOS share icon vs Android share icon)
+  - [ ] "Play Again" primary action button
+  - [ ] "Watch Ad to Continue" secondary button (conditional, rewarded ad)
+  - [ ] "View Stats" and "Achievements" navigation links
+  - [ ] New high score celebration variant (different layout/animation when isNewHighScore)
+
+  **Phase 3 — Transitions**
+  - [ ] Entry animation: staggered reveal (background → animation → stats cascade → buttons slide up)
+  - [ ] Exit animation on Play Again before interstitial check
+  - [ ] Preserve existing game-over jingles and haptics
 
 - [ ] **Add time penalty for wrong input in timed mode**
       Wrong input replays the current sequence with no score or time penalty — effectively a free hint. Add a small time penalty (e.g., -3 seconds) so wrong inputs feel like a genuine setback rather than a free replay.
