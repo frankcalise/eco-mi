@@ -166,6 +166,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
   const inputTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const buttonPressStartTime = useRef<number | null>(null)
+  const inputLocked = useRef(false)
   const testSeed = getTestSeed()
   const seededRng = useRef(testSeed !== null ? mulberry32(testSeed) : null)
 
@@ -418,6 +419,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   function startGame() {
     clearAllTimeouts()
     stopTimer()
+    inputLocked.current = false
     if (mode === "daily") {
       seededRng.current = mulberry32(getDailySeed())
     } else if (testSeed !== null) {
@@ -451,6 +453,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   function resetGame() {
     clearAllTimeouts()
     stopTimer()
+    inputLocked.current = false
     setGameState("idle")
     setSequence([])
     setPlayerSequence([])
@@ -469,6 +472,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     if (gameState !== "showing" && gameState !== "waiting") return
     clearAllTimeouts()
     stopTimer()
+    inputLocked.current = false
     setGameState("gameover")
     setActiveButton(null)
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
@@ -492,6 +496,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   function continueGame() {
     if (gameState !== "gameover") return
     clearAllTimeouts()
+    inputLocked.current = false
     setContinuedThisGame(true)
     setIsNewHighScore(false)
     setPlayerSequence([])
@@ -503,7 +508,14 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   }
 
   function handleButtonTouch(color: Color) {
-    if (gameState !== "waiting") return
+    if (gameState !== "waiting") {
+      if (gameState === "showing") {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      }
+      return
+    }
+    if (inputLocked.current) return
+    inputLocked.current = true
     const toneDuration = getToneDuration(level)
 
     buttonPressStartTime.current = Date.now()
@@ -565,6 +577,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
         addTimeout(() => {
           showSequence(sequence, level)
         }, 500)
+        inputLocked.current = false
         return
       }
 
@@ -586,6 +599,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       if (mode === "daily") {
         saveDailyResult(score)
       }
+      inputLocked.current = false
       return
     }
 
@@ -624,6 +638,8 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
         }
       }, 400)
     }
+
+    inputLocked.current = false
   }
 
   function toggleSound() {
