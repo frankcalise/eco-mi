@@ -1,0 +1,19 @@
+# Tracking screen: verify ATT pre-permission screen on iOS first launch
+appId: ${MAESTRO_APP_ID}
+tags:
+  - tracking
+  - ios
+onFlowStart:
+  - runFlow: ../shared/_OnFlowStart.yaml
+---
+# On iOS with clearState, tracking screen should appear
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - assertVisible: "Allow Tracking"
+      - assertVisible: "Maybe Later"
+      - tapOn: "Maybe Later"
+      - waitForAnimationToEnd
+      - assertVisible:
+          id: "btn-start"

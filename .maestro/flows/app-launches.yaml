@@ -1,0 +1,36 @@
+# Smoke test: verify the app reaches idle state with all core elements visible
+appId: ${MAESTRO_APP_ID}
+tags:
+  - smoke
+  - pr
+onFlowStart:
+  - runFlow: ../shared/_OnFlowStart.yaml
+---
+- runFlow: ../shared/_dismiss-tracking.yaml
+
+- assertVisible:
+    id: "text-score"
+- assertVisible:
+    id: "text-level"
+- assertVisible:
+    id: "text-high-score"
+- assertVisible:
+    id: "btn-start"
+- assertVisible:
+    id: "btn-red"
+- assertVisible:
+    id: "btn-blue"
+- assertVisible:
+    id: "btn-green"
+- assertVisible:
+    id: "btn-yellow"
+- assertVisible:
+    id: "btn-leaderboard"
+- assertVisible:
+    id: "btn-stats"
+- assertVisible:
+    id: "btn-achievements"
+- assertVisible:
+    id: "btn-mode-selector"
+- assertVisible:
+    id: "btn-settings"

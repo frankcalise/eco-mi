@@ -1,0 +1,31 @@
+# Game over → Home: verify tapping home returns to idle state
+appId: ${MAESTRO_APP_ID}
+tags:
+  - gameplay
+onFlowStart:
+  - runFlow: ../shared/_OnFlowStart.yaml
+---
+- runFlow: ../shared/_dismiss-tracking.yaml
+
+- tapOn:
+    id: "btn-start"
+- waitForAnimationToEnd
+
+# Lose immediately
+- tapOn:
+    id: "btn-red"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "overlay-game-over"
+
+# Tap home
+- tapOn:
+    id: "btn-home"
+- waitForAnimationToEnd
+
+# Should be back at idle
+- assertNotVisible:
+    id: "overlay-game-over"
+- assertVisible:
+    id: "btn-start"

@@ -1,0 +1,44 @@
+# Navigation: verify stats and achievements screens are reachable
+appId: ${MAESTRO_APP_ID}
+tags:
+  - navigation
+  - pr
+onFlowStart:
+  - runFlow: ../shared/_OnFlowStart.yaml
+---
+- runFlow: ../shared/_dismiss-tracking.yaml
+
+# Verify idle state
+- assertVisible:
+    id: "btn-start"
+
+# Navigate to stats
+- tapOn:
+    id: "btn-stats"
+- waitForAnimationToEnd
+
+# Stats screen should be visible
+- assertVisible: "Statistics"
+
+# Go back via accessibility label
+- tapOn: "Back"
+- waitForAnimationToEnd
+
+# Should be back at game screen
+- assertVisible:
+    id: "btn-start"
+
+# Navigate to achievements
+- tapOn:
+    id: "btn-achievements"
+- waitForAnimationToEnd
+
+# Achievements screen should be visible
+- assertVisible: "Achievements"
+
+# Go back via accessibility label
+- tapOn: "Back"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "btn-start"

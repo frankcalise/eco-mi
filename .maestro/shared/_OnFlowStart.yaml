@@ -37,6 +37,23 @@ appId: ${MAESTRO_APP_ID}
       - tapOn: "http://.*:.*"
       - waitForAnimationToEnd
 
+# Dismiss the Expo dev menu welcome screen and disable floating tools button
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+      - waitForAnimationToEnd
+
+# Dismiss the Expo dev tools menu by tapping above it
+- runFlow:
+    when:
+      visible: "Reload"
+    commands:
+      - tapOn:
+          point: "50%,10%"
+      - waitForAnimationToEnd
+
 - runFlow:
     when:
       platform: Android

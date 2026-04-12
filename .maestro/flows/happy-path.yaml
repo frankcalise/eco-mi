@@ -1,0 +1,36 @@
+# Happy path: start game, wait for player turn, tap a button
+# NOTE: Without EXPO_PUBLIC_TEST_SEED=42 baked into the build, the sequence
+# is random. This flow verifies the game starts and reaches "waiting" state.
+# With seed 42, level 1 expects green — uncomment the specific color tap.
+appId: ${MAESTRO_APP_ID}
+tags:
+  - gameplay
+  - pr
+onFlowStart:
+  - runFlow: ../shared/_OnFlowStart.yaml
+---
+- runFlow: ../shared/_dismiss-tracking.yaml
+
+# Verify idle state
+- assertVisible:
+    id: "btn-start"
+
+# Start the game
+- tapOn:
+    id: "btn-start"
+
+# Start button should disappear
+- assertNotVisible:
+    id: "btn-start"
+
+# Wait for "Repeat the sequence!" text — signals the game is in waiting state
+- extendedWaitUntil:
+    visible: "Repeat the sequence!"
+    timeout: 15000
+
+# Game is now waiting for player input — tap green
+# With seed 42 this is correct; without seed this may cause game over
+- tapOn:
+    id: "btn-green"
+
+- waitForAnimationToEnd

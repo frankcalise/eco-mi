@@ -1,0 +1,27 @@
+# Mode switch: open mode selector and dismiss
+# NOTE: Mode selector uses RN Modal — content invisible to Maestro.
+# Full mode-switch testing will work after migrating to Expo Router modals.
+appId: ${MAESTRO_APP_ID}
+tags:
+  - modes
+onFlowStart:
+  - runFlow: ../shared/_OnFlowStart.yaml
+---
+- runFlow: ../shared/_dismiss-tracking.yaml
+
+- assertVisible:
+    id: "btn-start"
+
+# Open mode selector
+- tapOn:
+    id: "btn-mode-selector"
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+
+# Close by tapping above the modal
+- tapOn:
+    point: "50%,8%"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "btn-start"

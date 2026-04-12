@@ -1,0 +1,42 @@
+# Game over: start game, tap wrong color, verify overlay appears with all buttons
+# Requires app built with EXPO_PUBLIC_TEST_SEED=42
+# Seed 42 level 1 expects green — we tap red to fail
+appId: ${MAESTRO_APP_ID}
+tags:
+  - gameplay
+  - pr
+onFlowStart:
+  - runFlow: ../shared/_OnFlowStart.yaml
+---
+- runFlow: ../shared/_dismiss-tracking.yaml
+
+- tapOn:
+    id: "btn-start"
+
+- waitForAnimationToEnd
+
+# Tap wrong color (seed 42 expects green, tap red)
+- tapOn:
+    id: "btn-red"
+
+- waitForAnimationToEnd
+
+# Game over overlay should appear with all action buttons
+- assertVisible:
+    id: "overlay-game-over"
+- assertVisible:
+    id: "btn-play-again"
+- assertVisible:
+    id: "btn-home"
+- assertVisible:
+    id: "btn-share"
+
+# Tap play again to start a new game
+- tapOn:
+    id: "btn-play-again"
+
+- waitForAnimationToEnd
+
+# Game over overlay should disappear
+- assertNotVisible:
+    id: "overlay-game-over"

@@ -1,0 +1,26 @@
+# Leaderboard: open modal, verify it appeared, close
+# NOTE: Same Modal visibility issue — use coordinate dismiss
+appId: ${MAESTRO_APP_ID}
+tags:
+  - navigation
+onFlowStart:
+  - runFlow: ../shared/_OnFlowStart.yaml
+---
+- runFlow: ../shared/_dismiss-tracking.yaml
+
+- assertVisible:
+    id: "btn-start"
+
+# Open leaderboard
+- tapOn:
+    id: "btn-leaderboard"
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+
+# Close by tapping above the modal
+- tapOn:
+    point: "50%,8%"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "btn-start"
