@@ -5,7 +5,6 @@ import * as SplashScreen from "expo-splash-screen"
 import * as Sentry from "@sentry/react-native"
 import { PostHogProvider } from "posthog-react-native"
 import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context"
-
 import { useWebFonts } from "@/hooks/useWebFonts"
 import { initI18n } from "@/i18n"
 import { ThemeProvider } from "@/theme/context"

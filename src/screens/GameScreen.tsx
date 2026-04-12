@@ -19,6 +19,7 @@ import { EaseView } from "react-native-ease"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { AchievementToast } from "@/components/AchievementToast"
 import { AnimatedCountdown } from "@/components/AnimatedCountdown"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
 import { PressableScale } from "@/components/PressableScale"
@@ -28,6 +29,7 @@ import { HighScoreTable } from "@/components/HighScoreTable"
 import { InitialEntryModal } from "@/components/InitialEntryModal"
 import { ReviewPrompt } from "@/components/ReviewPrompt"
 import { TimerRing } from "@/components/TimerRing"
+import { ACHIEVEMENTS } from "@/config/achievements"
 import { SOUND_PACKS } from "@/config/soundPacks"
 import { themeIds, gameThemes } from "@/config/themes"
 import { useAds } from "@/hooks/useAds"
@@ -185,7 +187,7 @@ export function GameScreen() {
   const { getHighScores, isHighScore: checkIsHighScore, addHighScore } = useHighScores()
   const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
     useStoreReview()
-  const { checkAchievements } = useAchievements()
+  const { checkAchievements, newlyUnlocked, clearNewlyUnlocked } = useAchievements()
   const sessionCounted = useRef(false)
   const [modeModalVisible, setModeModalVisible] = useState(false)
   const [settingsModalVisible, setSettingsModalVisible] = useState(false)
@@ -198,7 +200,25 @@ export function GameScreen() {
   const pulseTimers = useRef<ReturnType<typeof setTimeout>[]>([])
   const [poppingSoundPack, setPoppingSoundPack] = useState<string | null>(null)
   const [poppingTheme, setPoppingTheme] = useState<string | null>(null)
+  const [achievementToast, setAchievementToast] = useState<{
+    title: string
+    description: string
+    icon?: string
+  } | null>(null)
   const isIdle = gameState === "idle"
+
+  useEffect(() => {
+    if (newlyUnlocked.length > 0) {
+      const id = newlyUnlocked[0]
+      const achievement = ACHIEVEMENTS.find((a) => a.id === id)
+      setAchievementToast({
+        title: t(`achievements:${id}`),
+        description: t(`achievements:${id}_desc`),
+        icon: achievement?.icon,
+      })
+      clearNewlyUnlocked()
+    }
+  }, [newlyUnlocked])
 
   // Neon sign color cycling for idle title
   const NEON_COLOR_ORDER = ["red", "blue", "green"] as const
@@ -1020,6 +1040,13 @@ export function GameScreen() {
         visible={showReviewPrompt}
         onDismiss={dismissReviewPrompt}
         onResponse={handleReviewResponse}
+      />
+      <AchievementToast
+        title={achievementToast?.title ?? ""}
+        description={achievementToast?.description ?? ""}
+        icon={achievementToast?.icon}
+        visible={achievementToast !== null}
+        onHide={() => setAchievementToast(null)}
       />
     </View>
   )
