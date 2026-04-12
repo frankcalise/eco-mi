@@ -53,6 +53,9 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 - Input race condition fixed — rapid taps no longer register multiple inputs
 - Light haptic feedback when tapping buttons during sequence playback ("not yet")
 - Status text, progress dots, restore/sound hints all use theme colors now — visible on Pastel theme
+- `GameThemeContext` + `ThemedView`/`ThemedText` base components for scalable theming
+- Stats and Achievements screens now fully themed (adapt to Classic, Neon, Retro, Pastel)
+- AchievementToast respects active theme colors
 
 ### Test
 - 68 unit tests (useGameEngine bugs, useHighScores, useStats, useAchievements, useStoreReview, game flow integration)
