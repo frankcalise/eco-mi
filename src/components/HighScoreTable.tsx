@@ -141,10 +141,10 @@ export function HighScoreTable({
               {translate("game:initials")}
             </Text>
             <Text style={[styles.headerCell, styles.scoreCol, { color: theme.secondaryTextColor }]}>
-              SCORE
+              {translate("game:scoreLbl")}
             </Text>
             <Text style={[styles.headerCell, styles.levelCol, { color: theme.secondaryTextColor }]}>
-              LVL
+              {translate("game:levelLbl")}
             </Text>
           </View>
 

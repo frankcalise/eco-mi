@@ -109,7 +109,7 @@ export function InitialEntryModal({
             {translate("game:newHighScoreEntry")}
           </Text>
           <Text style={[styles.scoreText, { color: theme.textColor }]}>
-            {score} PTS - LVL {level}
+            {score} {translate("game:scoreLbl")} - {translate("game:levelLbl")} {level}
           </Text>
           <Text style={[styles.subtitle, { color: theme.secondaryTextColor }]}>
             {translate("game:enterInitials")}

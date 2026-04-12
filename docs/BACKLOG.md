@@ -60,10 +60,10 @@
 - [ ] **Reset button mid-game should be "End Game" with game-over flow**
       The Reset button during active gameplay destroys the current run with zero confirmation — score is lost, no game-over overlay, no stats recorded, no high score entry. During active gameplay, replace "Reset" with "End Game" that triggers the normal game-over flow (score recorded, overlay shown, high score entry if qualified). "Reset" is fine on the idle screen.
 
-- [ ] **ReviewPrompt has no dismiss option**
+- [x] **ReviewPrompt has no dismiss option**
       `ReviewPrompt.tsx` forces users into a binary choice ("Love it" / "Not really") with no close button, no backdrop dismiss, no "Maybe Later." Tapping "Not Really" immediately opens a Google Form in the browser with no warning. Add a dismiss/skip option and a confirmation before opening the external URL.
 
-- [ ] **No splash screen management — blank frame on cold start**
+- [x] **No splash screen management — blank frame on cold start**
       No `SplashScreen.preventAutoHideAsync()` call anywhere. The native splash auto-hides immediately, then users see a blank/black screen while i18n and fonts load. Add splash screen hold in `_layout.tsx` and hide it once `loaded` is true.
 
 - [x] **Manually test review pre-prompt flow on device**
@@ -172,7 +172,7 @@
 - [ ] **Make GameOverOverlay and ReviewPrompt theme-aware**
       Both components hardcode dark colors (`#1a1a2e`, `#ef4444`, etc.) and don't accept a theme prop. When playing on the Pastel theme (light background), overlays still render dark. Pass the active game theme and adapt colors to maintain visual consistency.
 
-- [ ] **Make settings modal scrollable**
+- [x] **Make settings modal scrollable**
       Settings modal content (sound toggle, sound packs, themes, remove ads, restore purchases) is in a non-scrollable container. On iPhone SE or with larger dynamic type, content overflows and the Restore Purchases button (legally required) gets clipped. Wrap in a `ScrollView`.
 
 - [ ] **Replace `Alert.alert` for Restore Purchases with themed feedback**
@@ -199,20 +199,20 @@
 - [ ] **Locked achievement text fails WCAG AA contrast ratio**
       `#6b6b7b` text on effective `#121222` background is ~3.8:1 contrast. WCAG AA requires 4.5:1 for normal text (13px/11px). Lighten the locked text color or darken less aggressively.
 
-- [ ] **Tracking screen "Share Statistics" copy is misleading**
+- [x] **Tracking screen "Share Statistics" copy is misleading**
       "Share Statistics" implies game stats but actually triggers ATT ad tracking consent. Apple has rejected apps for misleading pre-permission language. Revise to something like "Allow Tracking" or "Support with Ads" that accurately describes the IDFA consent being requested.
 
 ---
 
 ## i18n Quality
 
-- [ ] **Fix missing diacritical marks in Spanish and Portuguese**
+- [x] **Fix missing diacritical marks in Spanish and Portuguese**
       Systematic missing accents: ES "Estadisticas" → "Estadísticas", "Puntuacion" → "Puntuación", "dia" → "día", etc. PT "Configuracoes" → "Configurações", "Pontuacao" → "Pontuação", "comecar" → "começar", etc. Looks machine-translated to native speakers and undermines trust.
 
-- [ ] **Translate hardcoded English strings in settings modal**
+- [x] **Translate hardcoded English strings in settings modal**
       `GameScreen.tsx` "On"/"Off" toggle text, "Unlock Sound ({name})", "Unlock Theme ({name})" are literal English, not i18n keys. Also "SCORE"/"LVL" in `HighScoreTable.tsx` and "PTS - LVL" in `InitialEntryModal.tsx`. Add translation keys for all.
 
-- [ ] **Localize achievement titles and descriptions**
+- [x] **Localize achievement titles and descriptions**
       All 15 achievement titles ("First Steps", "Triple Digits", etc.) and descriptions in `achievements.ts` are hardcoded English strings, bypassing the i18n system. Move to translation keys so ES/PT users see localized achievements.
 
 ---
@@ -238,10 +238,10 @@
 
 ## Navigation & Features
 
-- [ ] **Wire up achievements and stats screen navigation**
+- [x] **Wire up achievements and stats screen navigation**
       Routes exist at `/achievements` and `/stats` but zero navigation points to them from anywhere in the app. Add entry points from the idle game screen header (trophy icon already exists for leaderboard — add stats/achievements icons) and from the game-over overlay ("View Stats" link). These are entire features that users cannot currently access.
 
-- [ ] **Invoke achievement unlock logic during gameplay**
+- [x] **Invoke achievement unlock logic during gameplay**
       `checkAchievements()` exists in `useAchievements.ts` but is never called. Import and call it from `GameScreen.tsx` on relevant game events (game over, round complete). Without this, achievements never unlock even if navigation is added.
 
 - [ ] **Add achievements/stats links to Game Over overlay**
@@ -439,6 +439,24 @@
 - [ ] **Write Maestro flow: `game-over.yaml`**
       Start → tap wrong button → verify `overlay-game-over` visible → tap `btn-play-again` → verify reset.
   - Blocked by: testIDs added, seeded RNG implemented
+
+- [ ] **Write Maestro flow: `navigation.yaml`**
+      Verify achievements and stats screens are reachable from idle screen. Tap `btn-achievements` → verify achievements screen renders → back → tap `btn-stats` → verify stats screen → back. Also verify leaderboard modal opens/closes.
+
+- [ ] **Write Maestro flow: `settings-scroll.yaml`**
+      Open settings modal on iPhone SE simulator. Scroll down to verify "Restore Purchases" button is visible and tappable. Validates the ScrollView fix.
+
+- [ ] **Write Maestro flow: `review-prompt-dismiss.yaml`**
+      Trigger review prompt conditions (5+ games, no ad). Verify the "Maybe Later" button is visible and dismisses the prompt without opening a browser. Also verify backdrop tap dismisses.
+
+- [ ] **Write Maestro flow: `tracking-screen.yaml`**
+      iOS only. On first launch (clearState), verify tracking screen appears with "Allow Tracking" button text. Tap "Maybe Later" → verify game screen loads. Second launch → verify tracking screen does not appear.
+
+- [ ] **Write Maestro flow: `splash-no-flash.yaml`**
+      Cold launch the app and verify no blank/white frame appears between native splash and game screen. This is hard to assert in Maestro — may need visual comparison or just verify `btn-start` appears within 2s of launch.
+
+- [ ] **Add missing testIDs for Maestro flows**
+      Add `testID="btn-settings"` to settings Pressable, `testID="btn-mode-selector"` to mode Pressable, `testID="btn-reset"` to reset/stop button. Required for Maestro settings and mode-switching flows.
 
 ### 1.6 Build & Submit
 

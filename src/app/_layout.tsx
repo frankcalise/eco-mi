@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import AppMetrics from "expo-eas-observe"
 import { Slot } from "expo-router"
+import * as SplashScreen from "expo-splash-screen"
 import * as Sentry from "@sentry/react-native"
 import { PostHogProvider } from "posthog-react-native"
 import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context"
@@ -20,6 +21,8 @@ if (SENTRY_DSN) {
   })
 }
 
+SplashScreen.preventAutoHideAsync()
+
 const POSTHOG_KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY ?? ""
 
 function Root() {
@@ -36,6 +39,7 @@ function Root() {
 
   useEffect(() => {
     if (loaded) {
+      SplashScreen.hideAsync()
       AppMetrics.markFirstRender()
       AppMetrics.markInteractive()
     }

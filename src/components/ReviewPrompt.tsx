@@ -29,8 +29,8 @@ export function ReviewPrompt({ visible, onDismiss, onResponse }: ReviewPromptPro
   }
 
   return (
-    <View style={styles.backdrop}>
-      <View style={styles.card}>
+    <Pressable style={styles.backdrop} onPress={onDismiss}>
+      <Pressable style={styles.card} onPress={() => {}}>
         <Text style={styles.title}>{t("review:title")}</Text>
         <Text style={styles.subtitle}>{t("review:subtitle")}</Text>
         <View style={styles.buttons}>
@@ -45,8 +45,11 @@ export function ReviewPrompt({ visible, onDismiss, onResponse }: ReviewPromptPro
             <Text style={styles.notReallyText}>{t("review:notReally")}</Text>
           </Pressable>
         </View>
-      </View>
-    </View>
+        <Pressable testID="review-maybe-later" style={styles.maybeLaterButton} onPress={onDismiss}>
+          <Text style={styles.maybeLaterText}>{t("review:maybeLater")}</Text>
+        </Pressable>
+      </Pressable>
+    </Pressable>
   )
 }
 
@@ -72,6 +75,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     paddingVertical: 24,
     width: "80%",
+  },
+  maybeLaterButton: {
+    marginTop: 12,
+    paddingVertical: 8,
+  },
+  maybeLaterText: {
+    color: "rgba(255, 255, 255, 0.5)",
+    fontFamily: "Oxanium-Regular",
+    fontSize: 14,
   },
   loveItButton: {
     backgroundColor: "#22c55e",

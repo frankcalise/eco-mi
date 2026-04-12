@@ -31,9 +31,11 @@ export default function AchievementsScreen() {
                 color={unlocked ? "#fbbf24" : "#4a4a5a"}
               />
               <Text style={[styles.badgeTitle, unlocked && styles.badgeTitleUnlocked]}>
-                {achievement.title}
+                {t(`achievements:${achievement.id}`)}
               </Text>
-              <Text style={styles.badgeDescription}>{achievement.description}</Text>
+              <Text style={styles.badgeDescription}>
+                {t(`achievements:${achievement.id}_desc`)}
+              </Text>
             </View>
           )
         })}

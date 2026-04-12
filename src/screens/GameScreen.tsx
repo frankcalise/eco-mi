@@ -8,10 +8,12 @@ import {
   useWindowDimensions,
   Modal,
   Alert,
+  ScrollView,
 } from "react-native"
 import * as Haptics from "expo-haptics"
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
+import { useRouter } from "expo-router"
 import { useTranslation } from "react-i18next"
 import { EaseView } from "react-native-ease"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
@@ -31,6 +33,7 @@ import { useGameEngine, colors, type GameMode } from "@/hooks/useGameEngine"
 import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useSoundPack } from "@/hooks/useSoundPack"
+import { useAchievements } from "@/hooks/useAchievements"
 import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
 import { useAnalytics } from "@/utils/analytics"
@@ -113,6 +116,7 @@ function ModeItem({
 
 export function GameScreen() {
   const { t } = useTranslation()
+  const router = useRouter()
   const { width, height } = useWindowDimensions()
   const insets = useSafeAreaInsets()
   const gameSize = Math.min(width * 0.8, height * 0.5)
@@ -177,6 +181,7 @@ export function GameScreen() {
   const { getHighScores, isHighScore: checkIsHighScore, addHighScore } = useHighScores()
   const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
     useStoreReview()
+  const { checkAchievements } = useAchievements()
   const sessionCounted = useRef(false)
   const [modeModalVisible, setModeModalVisible] = useState(false)
   const [settingsModalVisible, setSettingsModalVisible] = useState(false)
@@ -297,6 +302,17 @@ export function GameScreen() {
           triggerReviewCheck(`streak_${streak}`, adShownThisSession)
         }
       }
+
+      // Check achievement unlock conditions
+      const gamesPlayed = parseInt(loadString("ecomi:stats:gamesPlayed") ?? "0", 10)
+      const currentStreak = parseInt(loadString("ecomi:daily:currentStreak") ?? "0", 10)
+      checkAchievements({
+        score,
+        level,
+        gamesPlayed,
+        currentStreak,
+        isDaily: mode === "daily",
+      })
 
       // Check if score qualifies for local top 10
       if (checkIsHighScore(score, mode)) {
@@ -579,17 +595,39 @@ export function GameScreen() {
               <Ionicons name="play" size={24} color="white" />
               <Text style={styles.buttonText}>{t("game:startGame")}</Text>
             </Pressable>
-            <Pressable
-              testID="btn-leaderboard"
-              style={styles.trophyButton}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                setHighlightIndex(undefined)
-                setLeaderboardModalVisible(true)
-              }}
-            >
-              <Ionicons name="trophy" size={22} color="#fbbf24" />
-            </Pressable>
+            <View style={styles.idleActions}>
+              <Pressable
+                testID="btn-leaderboard"
+                style={styles.trophyButton}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                  setHighlightIndex(undefined)
+                  setLeaderboardModalVisible(true)
+                }}
+              >
+                <Ionicons name="trophy" size={22} color="#fbbf24" />
+              </Pressable>
+              <Pressable
+                testID="btn-stats"
+                style={styles.trophyButton}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                  router.push("/stats")
+                }}
+              >
+                <Ionicons name="stats-chart" size={22} color={activeTheme.secondaryTextColor} />
+              </Pressable>
+              <Pressable
+                testID="btn-achievements"
+                style={styles.trophyButton}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                  router.push("/achievements")
+                }}
+              >
+                <Ionicons name="ribbon" size={22} color={activeTheme.secondaryTextColor} />
+              </Pressable>
+            </View>
           </>
         )}
 
@@ -686,6 +724,7 @@ export function GameScreen() {
           <Pressable
             style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}
           >
+            <ScrollView showsVerticalScrollIndicator={false}>
             <Text style={[styles.modalTitle, { color: activeTheme.textColor }]}>
               {t("game:settings")}
             </Text>
@@ -716,7 +755,7 @@ export function GameScreen() {
                     size={20}
                     color="white"
                   />
-                  <Text style={styles.soundToggleText}>{soundEnabled ? "On" : "Off"}</Text>
+                  <Text style={styles.soundToggleText}>{soundEnabled ? t("common:on") : t("common:off")}</Text>
                 </EaseView>
               </Pressable>
             </View>
@@ -812,7 +851,7 @@ export function GameScreen() {
                   }}
                 >
                   <Ionicons name="lock-open" size={14} color="white" />
-                  <Text style={styles.unlockBtnText}>Unlock Sound ({previewSoundPack.name})</Text>
+                  <Text style={styles.unlockBtnText}>{t("game:unlockSound", { name: previewSoundPack.name })}</Text>
                 </Pressable>
               )}
             </View>
@@ -886,7 +925,7 @@ export function GameScreen() {
                   }}
                 >
                   <Ionicons name="lock-open" size={14} color="white" />
-                  <Text style={styles.unlockBtnText}>Unlock Theme ({previewTheme.name})</Text>
+                  <Text style={styles.unlockBtnText}>{t("game:unlockTheme", { name: previewTheme.name })}</Text>
                 </Pressable>
               )}
             </View>
@@ -917,6 +956,7 @@ export function GameScreen() {
                 <Text style={styles.restoreBtnText}>{t("game:restorePurchases")}</Text>
               </Pressable>
             </View>
+            </ScrollView>
           </Pressable>
         </Pressable>
       </Modal>
@@ -1298,6 +1338,10 @@ const styles = StyleSheet.create({
   titleStack: {
     alignItems: "center",
     justifyContent: "center",
+  },
+  idleActions: {
+    flexDirection: "row",
+    gap: 10,
   },
   trophyButton: {
     alignItems: "center",
