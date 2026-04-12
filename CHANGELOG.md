@@ -19,6 +19,10 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 - Wire up achievements and stats screen navigation from idle screen
 - Invoke `checkAchievements()` on game over — achievements now actually unlock during gameplay
 - Wrap settings modal content in `ScrollView` — Restore Purchases reachable on small screens
+- Per-mode high scores — "Best" now shows current mode's best instead of cross-mode. Fixes incorrect "New High Score!" celebrations when switching modes.
+- Input timeout increased (5s base + 2s/item) with visible 5-second countdown in center circle before game ends. Gold at 5s, red at 3s.
+- Dismiss buttons (game-over X, initial entry X) no longer overlap content — absolute positioning moved to EaseView wrapper
+- Sound pack preview shows inline "Enable sound to preview" hint when tapped while muted
 
 ### Feat
 - `PressableScale` reusable component — animated spring scale (0.96) + opacity (0.85) press feedback on all 26 action buttons across the app. Eliminates "dead tap" feel on every interactive element. Built on `react-native-ease` EaseView.

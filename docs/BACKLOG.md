@@ -36,7 +36,7 @@
 - [ ] **Rewarded ad grants continue before ad completes (AdMob policy risk)**
       `showRewarded()` in `useAds.ts` returns `true` immediately after calling `.show()` without waiting for the `EARNED_REWARD` event. Player gets the continue even if they dismiss the ad early. This violates AdMob policy (reward only after callback). Fix by awaiting the reward event listener before resolving the promise. Also creates a jarring transition — game replays sequence while ad overlay may still be visible.
 
-- [ ] **Dual high score system causes incorrect "New High Score!" celebrations**
+- [x] **Dual high score system causes incorrect "New High Score!" celebrations**
       `useGameEngine.ts` stores a single cross-mode `highScore` via `"simon-high-score"` key, while `useHighScores.ts` stores per-mode top-10 leaderboards via `"ecomi:highScores:{mode}"`. The single-value high score is not mode-aware — beating your classic score in timed mode triggers the celebration incorrectly, and setting a new mode-specific record may not trigger it at all. Consolidate to use the per-mode leaderboard as the source of truth for `isNewHighScore`.
 
 - [ ] **Race condition: rapid button taps register multiple inputs**
