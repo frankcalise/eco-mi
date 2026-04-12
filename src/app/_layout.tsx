@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import AppMetrics from "expo-eas-observe"
-import { Slot } from "expo-router"
+import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import * as Sentry from "@sentry/react-native"
 import { PostHogProvider } from "posthog-react-native"
@@ -49,16 +49,31 @@ function Root() {
     return null
   }
 
+  const navigation = (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        animation: "ios_from_right",
+        contentStyle: { backgroundColor: "transparent" },
+      }}
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="tracking" options={{ animation: "fade" }} />
+      <Stack.Screen name="achievements" />
+      <Stack.Screen name="stats" />
+    </Stack>
+  )
+
   const inner = POSTHOG_KEY ? (
     <PostHogProvider
       apiKey={POSTHOG_KEY}
       options={{ host: "https://us.i.posthog.com" }}
       autocapture={{ captureScreens: false }}
     >
-      <Slot />
+      {navigation}
     </PostHogProvider>
   ) : (
-    <Slot />
+    navigation
   )
 
   return (
