@@ -48,7 +48,7 @@
 - [x] **`playPreview` ignores `soundEnabled` flag**
       `useAudioTones.tsx` `playPreview()` only checks `contextReadyRef.current` but not `soundEnabled`. Sound pack previews play audio even when the player has explicitly muted. Compare with `playSound` and `playJingle` which both respect the flag.
 
-- [ ] **`continueGame` double-counts stats**
+- [x] **`continueGame` double-counts stats**
       When a player uses a rewarded ad to continue and then fails again, `recordGameResult(score)` is called a second time. This inflates `gamesPlayed` and deflates `averageScore` in stats. Guard against recording a game result if the previous game-over already recorded it, or flag continued games distinctly.
 
 - [x] **`continueGame` doesn't reset `isNewHighScore` flag**
@@ -108,7 +108,7 @@
 - [x] **Score box layout jitter on digit changes**
       Score/Level/Best pill boxes use `minWidth: 80` but no fixed width. When values jump from 9→10 or 99→100, the box width changes and the row reflows. Use tabular-number font features or fixed-width containers to prevent layout shifts during gameplay.
 
-- [ ] **HighScoreTable highlight row indistinguishable from zebra-stripe**
+- [x] **HighScoreTable highlight row indistinguishable from zebra-stripe**
       The highlighted "your new score" row gets `backgroundColor: theme.surfaceColor`, which is identical to even-row zebra-stripe coloring. The pulsing opacity partially compensates but the background should be distinctly different (e.g., a tinted accent color).
 
 - [x] **Achievement unlock notification/toast**
@@ -163,7 +163,7 @@
 
 ## UX Polish & Accessibility
 
-- [ ] **Add accessibility labels and roles to all interactive elements**
+- [x] **Add accessibility labels and roles to all interactive elements**
       Zero `accessibilityLabel`, `accessibilityRole`, or `accessibilityHint` props on any interactive element app-wide (except 2 instances in GameOverOverlay). VoiceOver/TalkBack users cannot use the app. Systematically annotate every Pressable, button, display, and modal. Prioritize game buttons, header actions, settings controls, and navigation.
 
 - [x] **Fix touch targets below 44pt minimum (Apple HIG)**
@@ -184,10 +184,10 @@
 - [x] **Use safe area insets on achievements and stats screens**
       Both screens hardcode `paddingTop: 60` instead of using `useSafeAreaInsets().top`. Breaks on Dynamic Island iPhones and varies across Android devices.
 
-- [ ] **Add keyboard avoidance to InitialEntryModal**
+- [x] **Add keyboard avoidance to InitialEntryModal**
       No `KeyboardAvoidingView` wrapping the modal content. On iPhone SE or with larger keyboards, the "Done" button may be obscured behind the keyboard.
 
-- [ ] **Add encouraging empty state for leaderboard**
+- [x] **Add encouraging empty state for leaderboard**
       Brand new users see 10 identical placeholder rows ("---" / "----"). Replace with an illustration or motivational message ("Play your first game to see your scores here!") when no scores exist.
 
 - [x] **Fix progress dots overflow at high levels**
@@ -196,7 +196,7 @@
 - [ ] **Add "not yet" feedback when tapping during sequence playback**
       During the "showing" phase, eager player taps are silently ignored. Add a brief haptic buzz or subtle visual pulse to communicate "input received but not ready yet" instead of dead silence.
 
-- [ ] **Locked achievement text fails WCAG AA contrast ratio**
+- [x] **Locked achievement text fails WCAG AA contrast ratio**
       `#6b6b7b` text on effective `#121222` background is ~3.8:1 contrast. WCAG AA requires 4.5:1 for normal text (13px/11px). Lighten the locked text color or darken less aggressively.
 
 - [x] **Tracking screen "Share Statistics" copy is misleading**
@@ -244,7 +244,7 @@
 - [x] **Invoke achievement unlock logic during gameplay**
       `checkAchievements()` exists in `useAchievements.ts` but is never called. Import and call it from `GameScreen.tsx` on relevant game events (game over, round complete). Without this, achievements never unlock even if navigation is added.
 
-- [ ] **Add achievements/stats links to Game Over overlay**
+- [x] **Add achievements/stats links to Game Over overlay**
       The game-over moment is the highest-engagement point for showing progress. Add a "View Stats" or "Achievements" link to the overlay so players who just beat their high score can see their overall progress.
 
 ---
