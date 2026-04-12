@@ -124,10 +124,6 @@ export function useAds(): UseAdsReturn {
       setRewardedReady(true)
     })
 
-    rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
-      // Reward is granted via the promise in showRewarded
-    })
-
     rewarded.addAdEventListener(AdEventType.CLOSED, () => {
       rewardedLoadedRef.current = false
       setRewardedReady(false)
@@ -142,16 +138,46 @@ export function useAds(): UseAdsReturn {
     rewarded.load()
   }
 
-  async function showRewarded(): Promise<boolean> {
-    if (!rewardedLoadedRef.current || !rewardedRef.current) return false
+  function showRewarded(): Promise<boolean> {
+    if (!rewardedLoadedRef.current || !rewardedRef.current) return Promise.resolve(false)
 
-    try {
-      rewardedRef.current.show()
-      setAdShownThisSession(true)
-      return true
-    } catch {
-      return false
-    }
+    const rewarded = rewardedRef.current
+    let earned = false
+
+    return new Promise<boolean>((resolve) => {
+      let settled = false
+
+      function settle(result: boolean) {
+        if (settled) return
+        settled = true
+        unsubReward()
+        unsubClose()
+        unsubError()
+        resolve(result)
+      }
+
+      const unsubReward = rewarded.addAdEventListener(
+        RewardedAdEventType.EARNED_REWARD,
+        () => {
+          earned = true
+        },
+      )
+
+      const unsubClose = rewarded.addAdEventListener(AdEventType.CLOSED, () => {
+        setAdShownThisSession(true)
+        settle(earned)
+      })
+
+      const unsubError = rewarded.addAdEventListener(AdEventType.ERROR, () => {
+        settle(false)
+      })
+
+      try {
+        rewarded.show()
+      } catch {
+        settle(false)
+      }
+    })
   }
 
   function shouldShowInterstitial(roundsPlayed: number, removeAds: boolean): boolean {
