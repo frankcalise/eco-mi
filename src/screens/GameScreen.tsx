@@ -413,6 +413,7 @@ export function GameScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable
+          testID="btn-mode-selector"
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
             setModeModalVisible(true)
@@ -482,6 +483,7 @@ export function GameScreen() {
           })()}
         </EaseView>
         <Pressable
+          testID="btn-settings"
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
             setSettingsModalVisible(true)
@@ -632,7 +634,7 @@ export function GameScreen() {
         )}
 
         {(gameState === "showing" || gameState === "waiting") && (
-          <Pressable style={styles.resetButton} onPress={resetGame}>
+          <Pressable testID="btn-reset" style={styles.resetButton} onPress={resetGame}>
             <Ionicons name="stop" size={24} color="white" />
             <Text style={styles.buttonText}>{t("game:reset")}</Text>
           </Pressable>

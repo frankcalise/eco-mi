@@ -14,7 +14,7 @@ export default function AchievementsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
+        <Pressable accessibilityLabel={t("common:back")} accessibilityRole="button" style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="white" />
         </Pressable>
         <Text style={styles.title}>{t("achievements:title")}</Text>
