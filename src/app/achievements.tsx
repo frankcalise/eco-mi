@@ -34,7 +34,7 @@ export default function AchievementsScreen() {
         </Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.grid}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.grid}>
         {ACHIEVEMENTS.map((achievement) => {
           const unlocked = isUnlocked(achievement.id)
           return (
