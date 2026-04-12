@@ -47,7 +47,10 @@ function waitForWaiting(sequenceLength: number) {
 
 /** Helper: tap a color and release after tone duration */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function tapColor(hook: { result: { current: ReturnType<typeof useGameEngine> } }, color: (typeof colors)[number]) {
+function tapColor(
+  hook: { result: { current: ReturnType<typeof useGameEngine> } },
+  color: (typeof colors)[number],
+) {
   act(() => {
     hook.result.current.handleButtonTouch(color)
   })

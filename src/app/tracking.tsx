@@ -48,7 +48,11 @@ export default function TrackingScreen() {
           <Text style={styles.shareBtnText}>{t("tracking:shareButton")}</Text>
         </PressableScale>
 
-        <PressableScale style={styles.skipBtn} onPress={handleSkip} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <PressableScale
+          style={styles.skipBtn}
+          onPress={handleSkip}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
           <Text style={styles.skipBtnText}>{t("tracking:maybeLater")}</Text>
         </PressableScale>
       </View>

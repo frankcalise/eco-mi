@@ -26,13 +26,13 @@ FIVE GAME MODES
 
 COMPETE & TRACK
 • Arcade-style high score leaderboard with retro initial entry
-• Achievements to unlock as you improve
+• 15 achievements to unlock as you improve
 • Stats dashboard tracking your progress over time
 
 CUSTOMIZE
-• Multiple color themes to personalize your game
-• Different sound packs with unique tones
-• Beautiful animations and satisfying haptic feedback
+• 4 color themes — 1 included free, 3 unlockable
+• 4 sound packs with unique tones — 1 included free, 3 unlockable
+• Smooth animations and satisfying haptic feedback
 
 PLAY IN YOUR LANGUAGE
 • English, Spanish, and Portuguese
@@ -68,12 +68,12 @@ CINCO MODOS DE JUEGO
 
 COMPITE Y MEJORA
 • Tabla de puntuaciones estilo arcade con entrada de iniciales retro
-• Logros que desbloquear mientras mejoras
+• 15 logros que desbloquear mientras mejoras
 • Panel de estadísticas para seguir tu progreso
 
 PERSONALIZA
-• Múltiples temas de colores para personalizar tu juego
-• Diferentes paquetes de sonido con tonos únicos
+• 4 temas de colores — 1 incluido gratis, 3 desbloqueables
+• 4 paquetes de sonido con tonos únicos — 1 incluido gratis, 3 desbloqueables
 • Animaciones fluidas y retroalimentación háptica satisfactoria
 
 JUEGA EN TU IDIOMA
@@ -110,12 +110,12 @@ CINCO MODOS DE JOGO
 
 COMPITA E MELHORE
 • Tabela de pontuações estilo arcade com entrada de iniciais retrô
-• Conquistas para desbloquear conforme você melhora
+• 15 conquistas para desbloquear conforme você melhora
 • Painel de estatísticas para acompanhar seu progresso
 
 PERSONALIZE
-• Múltiplos temas de cores para personalizar seu jogo
-• Diferentes pacotes de som com tons únicos
+• 4 temas de cores — 1 incluído grátis, 3 desbloqueáveis
+• 4 pacotes de som com tons únicos — 1 incluído grátis, 3 desbloqueáveis
 • Animações fluidas e feedback háptico satisfatório
 
 JOGUE NO SEU IDIOMA
