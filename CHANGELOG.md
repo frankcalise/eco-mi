@@ -52,6 +52,9 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 - Standardized all modal widths (85%, max 380) and border radii (16)
 - Input race condition fixed — rapid taps no longer register multiple inputs
 - Light haptic feedback when tapping buttons during sequence playback ("not yet")
+- Rewarded ad continue now waits for EARNED_REWARD event before granting — fixes AdMob policy risk
+- Buttons no longer stay lit during fast sequence playback at level 16+ (80ms minimum off-gap)
+- Audio context recovery after backgrounding — auto-recreates context if dead, all playback functions wrapped with try/catch fallback
 - Status text, progress dots, restore/sound hints all use theme colors now — visible on Pastel theme
 - `GameThemeContext` + `ThemedView`/`ThemedText` base components for scalable theming
 - Stats and Achievements screens now fully themed (adapt to Classic, Neon, Retro, Pastel)

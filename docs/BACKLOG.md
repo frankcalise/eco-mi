@@ -30,10 +30,10 @@
 
 - [x] **Status bar content color doesn't adapt to pastel theme**
 
-- [ ] **Buttons stay lit during fast sequence playback at high levels (~14-15+)**
+- [x] **Buttons stay lit during fast sequence playback at high levels (~14-15+)**
       At higher levels where tone duration and sequence interval are very short, consecutive same-color notes (e.g., 3 blues in a row) play the audio correctly but the button never visually returns to its unpressed state between notes. The active/lit state persists across all 3 tones, making it impossible to visually count repeated colors. Likely cause: the deactivation delay in `showSequence` is longer than or equal to the interval between notes, so the button never flashes off before the next activation. Fix by ensuring a minimum gap between the active state turning off and the next note turning it on — even at the fastest speeds, there should be a brief visible "off" frame. Need to verify the timing math in `src/config/difficulty.ts` (`getToneDuration`, `getSequenceInterval`) and the flash logic in `useGameEngine`. Add a Maestro or manual test scenario that reaches level 15+ with a seeded sequence containing consecutive same-color notes to verify the fix.
 
-- [ ] **Rewarded ad grants continue before ad completes (AdMob policy risk)**
+- [x] **Rewarded ad grants continue before ad completes (AdMob policy risk)**
       `showRewarded()` in `useAds.ts` returns `true` immediately after calling `.show()` without waiting for the `EARNED_REWARD` event. Player gets the continue even if they dismiss the ad early. This violates AdMob policy (reward only after callback). Fix by awaiting the reward event listener before resolving the promise. Also creates a jarring transition — game replays sequence while ad overlay may still be visible.
 
 - [x] **Dual high score system causes incorrect "New High Score!" celebrations**
@@ -42,7 +42,7 @@
 - [x] **Race condition: rapid button taps register multiple inputs**
       In `useGameEngine.ts`, touching button B before releasing button A processes both as inputs. At higher levels, fast players accidentally register extra inputs, and the visual state (which button is lit) disagrees with what was processed. Add input debouncing or lock out new touches until the current touch is released.
 
-- [ ] **Audio context silently dies after backgrounding with no recovery**
+- [x] **Audio context silently dies after backgrounding with no recovery**
       `ctx.resume()` failures in `useAudioTones.tsx` are swallowed by empty catch blocks. If the AudioContext enters an unrecoverable state after prolonged backgrounding (common on iOS), all audio dies with no indicator or recovery mechanism. The game becomes visual-only without the player understanding why. Add a health check and context recreation fallback.
 
 - [x] **`playPreview` ignores `soundEnabled` flag**
