@@ -103,9 +103,9 @@ export function useAudioTones(
           ctx.suspend()
         } catch {}
       } else if (state === "active" && contextReadyRef.current) {
-        try {
-          ctx.resume()
-        } catch {}
+        if (!ensureResumed()) {
+          recreateContext()
+        }
       }
     })
     return () => sub.remove()
@@ -121,14 +121,61 @@ export function useAudioTones(
 
   // Resume the context and reset the auto-suspend timer.
   // Called before every sound to ensure the context is running.
-  function ensureResumed() {
+  // Returns true if the context is healthy, false if it needs recreation.
+  function ensureResumed(): boolean {
     const ctx = getContext()
-    if (!ctx) return
+    if (!ctx) return false
+
+    // If the context has been closed, it cannot be resumed
+    if (ctx.state === "closed") return false
+
     try {
       // @ts-ignore — resume may not exist on all platforms
       ctx.resume?.()
-    } catch {}
+    } catch {
+      return false
+    }
+
+    // After resume attempt, check if the context is still suspended.
+    // On iOS after prolonged backgrounding, resume() can succeed without
+    // actually transitioning the state — treat this as unrecoverable.
+    if (ctx.state === "suspended") return false
+
     // Reset the auto-suspend timer
+    if (suspendTimerRef.current) clearTimeout(suspendTimerRef.current)
+    suspendTimerRef.current = setTimeout(() => {
+      const c = getContext()
+      if (c && !activeSoundRef.current) {
+        try {
+          c.suspend()
+        } catch {}
+      }
+    }, SUSPEND_DELAY)
+    return true
+  }
+
+  // Tear down the current audio context and build a fresh one.
+  // Used when the context enters an unrecoverable state (closed, or
+  // permanently stuck suspended after prolonged backgrounding on iOS).
+  function recreateContext() {
+    // Clean up the old context
+    if (activeSoundRef.current) {
+      silentDiscard(activeSoundRef.current)
+      activeSoundRef.current = null
+    }
+    const oldCtx = audioContextRef.current
+    if (oldCtx) {
+      try {
+        oldCtx.close()
+      } catch {}
+      audioContextRef.current = null
+      masterGainRef.current = null
+    }
+
+    // Build a new context + master gain
+    createFreshContext()
+
+    // Reset the auto-suspend timer for the new context
     if (suspendTimerRef.current) clearTimeout(suspendTimerRef.current)
     suspendTimerRef.current = setTimeout(() => {
       const c = getContext()
@@ -311,14 +358,20 @@ export function useAudioTones(
     if (!soundEnabled || !contextReadyRef.current) return
 
     trackNodeCount()
-    ensureResumed()
-    const ctx = getContext()
-    const master = getMasterGain()
-    if (!ctx || !master) return
+    if (!ensureResumed()) {
+      recreateContext()
+    }
+    try {
+      const ctx = getContext()
+      const master = getMasterGain()
+      if (!ctx || !master) return
 
-    const frequency = colorMap[color].sound
-    const durationS = duration / 1000
-    scheduleNote(ctx, master, frequency, oscillatorType, ctx.currentTime, durationS, TARGET_GAIN)
+      const frequency = colorMap[color].sound
+      const durationS = duration / 1000
+      scheduleNote(ctx, master, frequency, oscillatorType, ctx.currentTime, durationS, TARGET_GAIN)
+    } catch {
+      recreateContext()
+    }
   }
 
   // Used by the player on touch — SYNCHRONOUS node creation, no async race
@@ -326,19 +379,25 @@ export function useAudioTones(
     if (!soundEnabled || !contextReadyRef.current) return
 
     trackNodeCount()
-    ensureResumed()
-
-    // Fade out any existing sound first
-    if (activeSoundRef.current) {
-      fadeOutAndStop(activeSoundRef.current, 0.02)
-      activeSoundRef.current = null
+    if (!ensureResumed()) {
+      recreateContext()
     }
 
-    const frequency = colorMap[color].sound
-    const sound = createSound(frequency)
-    if (!sound) return
+    try {
+      // Fade out any existing sound first
+      if (activeSoundRef.current) {
+        fadeOutAndStop(activeSoundRef.current, 0.02)
+        activeSoundRef.current = null
+      }
 
-    activeSoundRef.current = sound
+      const frequency = colorMap[color].sound
+      const sound = createSound(frequency)
+      if (!sound) return
+
+      activeSoundRef.current = sound
+    } catch {
+      recreateContext()
+    }
   }
 
   // Used by the player on release — setTargetAtTime for clean fade to zero
@@ -359,93 +418,117 @@ export function useAudioTones(
     if (!soundEnabled) return
     if (!contextReadyRef.current) return
     trackNodeCount()
-    ensureResumed()
-    const ctx = getContext()
-    const master = getMasterGain()
-    if (!ctx || !master) return
+    if (!ensureResumed()) {
+      recreateContext()
+    }
+    try {
+      const ctx = getContext()
+      const master = getMasterGain()
+      if (!ctx || !master) return
 
-    const type = overrideType ?? oscillatorType
-    const now = ctx.currentTime
+      const type = overrideType ?? oscillatorType
+      const now = ctx.currentTime
 
-    for (const note of PREVIEW_NOTES) {
-      scheduleNote(
-        ctx,
-        master,
-        note.freq,
-        type,
-        now + note.delay,
-        PREVIEW_NOTE_DURATION,
-        TARGET_GAIN * 0.8,
-      )
+      for (const note of PREVIEW_NOTES) {
+        scheduleNote(
+          ctx,
+          master,
+          note.freq,
+          type,
+          now + note.delay,
+          PREVIEW_NOTE_DURATION,
+          TARGET_GAIN * 0.8,
+        )
+      }
+    } catch {
+      recreateContext()
     }
   }
 
   function playJingle() {
     if (!soundEnabled || !contextReadyRef.current) return
     trackNodeCount()
-    ensureResumed()
-    const ctx = getContext()
-    const master = getMasterGain()
-    if (!ctx || !master) return
+    if (!ensureResumed()) {
+      recreateContext()
+    }
+    try {
+      const ctx = getContext()
+      const master = getMasterGain()
+      if (!ctx || !master) return
 
-    const now = ctx.currentTime
+      const now = ctx.currentTime
 
-    for (const note of JINGLE_NOTES) {
-      scheduleNote(
-        ctx,
-        master,
-        note.freq,
-        oscillatorType,
-        now + note.delay,
-        JINGLE_NOTE_DURATION,
-        TARGET_GAIN * 0.6,
-      )
+      for (const note of JINGLE_NOTES) {
+        scheduleNote(
+          ctx,
+          master,
+          note.freq,
+          oscillatorType,
+          now + note.delay,
+          JINGLE_NOTE_DURATION,
+          TARGET_GAIN * 0.6,
+        )
+      }
+    } catch {
+      recreateContext()
     }
   }
 
   function playGameOverJingle() {
     if (!soundEnabled || !contextReadyRef.current) return
     trackNodeCount()
-    ensureResumed()
-    const ctx = getContext()
-    const master = getMasterGain()
-    if (!ctx || !master) return
+    if (!ensureResumed()) {
+      recreateContext()
+    }
+    try {
+      const ctx = getContext()
+      const master = getMasterGain()
+      if (!ctx || !master) return
 
-    const now = ctx.currentTime
+      const now = ctx.currentTime
 
-    for (const note of GAMEOVER_NOTES) {
-      scheduleNote(
-        ctx,
-        master,
-        note.freq,
-        oscillatorType,
-        now + note.delay,
-        GAMEOVER_NOTE_DURATION,
-        TARGET_GAIN * 0.4,
-      )
+      for (const note of GAMEOVER_NOTES) {
+        scheduleNote(
+          ctx,
+          master,
+          note.freq,
+          oscillatorType,
+          now + note.delay,
+          GAMEOVER_NOTE_DURATION,
+          TARGET_GAIN * 0.4,
+        )
+      }
+    } catch {
+      recreateContext()
     }
   }
 
   function playHighScoreJingle() {
     if (!soundEnabled || !contextReadyRef.current) return
     trackNodeCount()
-    ensureResumed()
-    const ctx = getContext()
-    const master = getMasterGain()
-    if (!ctx || !master) return
+    if (!ensureResumed()) {
+      recreateContext()
+    }
+    try {
+      const ctx = getContext()
+      const master = getMasterGain()
+      if (!ctx || !master) return
 
-    const now = ctx.currentTime
+      const now = ctx.currentTime
 
-    for (const note of HIGHSCORE_NOTES) {
-      scheduleNote(
-        ctx,
-        master,
-        note.freq,
-        oscillatorType,
-        now + note.delay,
-        HIGHSCORE_NOTE_DURATION,
-        TARGET_GAIN * 0.7,
-      )
+      for (const note of HIGHSCORE_NOTES) {
+        scheduleNote(
+          ctx,
+          master,
+          note.freq,
+          oscillatorType,
+          now + note.delay,
+          HIGHSCORE_NOTE_DURATION,
+          TARGET_GAIN * 0.7,
+        )
+      }
+    } catch {
+      recreateContext()
     }
   }
 
