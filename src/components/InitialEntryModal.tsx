@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react"
-import { Animated, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native"
+import { Animated, Modal, StyleSheet, Text, TextInput, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 
+import { PressableScale } from "@/components/PressableScale"
 import type { GameTheme } from "@/config/themes"
 import { translate } from "@/i18n/translate"
 
@@ -96,7 +97,7 @@ export function InitialEntryModal({
             { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor },
           ]}
         >
-          <Pressable
+          <PressableScale
             testID="btn-initial-dismiss"
             style={styles.dismissButton}
             onPress={onDismiss}
@@ -104,7 +105,7 @@ export function InitialEntryModal({
             accessibilityRole="button"
           >
             <Ionicons name="close" size={24} color={theme.secondaryTextColor} />
-          </Pressable>
+          </PressableScale>
           <Text style={[styles.title, { color: highlight }]}>
             {translate("game:newHighScoreEntry")}
           </Text>
@@ -141,7 +142,7 @@ export function InitialEntryModal({
             ))}
           </View>
 
-          <Pressable
+          <PressableScale
             testID="btn-initial-done"
             style={[
               styles.doneButton,
@@ -160,7 +161,7 @@ export function InitialEntryModal({
             >
               {translate("game:done")}
             </Text>
-          </Pressable>
+          </PressableScale>
         </View>
       </View>
     </Modal>

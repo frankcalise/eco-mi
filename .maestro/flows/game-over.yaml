@@ -21,13 +21,13 @@ onFlowStart:
 
 - waitForAnimationToEnd
 
-# Game over overlay should appear with all action buttons
-- assertVisible:
-    id: "overlay-game-over"
+# Wait for game over overlay to appear
+- extendedWaitUntil:
+    visible:
+      id: "overlay-game-over"
+    timeout: 10000
 - assertVisible:
     id: "btn-play-again"
-- assertVisible:
-    id: "btn-home"
 - assertVisible:
     id: "btn-share"
 

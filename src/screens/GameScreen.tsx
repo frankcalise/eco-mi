@@ -20,6 +20,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { AnimatedCountdown } from "@/components/AnimatedCountdown"
+import { PressableScale } from "@/components/PressableScale"
 import { GameButton } from "@/components/GameButton"
 import { GameOverOverlay } from "@/components/GameOverOverlay"
 import { HighScoreTable } from "@/components/HighScoreTable"
@@ -192,7 +193,6 @@ export function GameScreen() {
   const [pulsingMode, setPulsingMode] = useState<GameMode | null>(null)
   const [pulsePhase, setPulsePhase] = useState<"bright" | "dim">("bright")
   const pulseTimers = useRef<ReturnType<typeof setTimeout>[]>([])
-  const [soundTogglePop, setSoundTogglePop] = useState(false)
   const [poppingSoundPack, setPoppingSoundPack] = useState<string | null>(null)
   const [poppingTheme, setPoppingTheme] = useState<string | null>(null)
   const isIdle = gameState === "idle"
@@ -412,7 +412,7 @@ export function GameScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <Pressable
+        <PressableScale
           testID="btn-mode-selector"
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -427,7 +427,7 @@ export function GameScreen() {
             color={isIdle ? activeTheme.textColor : activeTheme.secondaryTextColor}
             style={{ opacity: isIdle ? 1 : 0.4 }}
           />
-        </Pressable>
+        </PressableScale>
         <EaseView
           animate={{ scale: isIdle ? 1.03 : 1 }}
           transition={{
@@ -482,7 +482,7 @@ export function GameScreen() {
             )
           })()}
         </EaseView>
-        <Pressable
+        <PressableScale
           testID="btn-settings"
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -497,7 +497,7 @@ export function GameScreen() {
             color={isIdle ? activeTheme.textColor : activeTheme.secondaryTextColor}
             style={{ opacity: isIdle ? 1 : 0.4 }}
           />
-        </Pressable>
+        </PressableScale>
       </View>
 
       {/* Score Display */}
@@ -593,12 +593,12 @@ export function GameScreen() {
       <View style={styles.controlsContainer}>
         {gameState === "idle" && (
           <>
-            <Pressable testID="btn-start" style={styles.startButton} onPress={handleStartGame}>
+            <PressableScale testID="btn-start" style={styles.startButton} onPress={handleStartGame}>
               <Ionicons name="play" size={24} color="white" />
               <Text style={styles.buttonText}>{t("game:startGame")}</Text>
-            </Pressable>
+            </PressableScale>
             <View style={styles.idleActions}>
-              <Pressable
+              <PressableScale
                 testID="btn-leaderboard"
                 style={styles.trophyButton}
                 onPress={() => {
@@ -608,8 +608,8 @@ export function GameScreen() {
                 }}
               >
                 <Ionicons name="trophy" size={22} color="#fbbf24" />
-              </Pressable>
-              <Pressable
+              </PressableScale>
+              <PressableScale
                 testID="btn-stats"
                 style={styles.trophyButton}
                 onPress={() => {
@@ -618,8 +618,8 @@ export function GameScreen() {
                 }}
               >
                 <Ionicons name="stats-chart" size={22} color={activeTheme.secondaryTextColor} />
-              </Pressable>
-              <Pressable
+              </PressableScale>
+              <PressableScale
                 testID="btn-achievements"
                 style={styles.trophyButton}
                 onPress={() => {
@@ -628,16 +628,16 @@ export function GameScreen() {
                 }}
               >
                 <Ionicons name="ribbon" size={22} color={activeTheme.secondaryTextColor} />
-              </Pressable>
+              </PressableScale>
             </View>
           </>
         )}
 
         {(gameState === "showing" || gameState === "waiting") && (
-          <Pressable testID="btn-reset" style={styles.resetButton} onPress={resetGame}>
+          <PressableScale testID="btn-reset" style={styles.resetButton} onPress={resetGame}>
             <Ionicons name="stop" size={24} color="white" />
             <Text style={styles.buttonText}>{t("game:reset")}</Text>
-          </Pressable>
+          </PressableScale>
         )}
       </View>
 
@@ -738,28 +738,21 @@ export function GameScreen() {
               >
                 {t("game:soundToggle")}
               </Text>
-              <Pressable
+              <PressableScale
                 testID="btn-sound-toggle"
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
                   toggleSound()
-                  setSoundTogglePop(true)
-                  setTimeout(() => setSoundTogglePop(false), 150)
                 }}
+                style={[styles.soundToggleBtn, soundEnabled && styles.soundToggleBtnActive]}
               >
-                <EaseView
-                  animate={{ scale: soundTogglePop ? 1.05 : 1 }}
-                  transition={{ default: { type: "timing", duration: 75, easing: "easeOut" } }}
-                  style={[styles.soundToggleBtn, soundEnabled && styles.soundToggleBtnActive]}
-                >
                   <Ionicons
                     name={soundEnabled ? "volume-high" : "volume-mute"}
                     size={20}
                     color="white"
                   />
                   <Text style={styles.soundToggleText}>{soundEnabled ? t("common:on") : t("common:off")}</Text>
-                </EaseView>
-              </Pressable>
+              </PressableScale>
             </View>
 
             {/* Sound Pack */}
@@ -839,7 +832,7 @@ export function GameScreen() {
                 })}
               </View>
               {previewSoundPack && !ownsSoundPack(previewSoundPack.id) && (
-                <Pressable
+                <PressableScale
                   style={styles.unlockBtn}
                   onPress={async () => {
                     const productId = getSoundProductId(previewSoundPack.id)
@@ -854,7 +847,7 @@ export function GameScreen() {
                 >
                   <Ionicons name="lock-open" size={14} color="white" />
                   <Text style={styles.unlockBtnText}>{t("game:unlockSound", { name: previewSoundPack.name })}</Text>
-                </Pressable>
+                </PressableScale>
               )}
             </View>
 
@@ -913,7 +906,7 @@ export function GameScreen() {
                 })}
               </View>
               {previewTheme && !ownsTheme(previewTheme.id) && (
-                <Pressable
+                <PressableScale
                   style={styles.unlockBtn}
                   onPress={async () => {
                     const productId = getThemeProductId(previewTheme.id)
@@ -928,23 +921,23 @@ export function GameScreen() {
                 >
                   <Ionicons name="lock-open" size={14} color="white" />
                   <Text style={styles.unlockBtnText}>{t("game:unlockTheme", { name: previewTheme.name })}</Text>
-                </Pressable>
+                </PressableScale>
               )}
             </View>
 
             {/* Remove Ads */}
             {!removeAds && (
               <View style={styles.settingsSection}>
-                <Pressable style={styles.removeAdsBtn} onPress={handleRemoveAds}>
+                <PressableScale style={styles.removeAdsBtn} onPress={handleRemoveAds}>
                   <Ionicons name="shield-checkmark" size={18} color="white" />
                   <Text style={styles.removeAdsBtnText}>{t("game:removeAds")}</Text>
-                </Pressable>
+                </PressableScale>
               </View>
             )}
 
             {/* Restore Purchases */}
             <View style={styles.settingsSection}>
-              <Pressable
+              <PressableScale
                 style={styles.restoreBtn}
                 onPress={async () => {
                   const success = await restorePurchases()
@@ -956,7 +949,7 @@ export function GameScreen() {
               >
                 <Ionicons name="refresh" size={16} color="white" />
                 <Text style={styles.restoreBtnText}>{t("game:restorePurchases")}</Text>
-              </Pressable>
+              </PressableScale>
             </View>
             </ScrollView>
           </Pressable>

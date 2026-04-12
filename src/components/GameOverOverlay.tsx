@@ -1,7 +1,9 @@
-import { View, Text, Pressable, StyleSheet } from "react-native"
+import { View, Text, StyleSheet } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import LottieView from "lottie-react-native"
 import { useTranslation } from "react-i18next"
+
+import { PressableScale } from "@/components/PressableScale"
 
 type GameOverOverlayProps = {
   visible: boolean
@@ -40,7 +42,7 @@ export function GameOverOverlay({
     <View testID="overlay-game-over" style={styles.backdrop}>
       <View style={styles.card}>
         {onHome && (
-          <Pressable
+          <PressableScale
             testID="btn-home"
             style={styles.homeButton}
             onPress={onHome}
@@ -48,7 +50,7 @@ export function GameOverOverlay({
             accessibilityRole="button"
           >
             <Ionicons name="close" size={24} color="#a0a0a0" />
-          </Pressable>
+          </PressableScale>
         )}
 
         <Text style={styles.title}>{t("game:gameOver")}</Text>
@@ -84,31 +86,31 @@ export function GameOverOverlay({
         )}
 
         <View style={styles.actions}>
-          <Pressable testID="btn-play-again" style={styles.playAgainButton} onPress={onPlayAgain}>
+          <PressableScale testID="btn-play-again" style={styles.playAgainButton} onPress={onPlayAgain}>
             <Ionicons name="refresh" size={20} color="white" />
             <Text style={styles.buttonText}>{t("game:playAgain")}</Text>
-          </Pressable>
+          </PressableScale>
 
           {onShare && (
-            <Pressable testID="btn-share" style={styles.shareButton} onPress={onShare}>
+            <PressableScale testID="btn-share" style={styles.shareButton} onPress={onShare}>
               <Ionicons name="share-outline" size={20} color="white" />
               <Text style={styles.buttonText}>{t("game:share")}</Text>
-            </Pressable>
+            </PressableScale>
           )}
         </View>
 
         {showContinue && onContinue && (
-          <Pressable testID="btn-continue" style={styles.continueButton} onPress={onContinue}>
+          <PressableScale testID="btn-continue" style={styles.continueButton} onPress={onContinue}>
             <Ionicons name="play-forward" size={18} color="white" />
             <Text style={styles.continueText}>{t("game:continue")}</Text>
-          </Pressable>
+          </PressableScale>
         )}
 
         {showRemoveAds && onRemoveAds && (
-          <Pressable testID="btn-remove-ads" style={styles.removeAdsButton} onPress={onRemoveAds}>
+          <PressableScale testID="btn-remove-ads" style={styles.removeAdsButton} onPress={onRemoveAds}>
             <Ionicons name="close-circle-outline" size={18} color="#fbbf24" />
             <Text style={styles.removeAdsText}>{t("game:removeAds")}</Text>
-          </Pressable>
+          </PressableScale>
         )}
       </View>
     </View>

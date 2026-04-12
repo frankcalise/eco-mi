@@ -2,6 +2,8 @@ import { View, Text, Pressable, Linking, StyleSheet } from "react-native"
 import * as StoreReview from "expo-store-review"
 import { useTranslation } from "react-i18next"
 
+import { PressableScale } from "@/components/PressableScale"
+
 type ReviewPromptProps = {
   visible: boolean
   onDismiss: () => void
@@ -34,20 +36,20 @@ export function ReviewPrompt({ visible, onDismiss, onResponse }: ReviewPromptPro
         <Text style={styles.title}>{t("review:title")}</Text>
         <Text style={styles.subtitle}>{t("review:subtitle")}</Text>
         <View style={styles.buttons}>
-          <Pressable testID="review-love-it" style={styles.loveItButton} onPress={handleLoveIt}>
+          <PressableScale testID="review-love-it" style={styles.loveItButton} onPress={handleLoveIt}>
             <Text style={styles.loveItText}>{t("review:loveIt")}</Text>
-          </Pressable>
-          <Pressable
+          </PressableScale>
+          <PressableScale
             testID="review-not-really"
             style={styles.notReallyButton}
             onPress={handleNotReally}
           >
             <Text style={styles.notReallyText}>{t("review:notReally")}</Text>
-          </Pressable>
+          </PressableScale>
         </View>
-        <Pressable testID="review-maybe-later" style={styles.maybeLaterButton} onPress={onDismiss}>
+        <PressableScale testID="review-maybe-later" style={styles.maybeLaterButton} onPress={onDismiss}>
           <Text style={styles.maybeLaterText}>{t("review:maybeLater")}</Text>
-        </Pressable>
+        </PressableScale>
       </Pressable>
     </Pressable>
   )

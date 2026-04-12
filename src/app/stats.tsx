@@ -1,8 +1,9 @@
-import { View, Text, Pressable, StyleSheet } from "react-native"
+import { View, Text, StyleSheet } from "react-native"
 import { useRouter } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
 
+import { PressableScale } from "@/components/PressableScale"
 import { useStats } from "@/hooks/useStats"
 
 export default function StatsScreen() {
@@ -30,9 +31,9 @@ export default function StatsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable accessibilityLabel={t("common:back")} accessibilityRole="button" style={styles.backButton} onPress={() => router.back()}>
+        <PressableScale accessibilityLabel={t("common:back")} accessibilityRole="button" style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="white" />
-        </Pressable>
+        </PressableScale>
         <Text style={styles.title}>{t("stats:title")}</Text>
       </View>
 

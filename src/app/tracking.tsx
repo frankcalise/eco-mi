@@ -1,10 +1,11 @@
-import { Image, View, Text, Pressable, StyleSheet } from "react-native"
+import { Image, View, Text, StyleSheet } from "react-native"
 import { useRouter } from "expo-router"
 import { requestTrackingPermissionsAsync } from "expo-tracking-transparency"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { PressableScale } from "@/components/PressableScale"
 import { saveString } from "@/utils/storage"
 
 const TRACKING_ASKED_KEY = "ecomi:tracking:asked"
@@ -43,13 +44,13 @@ export default function TrackingScreen() {
       </View>
 
       <View style={styles.buttons}>
-        <Pressable style={styles.shareBtn} onPress={handleShare}>
+        <PressableScale style={styles.shareBtn} onPress={handleShare}>
           <Text style={styles.shareBtnText}>{t("tracking:shareButton")}</Text>
-        </Pressable>
+        </PressableScale>
 
-        <Pressable style={styles.skipBtn} onPress={handleSkip}>
+        <PressableScale style={styles.skipBtn} onPress={handleSkip}>
           <Text style={styles.skipBtnText}>{t("tracking:maybeLater")}</Text>
-        </Pressable>
+        </PressableScale>
       </View>
     </View>
   )
