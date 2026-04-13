@@ -638,8 +638,12 @@ These are where v1.1 earns its keep. Ship on top of Phase B foundation.
 - [ ] **Post-PB soft IAP prompt**
       Highest-converting IAP moment in casual games is right after a personal best, when emotional investment peaks. Today the game-over overlay shows only Play Again / Share there. Add a dismissible "Go ad-free to stay in the zone" row beneath the celebration Lottie in `GameOverOverlay.tsx`. Cap at once per 7 days per user. Independent of `adShownThisSession` guard (the current remove-ads CTA).
 
+#### Store Submission Prep
+
+- **Re-capture ES and PT store screenshots in-locale** — must ship with v1.1 so translated store copy is backed by translated in-game UI. See the full task under **External / Non-Code Tasks → ASO Assets**.
+
 - [ ] **Submit v1.1 to stores**
-  - Blocked by: All v1.1.0 Phase A/B/C scope complete
+  - Blocked by: All v1.1.0 Phase A/B/C scope complete + ES/PT screenshots recaptured
 
 ---
 
