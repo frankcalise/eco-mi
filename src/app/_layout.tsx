@@ -6,6 +6,7 @@ import * as Sentry from "@sentry/react-native"
 import { PostHogProvider } from "posthog-react-native"
 import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context"
 
+import { RouteTracker } from "@/components/RouteTracker"
 import { useWebFonts } from "@/hooks/useWebFonts"
 import { initI18n } from "@/i18n"
 import { ThemeProvider } from "@/theme/context"
@@ -70,6 +71,7 @@ function Root() {
       options={{ host: "https://us.i.posthog.com" }}
       autocapture={{ captureScreens: false }}
     >
+      <RouteTracker />
       {navigation}
     </PostHogProvider>
   ) : (
