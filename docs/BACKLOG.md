@@ -574,8 +574,72 @@
   - Track `review_prompt_shown` and `review_prompt_response` events
   - Ref: VISION.md > Phase 2 #6, Review Prompt Rules, Pre-Prompt Pattern
 
+### v1.1.0 Retention & Polish — Post-Launch Scope
+
+Informed by the 1.0.0 crash + ATT review cycle and a deep-trace code/UX audit. Structured as three phases that should be shipped in order — Phase A unblocks measuring everything that follows.
+
+#### Phase A — Signal & Telemetry (this week)
+
+Unblock learning from the 1.0.1 launch. All three items live in **Tech Debt** above — link, don't duplicate:
+- **Enrich PostHog events with device + app context** (already in Tech Debt)
+- **Add PostHog identify() + person properties** (already in Tech Debt)
+- **Install expo-insights for update + adoption telemetry** (already in Tech Debt)
+
+#### Phase B — Code Foundation
+
+These compound: do them before the retention work so the Phase C additions slot into a clean house instead of adding to the sprawl.
+
+- [ ] **Split `GameScreen.tsx` (~1500 lines) into focused components**
+      Clean extraction seams already exist in the file. Extract `GameModeSelector` (ModeItem + Mode modal ~58-115, ~746-803), `GameSettingsPanel` (~787-1077), `GameHeader` + Status row (~446-713), leaving the screen as composition + state wiring (~800 lines). Required before xstate migration — passing 13 props into `GameOverOverlay` is a smell that gets worse as we add retention features.
+
+- [ ] **Add semantic color tokens to `GameTheme` and migrate hardcoded literals**
+      32 hex literals across 7 files (e.g., `#22c55e`, `#ef4444`, `#fbbf24`) bypass the theme. `ReviewPrompt.tsx` is actually broken on the Pastel theme because `rgba(255,255,255,0.5)` becomes white-on-lavender. Add `accentColor`, `destructiveColor`, `successColor`, `warningColor` to `src/config/themes.ts` and replace literals in `GameOverOverlay.tsx`, `ReviewPrompt.tsx`, and `GameScreen.tsx`. Priority files first: the two overlays users see most.
+
+- [ ] **Adopt XState for `useGameEngine` state machine**
+      `src/hooks/__tests__/useGameEngine.bugs.test.ts` already documents 3 bugs caused by invalid state combinations (stale `isNewHighScore` after continue, input timeout only gated in timed mode, button presses during `showing` trigger haptics but no effect). XState scoped to the game engine would enforce transitions and eliminate this class of bug. Keep hooks for ads/stats/theme — don't globalize. States: `idle → showing → waiting → {gameOver, continuing}`. Entry/exit handlers own timer cleanup and sound/haptic side effects. Est. 2-3 days.
+
+- [ ] **Consolidate storage keys into `src/config/storageKeys.ts`**
+      MMKV keys are scattered across `useAds.ts`, `usePurchases.ts`, `useGameEngine.ts`, `useStats.ts`, and the tracking screen. Centralize all `"ecomi:*"` keys as exported constants so schema changes are atomic and tests reference the same source of truth.
+
+- [ ] **Extract shared `ModalOverlay` component**
+      `ReviewPrompt.tsx`, `GameOverOverlay.tsx`, and the Settings/Mode/Leaderboard modals in `GameScreen.tsx` repeat the backdrop + card + dismiss-on-outer pattern. Consolidate into `<ModalOverlay onDismiss>` with consistent entrance animation (scale 0.95→1 + fade), matching the springy feel already in `GameOverOverlay`. Applies the Phase C "modal animation consistency" fix as a side effect.
+
+- [ ] **Drop redundant manual memoization in `theme/context.tsx`**
+      React Compiler is enabled via SDK 55, but `src/theme/context.tsx` still has 4 `useCallback`/`useMemo` instances (lines ~69, 81, 86, 95, 108). Safe to delete. Quick win that reinforces the "no manual memo" project rule.
+
+#### Phase C — Retention & Polish
+
+These are where v1.1 earns its keep. Ship on top of Phase B foundation.
+
+- [ ] **First-launch trainer sequence (minimal onboarding)**
+      One-time deterministic 1-color sequence on a fresh install, gated by `ecomi:onboarding:done` MMKV flag. User taps Play, watches a single green pulse, taps green, gets a satisfying chime + haptic, then level 2 ramps normally. A tiny tooltip appears only during their turn: *"Tap the button that lit up"* — auto-dismisses on first tap. **No modals, no Next buttons, no skip logic needed.** The game itself is the tutorial. Progressive disclosure for modes/streaks happens contextually later (after game 3, after first daily win). Targets D1 retention.
+
+- [ ] **Wrong-input juice: red flash overlay + warning haptic**
+      Currently wrong input only fires `Haptics.notificationAsync(Error)` from `useGameEngine.ts:590`. Add a 200ms red-tinted `EaseView` opacity flash in `GameScreen.tsx` and ensure the warning haptic also fires on timer expiry / end-game paths — not just wrong button. Cheap change, huge perceived-quality bump.
+
+- [ ] **Game-over emotional arc: stagger + PB delta + near-miss**
+      Three small additions in `GameOverOverlay.tsx` that compound: (1) stagger card children with `EaseView` delays (title 0ms → stats 150ms → actions 300ms) instead of all-at-once; (2) if `isNewHighScore`, show `+X over your previous best` below the trophy; (3) if `score >= highScore * 0.8 && !isNewHighScore`, show `So close — X from your best`. Source the title color from theme (`secondaryTextColor` for normal losses, `accentColor` for PB) instead of hardcoded red. Targets replay rate.
+
+- [ ] **Visual score card sharing via `react-native-view-shot`**
+      `handleShare` in `GameScreen.tsx:403` shares plain text today. Text shares get near-zero engagement on Instagram/TikTok/iMessage. Add a `<ScoreCard>` component (score + level + mode + app branding + themed background), capture with `captureRef`, share via `Share.share({ url })`. Single highest-leverage virality feature.
+
+- [ ] **Local notifications via `expo-notifications`**
+      Three schedules, all 100% local (no backend, no APNs/FCM). (1) **Daily challenge reminder** — one per day at user-preferred time (default 7pm). (2) **Streak-save warning** — if user has ≥3-day daily streak and hasn't played by 8pm, fire one nudge. (3) **Lapsed-user nudge** — if no launch in 3 days, one "Your best score is waiting" message. Ask permission with a pre-prompt *after* game 3 or first streak built (not on first launch). Consider iOS provisional notifications for no-permission silent delivery. Add opt-in/out toggle in settings modal.
+
+- [ ] **Streak loss-aversion idle banner**
+      If user has an active daily streak and hasn't played today's daily, render a banner on the idle screen: `🔥 Day {n} streak — play Daily to keep it!` tinted with accent color for urgency. Complements the notification push. Optional stretch: rewarded-ad streak save on first open after missing a day (restores yesterday's daily) — monetization + retention combo.
+
+- [ ] **Empty states for stats and leaderboard**
+      When `stats.gamesPlayed === 0`, `src/app/stats.tsx` renders a wall of zeros with no guidance. When `scores.length === 0`, `HighScoreTable.tsx` renders one line of centered text. Replace both with illustrated empty states: icon + localized message + CTA back to Play. Turns dead-ends into re-engagement moments.
+
+- [ ] **Play button visual dominance on idle screen**
+      Today the Start button is a modest pill in a row with trophy/stats/achievements icons (`GameScreen.tsx:1441-1449`) — it competes with 4 peer buttons. For F2P, the Play button is the single most important conversion surface. Make it ~70% width, `paddingVertical: 16`, add subtle accent-colored shadow, optional idle pulse (scale 1.0→1.02 loop). Move secondary icons to a less-prominent row below with more spacing.
+
+- [ ] **Post-PB soft IAP prompt**
+      Highest-converting IAP moment in casual games is right after a personal best, when emotional investment peaks. Today the game-over overlay shows only Play Again / Share there. Add a dismissible "Go ad-free to stay in the zone" row beneath the celebration Lottie in `GameOverOverlay.tsx`. Cap at once per 7 days per user. Independent of `adShownThisSession` guard (the current remove-ads CTA).
+
 - [ ] **Submit v1.1 to stores**
-  - Blocked by: All Phase 2 tasks complete
+  - Blocked by: All v1.1.0 Phase A/B/C scope complete
 
 ---
 
@@ -699,6 +763,15 @@
 - [ ] **Implement friend challenges via deep links**
       Share a challenge link (`ecomi://challenge/{seed}`) that opens the app with a specific daily seed.
   - Ref: VISION.md > Phase 5 #4
+
+---
+
+## Exploration — Not Scoped Yet
+
+Ideas worth tracking but not committed to any phase. Revisit after 6+ months of iPhone app signal.
+
+- [ ] **Apple Watch companion app via `expo-apple-targets`**
+      The 4-button Simon grid maps naturally to the Watch form factor and the Taptic Engine is uniquely suited to a haptic-first game. Halo/differentiator play, not a revenue driver — Watch users overlap heavily with iPhone users, Watch IAP conversion is lower, no AdMob on watchOS. **Approach:** Use [EvanBacon/expo-apple-targets](https://github.com/EvanBacon/expo-apple-targets) to add a watchOS target inside this Expo project (no separate repo, no ejecting). React Native still doesn't run on watchOS, so the Watch app is SwiftUI — but prebuild generates the target, EAS handles the build, and the code lives alongside the RN app. Share high scores, streaks, and theme selection with the iPhone app via App Groups (MMKV on RN side ↔ UserDefaults on Swift side). Scope: core classic mode only for v1, no modes/achievements/IAP on Watch. Rough effort: ~2 weeks of SwiftUI work for a solo dev new to it, most of which is learning SwiftUI + watchOS idioms, not plugin setup. **Key angle:** Eco Mi's haptics-first design is a genuine strength on Watch, not just a port — the Taptic Engine can deliver richer per-button haptics than iPhone, and escalating intensity at higher levels could make a watchOS version feel *better* than the phone app. That's the press/launch story ("the Simon game built for Apple Watch") if we invest. Revisit when iPhone retention data justifies the investment, or sooner if a "first Simon on Watch" launch moment is strategically attractive.
 
 ---
 
