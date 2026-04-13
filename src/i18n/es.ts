@@ -127,11 +127,10 @@ const es = {
     reset: "REINICIAR APP",
   },
   tracking: {
-    title: "Ayuda a Mejorar Eco Mi",
+    title: "Aviso rápido",
     subtitle:
-      "Permite el seguimiento anónimo para ayudarnos a personalizar anuncios y mejorar la experiencia. No se comparten datos personales.",
-    shareButton: "Permitir Seguimiento",
-    maybeLater: "Quizás Después",
+      "En la siguiente pantalla, iOS te preguntará si Eco Mi puede mostrar anuncios personalizados. Puedes permitirlo o denegarlo; el juego funciona igual en ambos casos.",
+    continueButton: "Continuar",
   },
   a11y: {
     modeSelector: "Seleccionar modo",

@@ -1,9 +1,16 @@
-# Dismiss the ATT tracking screen if present (iOS only, first launch after clearState)
+# Dismiss the ATT tracking pre-prompt + iOS system dialog if present
+# (iOS only, first launch after clearState)
 appId: ${MAESTRO_APP_ID}
 ---
 - runFlow:
     when:
-      visible: "Maybe Later"
+      visible: "Continue"
     commands:
-      - tapOn: "Maybe Later"
+      - tapOn: "Continue"
       - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible: "Ask App Not to Track"
+          commands:
+            - tapOn: "Ask App Not to Track"
+            - waitForAnimationToEnd

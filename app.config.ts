@@ -97,7 +97,13 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
           iosBackgroundMode: false,
         },
       ],
-      "expo-tracking-transparency",
+      [
+        "expo-tracking-transparency",
+        {
+          userTrackingPermission:
+            "Your data is used to deliver personalized ads and measure ad performance so we can keep Eco Mi free.",
+        },
+      ],
       [
         "@sentry/react-native/expo",
         {

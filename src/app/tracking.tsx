@@ -19,13 +19,8 @@ export default function TrackingScreen() {
   const insets = useSafeAreaInsets()
   const { t } = useTranslation()
 
-  async function handleShare() {
+  async function handleContinue() {
     await requestTrackingPermissionsAsync().catch(() => {})
-    markAsked()
-    router.replace("/")
-  }
-
-  function handleSkip() {
     markAsked()
     router.replace("/")
   }
@@ -44,16 +39,8 @@ export default function TrackingScreen() {
       </View>
 
       <View style={styles.buttons}>
-        <PressableScale style={styles.shareBtn} onPress={handleShare}>
-          <Text style={styles.shareBtnText}>{t("tracking:shareButton")}</Text>
-        </PressableScale>
-
-        <PressableScale
-          style={styles.skipBtn}
-          onPress={handleSkip}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text style={styles.skipBtnText}>{t("tracking:maybeLater")}</Text>
+        <PressableScale style={styles.shareBtn} onPress={handleContinue}>
+          <Text style={styles.shareBtnText}>{t("tracking:continueButton")}</Text>
         </PressableScale>
       </View>
     </View>
@@ -104,15 +91,6 @@ const styles = StyleSheet.create({
     color: "white",
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
-  },
-  skipBtn: {
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  skipBtnText: {
-    color: "rgba(255, 255, 255, 0.5)",
-    fontFamily: "Oxanium-Regular",
-    fontSize: 14,
   },
   subtitle: {
     color: "rgba(255, 255, 255, 0.6)",

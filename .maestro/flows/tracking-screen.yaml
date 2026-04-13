@@ -6,14 +6,20 @@ tags:
 onFlowStart:
   - runFlow: ../shared/_OnFlowStart.yaml
 ---
-# On iOS with clearState, tracking screen should appear
+# On iOS with clearState, tracking pre-prompt should appear
+# Tapping Continue fires the iOS system ATT dialog; dismiss with "Ask App Not to Track"
 - runFlow:
     when:
       platform: iOS
     commands:
-      - assertVisible: "Allow Tracking"
-      - assertVisible: "Maybe Later"
-      - tapOn: "Maybe Later"
+      - assertVisible: "Continue"
+      - tapOn: "Continue"
       - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible: "Ask App Not to Track"
+          commands:
+            - tapOn: "Ask App Not to Track"
+            - waitForAnimationToEnd
       - assertVisible:
           id: "btn-start"

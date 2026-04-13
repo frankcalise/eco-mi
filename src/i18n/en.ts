@@ -127,11 +127,10 @@ const en = {
     reset: "RESET APP",
   },
   tracking: {
-    title: "Help Improve Eco Mi",
+    title: "A quick heads-up",
     subtitle:
-      "Allow anonymous tracking to help us personalize ads and improve the app experience. No personal data is shared.",
-    shareButton: "Allow Tracking",
-    maybeLater: "Maybe Later",
+      "On the next screen, iOS will ask whether Eco Mi can deliver personalized ads. You can choose to allow or deny — either way the game works the same.",
+    continueButton: "Continue",
   },
   a11y: {
     modeSelector: "Select game mode",

@@ -126,11 +126,10 @@ const pt = {
     reset: "REINICIAR APP",
   },
   tracking: {
-    title: "Ajude a Melhorar o Eco Mi",
+    title: "Um aviso rápido",
     subtitle:
-      "Permita o rastreamento anônimo para nos ajudar a personalizar anúncios e melhorar a experiência. Nenhum dado pessoal é compartilhado.",
-    shareButton: "Permitir Rastreamento",
-    maybeLater: "Talvez Depois",
+      "Na próxima tela, o iOS perguntará se o Eco Mi pode exibir anúncios personalizados. Você pode permitir ou negar; o jogo funciona da mesma forma nos dois casos.",
+    continueButton: "Continuar",
   },
   a11y: {
     modeSelector: "Selecionar modo",
