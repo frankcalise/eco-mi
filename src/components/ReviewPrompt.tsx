@@ -48,7 +48,7 @@ export function ReviewPrompt({ visible, theme, onDismiss, onResponse }: ReviewPr
         <View style={styles.buttons}>
           <PressableScale
             testID="review-love-it"
-            style={styles.loveItButton}
+            style={[styles.loveItButton, { backgroundColor: theme.accentColor }]}
             onPress={handleLoveIt}
           >
             <Text style={styles.loveItText}>{t("review:loveIt")}</Text>
@@ -67,7 +67,9 @@ export function ReviewPrompt({ visible, theme, onDismiss, onResponse }: ReviewPr
           onPress={onDismiss}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.maybeLaterText}>{t("review:maybeLater")}</Text>
+          <Text style={[styles.maybeLaterText, { color: theme.secondaryTextColor }]}>
+            {t("review:maybeLater")}
+          </Text>
         </PressableScale>
       </Pressable>
     </Pressable>
@@ -97,7 +99,6 @@ const styles = StyleSheet.create({
     width: "85%",
   },
   loveItButton: {
-    backgroundColor: "#22c55e",
     borderRadius: 8,
     paddingHorizontal: 20,
     paddingVertical: 12,
@@ -112,12 +113,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   maybeLaterText: {
-    color: "rgba(255, 255, 255, 0.5)",
     fontFamily: "Oxanium-Regular",
     fontSize: 14,
   },
   notReallyButton: {
-    backgroundColor: "#6b7280",
+    backgroundColor: "rgba(128, 128, 128, 0.3)",
     borderRadius: 8,
     paddingHorizontal: 20,
     paddingVertical: 12,
@@ -128,13 +128,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   subtitle: {
-    color: "#a0a0a0",
     fontFamily: "Oxanium-Regular",
     fontSize: 14,
     marginTop: 8,
   },
   title: {
-    color: "white",
     fontFamily: "Oxanium-Bold",
     fontSize: 22,
   },

@@ -76,7 +76,7 @@ export function GameOverOverlay({
           </PressableScale>
         )}
 
-        <Text style={styles.title}>{t("game:gameOver")}</Text>
+        <Text style={[styles.title, { color: theme.destructiveColor }]}>{t("game:gameOver")}</Text>
 
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
@@ -108,8 +108,10 @@ export function GameOverOverlay({
               style={styles.lottie}
             />
             <View style={styles.badgeContainer}>
-              <Ionicons name="trophy" size={20} color="#fbbf24" />
-              <Text style={styles.badgeText}>{t("game:newHighScore")}</Text>
+              <Ionicons name="trophy" size={20} color={theme.warningColor} />
+              <Text style={[styles.badgeText, { color: theme.warningColor }]}>
+                {t("game:newHighScore")}
+              </Text>
             </View>
           </View>
         )}
@@ -117,7 +119,7 @@ export function GameOverOverlay({
         <View style={styles.actions}>
           <PressableScale
             testID="btn-play-again"
-            style={styles.playAgainButton}
+            style={[styles.playAgainButton, { backgroundColor: theme.linkColor }]}
             onPress={onPlayAgain}
             accessibilityLabel={t("game:playAgain")}
             accessibilityRole="button"
@@ -190,8 +192,10 @@ export function GameOverOverlay({
             accessibilityLabel={t("game:removeAds")}
             accessibilityRole="button"
           >
-            <Ionicons name="close-circle-outline" size={18} color="#fbbf24" />
-            <Text style={styles.removeAdsText}>{t("game:removeAds")}</Text>
+            <Ionicons name="close-circle-outline" size={18} color={theme.warningColor} />
+            <Text style={[styles.removeAdsText, { color: theme.warningColor }]}>
+              {t("game:removeAds")}
+            </Text>
           </PressableScale>
         )}
       </EaseView>
@@ -219,7 +223,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   badgeText: {
-    color: "#fbbf24",
     fontFamily: "Oxanium-Bold",
     fontSize: 16,
   },
@@ -273,7 +276,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   linkText: {
-    color: "#a0a0a0",
     fontFamily: "Oxanium-Medium",
     fontSize: 13,
   },
@@ -283,7 +285,6 @@ const styles = StyleSheet.create({
   },
   playAgainButton: {
     alignItems: "center",
-    backgroundColor: "#3b82f6",
     borderRadius: 8,
     flexDirection: "row",
     gap: 8,
@@ -298,13 +299,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   removeAdsText: {
-    color: "#fbbf24",
     fontFamily: "Oxanium-Medium",
     fontSize: 14,
   },
   shareButton: {
     alignItems: "center",
-    backgroundColor: "#6b7280",
+    backgroundColor: "rgba(128, 128, 128, 0.3)",
     borderRadius: 8,
     flexDirection: "row",
     gap: 8,
@@ -316,13 +316,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statLabel: {
-    color: "#a0a0a0",
     fontFamily: "Oxanium-Regular",
     fontSize: 12,
     marginBottom: 4,
   },
   statValue: {
-    color: "white",
     fontFamily: "Oxanium-Bold",
     fontSize: 24,
   },
@@ -332,7 +330,6 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   title: {
-    color: "#ef4444",
     fontFamily: "Oxanium-Bold",
     fontSize: 28,
   },
