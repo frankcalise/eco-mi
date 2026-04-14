@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import * as Haptics from "expo-haptics"
 import type { OscillatorType } from "react-native-audio-api"
+import { useMachine } from "@xstate/react"
 
 import { getToneDuration, getSequenceInterval, getInputTimeout } from "@/config/difficulty"
 import { pickShuffleSequence, getShuffleStepDelay } from "@/config/shuffleAnimations"
@@ -8,12 +9,25 @@ import { type GameTheme, gameThemes } from "@/config/themes"
 import { useAudioTones } from "@/hooks/useAudioTones"
 import { recordGameResult } from "@/hooks/useStats"
 import { saveString, loadString } from "@/utils/storage"
+import {
+  DAILY_CURRENT_STREAK,
+  DAILY_LAST_PLAYED,
+  DAILY_PREFIX,
+  HIGH_SCORE_PREFIX,
+  STATS_LONGEST_STREAK,
+} from "@/config/storageKeys"
 
-export type GameState = "idle" | "showing" | "waiting" | "gameover"
-export type GameMode = "classic" | "daily" | "timed" | "reverse" | "chaos"
-export type Color = "red" | "blue" | "green" | "yellow"
+import {
+  gameEngineMachine,
+  toPublicState,
+  colors,
+  type Color,
+  type GameMode,
+  type PublicGameState as GameState,
+} from "./gameEngineMachine"
 
-export const colors: Color[] = ["red", "blue", "green", "yellow"]
+export { colors }
+export type { Color, GameMode, GameState }
 
 const soundFrequencies: Record<Color, number> = {
   red: 220,
@@ -31,30 +45,10 @@ const buttonPositionMap: Record<Color, "topLeft" | "topRight" | "bottomLeft" | "
 
 export function getColorMapForTheme(theme: GameTheme) {
   return {
-    red: {
-      color: theme.buttonColors.red.color,
-      activeColor: theme.buttonColors.red.activeColor,
-      sound: soundFrequencies.red,
-      position: buttonPositionMap.red,
-    },
-    blue: {
-      color: theme.buttonColors.blue.color,
-      activeColor: theme.buttonColors.blue.activeColor,
-      sound: soundFrequencies.blue,
-      position: buttonPositionMap.blue,
-    },
-    green: {
-      color: theme.buttonColors.green.color,
-      activeColor: theme.buttonColors.green.activeColor,
-      sound: soundFrequencies.green,
-      position: buttonPositionMap.green,
-    },
-    yellow: {
-      color: theme.buttonColors.yellow.color,
-      activeColor: theme.buttonColors.yellow.activeColor,
-      sound: soundFrequencies.yellow,
-      position: buttonPositionMap.yellow,
-    },
+    red: { color: theme.buttonColors.red.color, activeColor: theme.buttonColors.red.activeColor, sound: soundFrequencies.red, position: buttonPositionMap.red },
+    blue: { color: theme.buttonColors.blue.color, activeColor: theme.buttonColors.blue.activeColor, sound: soundFrequencies.blue, position: buttonPositionMap.blue },
+    green: { color: theme.buttonColors.green.color, activeColor: theme.buttonColors.green.activeColor, sound: soundFrequencies.green, position: buttonPositionMap.green },
+    yellow: { color: theme.buttonColors.yellow.color, activeColor: theme.buttonColors.yellow.activeColor, sound: soundFrequencies.yellow, position: buttonPositionMap.yellow },
   }
 }
 
@@ -99,43 +93,25 @@ interface UseGameEngineReturn {
   setMode: (mode: GameMode) => void
 }
 
-import {
-  DAILY_CURRENT_STREAK,
-  DAILY_LAST_PLAYED,
-  DAILY_PREFIX,
-  HIGH_SCORE_PREFIX,
-  STATS_LONGEST_STREAK,
-} from "@/config/storageKeys"
-
 function highScoreKey(mode: string): string {
   return `${HIGH_SCORE_PREFIX}${mode}`
 }
 
 function getDailySeed(): number {
   const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, "0")
-  const day = String(now.getDate()).padStart(2, "0")
-  return parseInt(`${year}${month}${day}`, 10)
+  return parseInt(`${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`, 10)
 }
 
 function getTodayKey(): string {
   const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, "0")
-  const day = String(now.getDate()).padStart(2, "0")
-  return `${year}-${month}-${day}`
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
 }
 
-/**
- * Mulberry32 seeded PRNG — deterministic random from a 32-bit seed.
- * Returns a float in [0, 1).
- */
 function mulberry32(seed: number): () => number {
-  let state = seed | 0
+  let s = seed | 0
   return () => {
-    state = (state + 0x6d2b79f5) | 0
-    let t = Math.imul(state ^ (state >>> 15), 1 | state)
+    s = (s + 0x6d2b79f5) | 0
+    let t = Math.imul(s ^ (s >>> 15), 1 | s)
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
@@ -147,111 +123,76 @@ function getTestSeed(): number | null {
 }
 
 export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineReturn {
-  const [mode, setMode] = useState<GameMode>(options?.mode ?? "classic")
-  const [sequence, setSequence] = useState<Color[]>([])
-  const [playerSequence, setPlayerSequence] = useState<Color[]>([])
-  const [gameState, setGameState] = useState<GameState>("idle")
-  const [level, setLevel] = useState(1)
-  const [score, setScore] = useState(0)
+  const [state, send] = useMachine(gameEngineMachine)
+
+  // Local UI state
   const [activeButton, setActiveButton] = useState<Color | null>(null)
   const [soundEnabled, setSoundEnabled] = useState(true)
-  const [highScore, setHighScore] = useState(0)
-  const [isNewHighScore, setIsNewHighScore] = useState(false)
-  const [continuedThisGame, setContinuedThisGame] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
-  const [sequencesCompleted, setSequencesCompleted] = useState(0)
-  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [inputTimeRemaining, setInputTimeRemaining] = useState<number | null>(null)
   const [buttonPositions, setButtonPositions] = useState<Color[]>([...colors])
   const [isShuffling, setIsShuffling] = useState(false)
-  const [inputTimeRemaining, setInputTimeRemaining] = useState<number | null>(null)
-  const inputCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const scoreRef = useRef(0)
-  const gameResultRecorded = useRef(false)
+  // Refs
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const inputCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
-  const inputTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const buttonPressStartTime = useRef<number | null>(null)
   const inputLocked = useRef(false)
   const testSeed = getTestSeed()
   const seededRng = useRef(testSeed !== null ? mulberry32(testSeed) : null)
+  const scoreRef = useRef(0)
 
   const activeColorMap = options?.theme ? getColorMapForTheme(options.theme) : colorMap
 
   const {
-    initialize,
-    cleanup,
-    playSound,
-    playPreview,
-    playJingle,
-    playGameOverJingle,
-    playHighScoreJingle,
-    startContinuousSound,
-    stopContinuousSoundWithFade,
-  } = useAudioTones(
-    activeColorMap,
-    soundEnabled,
-    options?.oscillatorType,
-    options?.onAudioContextRecycle,
-  )
+    initialize, cleanup, playSound, playPreview, playJingle, playGameOverJingle,
+    playHighScoreJingle, startContinuousSound, stopContinuousSoundWithFade,
+  } = useAudioTones(activeColorMap, soundEnabled, options?.oscillatorType, options?.onAudioContextRecycle)
 
-  // --- Timeout management (fixes orphaned timer bug) ---
+  const ctx = state.context
+  const gameState = toPublicState(state.value as string)
+  const mode = ctx.mode
+
+  // Keep scoreRef in sync for timer callbacks
+  useEffect(() => { scoreRef.current = ctx.score }, [ctx.score])
+
+  // --- Timeout management ---
 
   function addTimeout(fn: () => void, ms: number) {
-    const id = setTimeout(() => {
-      timeoutsRef.current.delete(id)
-      fn()
-    }, ms)
+    const id = setTimeout(() => { timeoutsRef.current.delete(id); fn() }, ms)
     timeoutsRef.current.add(id)
     return id
   }
 
   function clearAllTimeouts() {
-    for (const id of timeoutsRef.current) {
-      clearTimeout(id)
-    }
+    for (const id of timeoutsRef.current) clearTimeout(id)
     timeoutsRef.current.clear()
-    if (inputTimeoutRef.current) {
-      clearTimeout(inputTimeoutRef.current)
-      inputTimeoutRef.current = null
-    }
-    if (inputCountdownRef.current) {
-      clearInterval(inputCountdownRef.current)
-      inputCountdownRef.current = null
-    }
+    if (inputCountdownRef.current) { clearInterval(inputCountdownRef.current); inputCountdownRef.current = null }
     setInputTimeRemaining(null)
   }
 
-  // --- Sequence generation (seeded or random) ---
-
-  function getNextColorIndex(_sequencePosition: number): number {
-    if (seededRng.current) {
-      return Math.floor(seededRng.current() * colors.length)
-    }
-    return Math.floor(Math.random() * colors.length)
+  function getNextColorIndex(): number {
+    return seededRng.current ? Math.floor(seededRng.current() * colors.length) : Math.floor(Math.random() * colors.length)
   }
 
   // --- Persistence ---
 
   function loadHighScore() {
     const saved = loadString(highScoreKey(mode))
-    setHighScore(saved ? parseInt(saved, 10) : 0)
+    send({ type: "SET_HIGH_SCORE", highScore: saved ? parseInt(saved, 10) : 0 })
   }
 
-  function saveHighScore(newScore: number) {
-    saveString(highScoreKey(mode), newScore.toString())
-  }
+  function saveHighScore(s: number) { saveString(highScoreKey(mode), s.toString()) }
 
   function saveDailyResult(finalScore: number) {
     const todayKey = getTodayKey()
     const bestKey = `${DAILY_PREFIX}${todayKey}:bestScore`
     const currentBest = parseInt(loadString(bestKey) ?? "0", 10)
-    if (finalScore > currentBest) {
-      saveString(bestKey, finalScore.toString())
-    }
+    if (finalScore > currentBest) saveString(bestKey, finalScore.toString())
 
     const lastPlayed = loadString(DAILY_LAST_PLAYED) ?? ""
-    const yesterday = new Date()
-    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1)
     const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`
 
     if (lastPlayed === yesterdayKey) {
@@ -259,118 +200,19 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       const newStreak = streak + 1
       saveString(DAILY_CURRENT_STREAK, newStreak.toString())
       const longestStreak = parseInt(loadString(STATS_LONGEST_STREAK) ?? "0", 10)
-      if (newStreak > longestStreak) {
-        saveString(STATS_LONGEST_STREAK, newStreak.toString())
-      }
+      if (newStreak > longestStreak) saveString(STATS_LONGEST_STREAK, newStreak.toString())
     } else if (lastPlayed !== todayKey) {
       saveString(DAILY_CURRENT_STREAK, "1")
       const longestStreak = parseInt(loadString(STATS_LONGEST_STREAK) ?? "0", 10)
-      if (longestStreak === 0) {
-        saveString(STATS_LONGEST_STREAK, "1")
-      }
+      if (longestStreak === 0) saveString(STATS_LONGEST_STREAK, "1")
     }
-
     saveString(DAILY_LAST_PLAYED, todayKey)
   }
 
-  // --- Init + cleanup ---
-
-  useEffect(() => {
-    scoreRef.current = score
-  }, [score])
-
-  useEffect(() => {
-    loadHighScore()
-  }, [mode])
-
-  useEffect(() => {
-    initialize()
-    loadHighScore()
-
-    return () => {
-      clearAllTimeouts()
-      stopTimer()
-      cleanup()
-    }
-  }, [])
-
-  // --- Game logic ---
-
-  function flashButton(color: Color, duration: number) {
-    setActiveButton(color)
-    playSound(color, duration)
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-
-    addTimeout(() => {
-      setActiveButton(null)
-    }, duration)
-  }
-
-  function showSequence(seq: Color[], currentLevel: number) {
-    setGameState("showing")
-    const toneDuration = getToneDuration(currentLevel)
-    const interval = getSequenceInterval(currentLevel)
-    // Ensure an 80ms visual gap between flashes so consecutive same-color
-    // notes produce a visible "off" frame even at high speeds.
-    const MIN_GAP = 80
-    const flashDuration = Math.min(toneDuration, interval - MIN_GAP)
-
-    seq.forEach((color, index) => {
-      addTimeout(
-        () => {
-          flashButton(color, flashDuration)
-
-          if (index === seq.length - 1) {
-            addTimeout(() => {
-              setGameState("waiting")
-              if (mode !== "timed") {
-                if (inputTimeoutRef.current) clearTimeout(inputTimeoutRef.current)
-                if (inputCountdownRef.current) clearInterval(inputCountdownRef.current)
-                const totalMs = getInputTimeout(seq.length)
-                const startTime = Date.now()
-                setInputTimeRemaining(null)
-                inputCountdownRef.current = setInterval(() => {
-                  const elapsed = Date.now() - startTime
-                  const remaining = Math.ceil((totalMs - elapsed) / 1000)
-                  if (remaining <= 5 && remaining > 0) {
-                    setInputTimeRemaining(remaining)
-                  }
-                }, 200)
-                inputTimeoutRef.current = setTimeout(() => {
-                  inputTimeoutRef.current = null
-                  if (inputCountdownRef.current) {
-                    clearInterval(inputCountdownRef.current)
-                    inputCountdownRef.current = null
-                  }
-                  setInputTimeRemaining(null)
-                  setGameState("gameover")
-                  stopTimer()
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-                  const currentScore = scoreRef.current
-                  if (currentScore > highScore) {
-                    setHighScore(currentScore)
-                    setIsNewHighScore(true)
-                    saveHighScore(currentScore)
-                  }
-                  if (!gameResultRecorded.current) {
-                    gameResultRecorded.current = true
-                    recordGameResult(currentScore)
-                  }
-                }, totalMs)
-              }
-            }, flashDuration + 100)
-          }
-        },
-        (index + 1) * interval,
-      )
-    })
-  }
+  // --- Timers ---
 
   function stopTimer() {
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current)
-      timerIntervalRef.current = null
-    }
+    if (timerIntervalRef.current) { clearInterval(timerIntervalRef.current); timerIntervalRef.current = null }
     setTimeRemaining(null)
   }
 
@@ -379,271 +221,222 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     setTimeRemaining(durationSec)
     const startTime = Date.now()
     timerIntervalRef.current = setInterval(() => {
-      const elapsedMs = Date.now() - startTime
-      const remaining = durationSec - elapsedMs / 1000
+      const remaining = durationSec - (Date.now() - startTime) / 1000
       if (remaining <= 0) {
-        stopTimer()
-        clearAllTimeouts()
-        setGameState("gameover")
+        stopTimer(); clearAllTimeouts()
+        send({ type: "TIMER_EXPIRED" })
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-
-        const currentScore = scoreRef.current
-        if (currentScore > highScore) {
-          setHighScore(currentScore)
-          setIsNewHighScore(true)
-          saveHighScore(currentScore)
-        }
-        if (!gameResultRecorded.current) {
-          gameResultRecorded.current = true
-          recordGameResult(currentScore)
-        }
+        handleGameOverSideEffects()
       } else {
         setTimeRemaining(remaining)
       }
     }, 100)
   }
 
+  function handleGameOverSideEffects() {
+    const sc = scoreRef.current
+    if (sc > ctx.highScore) saveHighScore(sc)
+    if (!ctx.gameResultRecorded) recordGameResult(sc)
+    if (mode === "daily") saveDailyResult(sc)
+  }
+
+  // --- Sequence playback ---
+
+  function flashButton(color: Color, duration: number) {
+    setActiveButton(color)
+    playSound(color, duration)
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    addTimeout(() => setActiveButton(null), duration)
+  }
+
+  function showSequence(seq: Color[], currentLevel: number) {
+    const toneDuration = getToneDuration(currentLevel)
+    const interval = getSequenceInterval(currentLevel)
+    const flashDuration = Math.min(toneDuration, interval - 80)
+
+    seq.forEach((color, index) => {
+      addTimeout(() => {
+        flashButton(color, flashDuration)
+        if (index === seq.length - 1) {
+          addTimeout(() => {
+            send({ type: "SEQUENCE_DONE" })
+            if (mode !== "timed") {
+              const totalMs = getInputTimeout(seq.length)
+              const startTime = Date.now()
+              setInputTimeRemaining(null)
+              inputCountdownRef.current = setInterval(() => {
+                const elapsed = Date.now() - startTime
+                const remaining = Math.ceil((totalMs - elapsed) / 1000)
+                if (remaining <= 5 && remaining > 0) setInputTimeRemaining(remaining)
+                else if (remaining <= 0) {
+                  if (inputCountdownRef.current) { clearInterval(inputCountdownRef.current); inputCountdownRef.current = null }
+                  setInputTimeRemaining(null)
+                }
+              }, 200)
+            }
+          }, flashDuration + 100)
+        }
+      }, (index + 1) * interval)
+    })
+  }
+
   function animateShuffleSequence(currentLevel: number): number {
     const steps = pickShuffleSequence(currentLevel, buttonPositions)
     const stepDelay = getShuffleStepDelay(currentLevel)
-
     setIsShuffling(true)
-
     steps.forEach((step, i) => {
       addTimeout(() => {
         setButtonPositions(step)
-
-        if (i === steps.length - 1) {
-          addTimeout(() => {
-            setIsShuffling(false)
-          }, stepDelay)
-        }
+        if (i === steps.length - 1) addTimeout(() => setIsShuffling(false), stepDelay)
       }, i * stepDelay)
     })
-
-    // Total duration: steps * stepDelay + final settle delay
     return steps.length * stepDelay + stepDelay
   }
 
-  function startGame() {
-    clearAllTimeouts()
-    stopTimer()
-    inputLocked.current = false
-    if (mode === "daily") {
-      seededRng.current = mulberry32(getDailySeed())
-    } else if (testSeed !== null) {
-      seededRng.current = mulberry32(testSeed)
-    } else {
-      seededRng.current = null
-    }
-    setSequence([])
-    setPlayerSequence([])
-    setLevel(1)
-    setScore(0)
-    setGameState("idle")
-    setIsNewHighScore(false)
-    setContinuedThisGame(false)
-    gameResultRecorded.current = false
-    setSequencesCompleted(0)
-    setButtonPositions([...colors])
-    setIsShuffling(false)
+  // --- Init ---
 
-    if (mode === "timed") {
-      startTimer(60)
+  useEffect(() => {
+    initialize()
+    loadHighScore()
+    return () => { clearAllTimeouts(); stopTimer(); cleanup() }
+  }, [])
+
+  useEffect(() => { loadHighScore() }, [mode])
+
+  // Clean up countdown interval when machine exits waiting (e.g., INPUT_TIMEOUT fires autonomously)
+  useEffect(() => {
+    const sv = state.value as string
+    if (sv !== "waiting" && inputCountdownRef.current) {
+      clearInterval(inputCountdownRef.current)
+      inputCountdownRef.current = null
+      setInputTimeRemaining(null)
     }
+  }, [state.value])
+
+  // --- Public actions ---
+
+  function startGame() {
+    clearAllTimeouts(); stopTimer()
+    inputLocked.current = false
+    setActiveButton(null); setButtonPositions([...colors]); setIsShuffling(false)
+
+    // Seed RNG
+    if (mode === "daily") seededRng.current = mulberry32(getDailySeed())
+    else if (testSeed !== null) seededRng.current = mulberry32(testSeed)
+    else seededRng.current = null
+
+    send({ type: "START" })
+
+    if (mode === "timed") startTimer(60)
 
     addTimeout(() => {
-      const newSequence = [colors[getNextColorIndex(0)]]
-      setSequence(newSequence)
-      showSequence(newSequence, 1)
+      const newSeq = [colors[getNextColorIndex()]]
+      send({ type: "SET_INITIAL_SEQUENCE", sequence: newSeq })
+      showSequence(newSeq, 1)
     }, 500)
   }
 
   function resetGame() {
-    clearAllTimeouts()
-    stopTimer()
+    clearAllTimeouts(); stopTimer()
     inputLocked.current = false
-    setGameState("idle")
-    setSequence([])
-    setPlayerSequence([])
-    setLevel(1)
-    setScore(0)
-    setActiveButton(null)
-    setIsNewHighScore(false)
-    setContinuedThisGame(false)
-    setSequencesCompleted(0)
-    setButtonPositions([...colors])
-    setIsShuffling(false)
-    buttonPressStartTime.current = null
+    setActiveButton(null); setButtonPositions([...colors]); setIsShuffling(false)
+    send({ type: "RESET" })
   }
 
   function endGame() {
-    if (gameState !== "showing" && gameState !== "waiting") return
-    clearAllTimeouts()
-    stopTimer()
+    const sv = state.value as string
+    if (sv !== "showing" && sv !== "waiting") return
+    clearAllTimeouts(); stopTimer()
     inputLocked.current = false
-    setGameState("gameover")
     setActiveButton(null)
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-
-    if (score > highScore) {
-      setHighScore(score)
-      setIsNewHighScore(true)
-      saveHighScore(score)
-    }
-
-    if (!gameResultRecorded.current) {
-      gameResultRecorded.current = true
-      recordGameResult(score)
-    }
-
-    if (mode === "daily") {
-      saveDailyResult(score)
-    }
+    send({ type: "END_GAME" })
+    handleGameOverSideEffects()
   }
 
   function continueGame() {
-    if (gameState !== "gameover") return
+    if (state.value !== "gameover") return
     clearAllTimeouts()
     inputLocked.current = false
-    setContinuedThisGame(true)
-    setIsNewHighScore(false)
-    setPlayerSequence([])
     setActiveButton(null)
+    send({ type: "CONTINUE" })
 
     addTimeout(() => {
-      showSequence(sequence, level)
+      // Replay existing sequence (preserved by setupContinue action)
+      showSequence(ctx.sequence, ctx.level)
+      // Machine transitions starting → showing via SET_INITIAL_SEQUENCE
+      send({ type: "SET_INITIAL_SEQUENCE", sequence: ctx.sequence })
     }, 500)
   }
 
   function handleButtonTouch(color: Color) {
-    if (gameState !== "waiting") {
-      if (gameState === "showing") {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-      }
-      return
-    }
+    if (state.value !== "waiting") return
     if (inputLocked.current) return
     inputLocked.current = true
-    const toneDuration = getToneDuration(level)
 
     buttonPressStartTime.current = Date.now()
     setActiveButton(color)
     startContinuousSound(color)
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-
-    addTimeout(() => {
-      // Ensures minimum duration — cleared on release if held longer
-    }, toneDuration)
   }
 
   function handleButtonRelease(color: Color) {
-    if (gameState !== "waiting") return
-    const toneDuration = getToneDuration(level)
-
-    const currentTime = Date.now()
-    const pressDuration = buttonPressStartTime.current
-      ? currentTime - buttonPressStartTime.current
-      : 0
+    if (state.value !== "waiting") return
+    const toneDuration = getToneDuration(ctx.level)
+    const pressDuration = buttonPressStartTime.current ? Date.now() - buttonPressStartTime.current : 0
 
     if (pressDuration < toneDuration) {
-      const remainingTime = toneDuration - pressDuration
       stopContinuousSoundWithFade(color, 100)
-
-      addTimeout(() => {
-        setActiveButton(null)
-      }, remainingTime)
+      addTimeout(() => setActiveButton(null), toneDuration - pressDuration)
     } else {
       setActiveButton(null)
       stopContinuousSoundWithFade(color, 200)
     }
 
-    const newPlayerSequence = [...playerSequence, color]
-    setPlayerSequence(newPlayerSequence)
-
-    // Clear input timeout and countdown on any tap
-    if (inputTimeoutRef.current) {
-      clearTimeout(inputTimeoutRef.current)
-      inputTimeoutRef.current = null
-    }
-    if (inputCountdownRef.current) {
-      clearInterval(inputCountdownRef.current)
-      inputCountdownRef.current = null
-    }
+    // Clear input countdown
+    if (inputCountdownRef.current) { clearInterval(inputCountdownRef.current); inputCountdownRef.current = null }
     setInputTimeRemaining(null)
 
-    // Wrong move — check for expected color based on mode
-    const expectedIndex =
-      mode === "reverse"
-        ? sequence.length - 1 - (newPlayerSequence.length - 1)
-        : newPlayerSequence.length - 1
-    const expectedColor = sequence[expectedIndex]
+    // Check correctness
+    const newPlayerLen = ctx.playerSequence.length + 1
+    const expectedIndex = mode === "reverse" ? ctx.sequence.length - 1 - (newPlayerLen - 1) : newPlayerLen - 1
+    const expectedColor = ctx.sequence[expectedIndex]
 
     if (color !== expectedColor) {
-      if (mode === "timed") {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-        setPlayerSequence([])
-        addTimeout(() => {
-          showSequence(sequence, level)
-        }, 500)
-        inputLocked.current = false
-        return
-      }
-
-      setGameState("gameover")
-      stopTimer()
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+      send({ type: "WRONG_INPUT" })
 
-      if (score > highScore) {
-        setHighScore(score)
-        setIsNewHighScore(true)
-        saveHighScore(score)
-      }
-
-      if (!gameResultRecorded.current) {
-        gameResultRecorded.current = true
-        recordGameResult(score)
-      }
-
-      if (mode === "daily") {
-        saveDailyResult(score)
+      if (mode === "timed") {
+        // Timed mode: replay after 500ms (machine goes to replaying → showing)
+        // Wrapper triggers showSequence when replaying transitions to showing
+        addTimeout(() => showSequence(ctx.sequence, ctx.level), 500)
+      } else {
+        handleGameOverSideEffects()
       }
       inputLocked.current = false
       return
     }
 
-    // Completed the sequence — advance
-    if (newPlayerSequence.length === sequence.length) {
-      const newScore = score + newPlayerSequence.length * 10
-      const newLevel = level + 1
+    // Correct input
+    const willComplete = newPlayerLen === ctx.sequence.length
+    send({ type: "CORRECT_INPUT", color })
 
-      setScore(newScore)
-      setLevel(newLevel)
-
-      if (mode === "timed") {
-        setSequencesCompleted((prev) => prev + 1)
-      }
-
-      // Brief delay so the last dot renders as filled and button animation settles
+    if (willComplete) {
+      // Advance round — brief pause, then add color and show
       addTimeout(() => {
-        setPlayerSequence([])
-
         if (mode === "chaos") {
-          const shuffleDuration = animateShuffleSequence(newLevel)
-
+          const shuffleDuration = animateShuffleSequence(ctx.level + 1)
           addTimeout(() => {
-            const newSequence = [...sequence]
-            newSequence.push(colors[getNextColorIndex(newSequence.length)])
-            setSequence(newSequence)
-            showSequence(newSequence, newLevel)
+            const newSeq = [...ctx.sequence, colors[getNextColorIndex()]]
+            send({ type: "ADVANCE_COMPLETE", newSequence: newSeq })
+            showSequence(newSeq, ctx.level + 1)
           }, shuffleDuration + 200)
         } else {
           addTimeout(() => {
-            const newSequence = [...sequence]
-            newSequence.push(colors[getNextColorIndex(newSequence.length)])
-            setSequence(newSequence)
-            showSequence(newSequence, newLevel)
-          }, 600)
+            const newSeq = [...ctx.sequence, colors[getNextColorIndex()]]
+            send({ type: "ADVANCE_COMPLETE", newSequence: newSeq })
+            showSequence(newSeq, ctx.level + 1)
+          }, 200)
         }
       }, 400)
     }
@@ -651,24 +444,26 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     inputLocked.current = false
   }
 
-  function toggleSound() {
-    setSoundEnabled((prev) => !prev)
+  function toggleSound() { setSoundEnabled((prev) => !prev) }
+
+  function setModeAction(newMode: GameMode) {
+    send({ type: "SET_MODE", mode: newMode })
   }
 
   return {
     gameState,
-    mode,
-    score,
-    level,
-    highScore,
+    mode: ctx.mode,
+    score: ctx.score,
+    level: ctx.level,
+    highScore: ctx.highScore,
     activeButton,
     soundEnabled,
-    sequence,
-    playerSequence,
-    isNewHighScore,
-    continuedThisGame,
+    sequence: ctx.sequence,
+    playerSequence: ctx.playerSequence,
+    isNewHighScore: ctx.isNewHighScore,
+    continuedThisGame: ctx.continuedThisGame,
     timeRemaining,
-    sequencesCompleted,
+    sequencesCompleted: ctx.sequencesCompleted,
     buttonPositions,
     isShuffling,
     inputTimeRemaining,
@@ -684,6 +479,6 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     playJingle,
     playGameOverJingle,
     playHighScoreJingle,
-    setMode,
+    setMode: setModeAction,
   }
 }
