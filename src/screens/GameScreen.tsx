@@ -44,7 +44,7 @@ import { useGameEngine, colors, type GameMode } from "@/hooks/useGameEngine"
 import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useSoundPack } from "@/hooks/useSoundPack"
-import { useNotifications } from "@/hooks/useNotifications"
+import { useNotifications, shouldShowNotificationPrompt } from "@/hooks/useNotifications"
 import { usePostPBPrompt } from "@/hooks/usePostPBPrompt"
 import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
@@ -139,6 +139,7 @@ export function GameScreen() {
   const [showInitialEntry, setShowInitialEntry] = useState(false)
   const [highlightIndex, setHighlightIndex] = useState<number | undefined>(undefined)
   const pendingGameOver = useRef(false)
+  const leaderboardRecorded = useRef(false)
   const previousHighScoreRef = useRef(highScore)
   const shareCardRef = useRef<ViewShot>(null)
   const [pulsingMode, setPulsingMode] = useState<GameMode | null>(null)
@@ -269,8 +270,9 @@ export function GameScreen() {
         isDaily: mode === "daily",
       })
 
-      // Check if score qualifies for local top 10
-      if (checkIsHighScore(score, mode)) {
+      // Check if score qualifies for local top 10 (guard against duplicate on continue)
+      if (checkIsHighScore(score, mode) && !leaderboardRecorded.current) {
+        leaderboardRecorded.current = true
         pendingGameOver.current = true
         setShowInitialEntry(true)
       }
@@ -280,12 +282,16 @@ export function GameScreen() {
 
     if (prevGameState.current !== "idle" && gameState === "idle") {
       playJingle()
+      if (shouldShowNotificationPrompt()) {
+        router.push("/notifications")
+      }
     }
 
     prevGameState.current = gameState
   }, [gameState])
 
   async function handleStartGame() {
+    leaderboardRecorded.current = false
     previousHighScoreRef.current = highScore
     const adShown = await showInterstitial(level, removeAds)
     if (adShown) {
