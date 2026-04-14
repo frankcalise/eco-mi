@@ -23,6 +23,7 @@ import { AnimatedCountdown } from "@/components/AnimatedCountdown"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
 import { GameButton } from "@/components/GameButton"
 import { GameHeader } from "@/components/GameHeader"
+import { GameStatusBar } from "@/components/GameStatusBar"
 import { ModeItem } from "@/components/ModeItem"
 import { GameOverOverlay } from "@/components/GameOverOverlay"
 import { HighScoreTable } from "@/components/HighScoreTable"
@@ -537,36 +538,12 @@ export function GameScreen() {
         )}
       </View>
 
-      {/* Game Status */}
-      <View style={styles.statusContainer}>
-        {gameState === "showing" && (
-          <Text style={[styles.statusText, { color: activeTheme.secondaryTextColor }]}>{t("game:watchSequence")}</Text>
-        )}
-        {gameState === "waiting" && (
-          <Text style={[styles.statusText, { color: activeTheme.textColor }]}>{t("game:repeatSequence")}</Text>
-        )}
-        <View style={styles.progressRow}>
-          {(gameState === "showing" || gameState === "waiting") &&
-            (sequence.length <= 15 ? (
-              sequence.map((_, i) => (
-                <View
-                  key={i}
-                  style={[
-                    styles.progressDot,
-                    { backgroundColor: activeTheme.borderColor },
-                    gameState === "waiting" &&
-                      i < playerSequence.length &&
-                      styles.progressDotFilled,
-                  ]}
-                />
-              ))
-            ) : (
-              <Text style={[styles.progressFraction, { color: activeTheme.secondaryTextColor }]}>
-                {playerSequence.length}/{sequence.length}
-              </Text>
-            ))}
-        </View>
-      </View>
+      <GameStatusBar
+        gameState={gameState}
+        sequence={sequence}
+        playerSequence={playerSequence}
+        theme={activeTheme}
+      />
 
       {/* Mode Selector Modal */}
       <Modal
@@ -1065,27 +1042,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: "center",
   },
-  progressDot: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 5,
-    height: 10,
-    width: 10,
-  },
-  progressDotFilled: {
-    backgroundColor: "#22c55e",
-  },
-  progressFraction: {
-    color: "#a0a0a0",
-    fontFamily: "Oxanium-Regular",
-    fontSize: 14,
-  },
-  progressRow: {
-    flexDirection: "row",
-    gap: 6,
-    height: 18,
-    justifyContent: "center",
-    marginTop: 8,
-  },
   removeAdsBtn: {
     alignItems: "center",
     backgroundColor: "#8b5cf6",
@@ -1220,16 +1176,6 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 20,
     paddingVertical: 12,
-  },
-  statusContainer: {
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  statusText: {
-    color: "#a0a0a0",
-    fontFamily: "Oxanium-Regular",
-    fontSize: 16,
-    textAlign: "center",
   },
   themeCircle: {
     alignItems: "center",
