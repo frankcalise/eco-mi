@@ -126,6 +126,7 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
       reactCompiler: true,
     },
     extra: {
+      appVariant: process.env.APP_VARIANT ?? "production",
       ignite: {
         version: "11.1.3",
       },

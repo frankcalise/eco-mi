@@ -2,8 +2,6 @@ import { usePostHog } from "posthog-react-native"
 
 type EventProperties = Record<string, string | number | boolean>
 
-const environment = __DEV__ ? "development" : "production"
-
 /**
  * Typed analytics event tracking.
  * Returns capture functions that no-op if PostHog is not configured.
@@ -12,7 +10,7 @@ export function useAnalytics() {
   const posthog = usePostHog()
 
   function capture(event: string, properties?: EventProperties) {
-    posthog?.capture(event, { environment, ...properties })
+    posthog?.capture(event, properties)
   }
 
   return {
