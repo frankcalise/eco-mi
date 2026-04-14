@@ -6,7 +6,12 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 
 ## [Unreleased]
 
+### Fix (v1.1.0)
+- **Audio pops at tone onset** — pre-schedule all sequence tones in one pass using audio-clock offsets (same pattern as jingles). Eliminates JS timer drift and oscillator overlap that caused intermittent pops at high levels.
+- **Duplicate leaderboard entry on rewarded-ad continue** — added `leaderboardRecorded` ref guard. First game-over records to leaderboard; continue + second loss is skipped. Resets on new game.
+
 ### Feat (v1.1.0 Phase C — Retention & Polish)
+- **Notification permission pre-prompt** — full-screen route (`/notifications`) with bell icon, explains daily reminders and streak protection before OS dialog. Shown once on idle after 3+ games. Localized en/es/pt.
 - **First-launch onboarding** — tooltip "Tap the button that lit up!" appears during first waiting state, auto-dismisses after first correct input
 - **Wrong-input juice** — red flash overlay (300ms, EaseView opacity) + error haptic on wrong input across all modes
 - **Game-over emotional arc** — staggered card animation (title/stats/actions), PB delta text ("+X from your previous best!"), near-miss text ("So close! Just X away") when within 5 points, title shows "New High Score!" in warningColor on PB

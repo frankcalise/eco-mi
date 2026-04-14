@@ -69,10 +69,10 @@
 - [x] **Manually test review pre-prompt flow on device**
       The review prompt requires 5+ games played, no ad shown this session, and 30-day cooldown. Temporarily lower `MIN_GAMES_FOR_REVIEW` to 1 and bypass the `adShownThisSession` check to verify the "Love it!" and "Not really" paths work correctly. Verify the "Not really" path opens the feedback channel. Revert thresholds after testing.
 
-- [ ] **Intermittent audio pops/static at tone onset (post-XState refactor)**
+- [x] **Intermittent audio pops/static at tone onset (post-XState refactor)**
       After the B6 XState migration, audio pops reappear intermittently at the start of tones during both sequence playback (`playSound` in `flashButton`) and player input (`startContinuousSound`). Jingles are unaffected (separate audio path). The pops are color-specific — once a frequency channel (e.g., red=220Hz, blue=277Hz) starts popping, it persists for that color while others remain clean. Observed on Pixel 9 Pro (not simulator). `useAudioTones` was not modified in the refactor, but the timing of when `playSound` fires relative to state transitions shifted — the machine transitions first, then the wrapper calls `showSequence` imperatively, vs the old code where `setGameState("showing")` and `showSequence` ran in the same synchronous block. Investigate whether the slight async gap between state transition and first `playSound` call leaves a previous oscillator node undisposed, causing gain discontinuity when the new one starts on the same frequency.
 
-- [ ] **Continue via ad logs duplicate leaderboard entry**
+- [x] **Continue via ad logs duplicate leaderboard entry**
       When a player gets game over with a high score, the score is added to the leaderboard (`useHighScores.addHighScore` called from `GameScreen.tsx` game-over effect). If they continue via rewarded ad and then lose again, a second entry is logged — potentially the same or a different score. Stats are already guarded against double-counting by `gameResultRecorded`, but the leaderboard path in GameScreen fires on every gameover transition. Fix: only log to the leaderboard on the final gameover (skip if `continuedThisGame` is false on the first game-over, or defer logging until the game truly ends). Alternatively, if the continued score is higher, replace the first entry rather than adding a second.
 
 ## Animation Polish
@@ -221,7 +221,7 @@
 - [x] **Localize achievement titles and descriptions**
       All 15 achievement titles ("First Steps", "Triple Digits", etc.) and descriptions in `achievements.ts` are hardcoded English strings, bypassing the i18n system. Move to translation keys so ES/PT users see localized achievements.
 
-- [ ] **Add notification permission pre-prompt screen**
+- [x] **Add notification permission pre-prompt screen**
       Same pattern as the ATT tracking screen — a branded pre-prompt that explains the value before the system dialog fires. Currently `useNotifications` calls `requestPermissionsAsync()` directly after 3 games. Replace with an intermediate screen/modal that explains: "We can remind you to keep your streak alive and never miss your daily challenge." Two buttons: "Enable Reminders" (fires the system prompt) and "Not Now" (skips, marks as asked). Localize for en/es/pt. This increases opt-in rates by setting expectations before the system dialog appears.
 
 - [ ] **Localize iOS permission purpose strings (ATT + microphone)**
