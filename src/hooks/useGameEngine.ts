@@ -148,9 +148,11 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const activeColorMap = options?.theme ? getColorMapForTheme(options.theme) : colorMap
 
   const {
-    initialize, cleanup, playSound, playPreview, playJingle, playGameOverJingle,
-    playHighScoreJingle, startContinuousSound, stopContinuousSoundWithFade,
+    initialize, cleanup, playSound, playSequenceTones, playPreview, playJingle,
+    playGameOverJingle, playHighScoreJingle, startContinuousSound, stopContinuousSoundWithFade,
   } = useAudioTones(activeColorMap, soundEnabled, options?.oscillatorType, options?.onAudioContextRecycle)
+
+  const cancelSequenceAudioRef = useRef<(() => void) | null>(null)
 
   const ctx = state.context
   const gameState = toPublicState(state.value as string)
@@ -172,6 +174,10 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     timeoutsRef.current.clear()
     if (inputCountdownRef.current) { clearInterval(inputCountdownRef.current); inputCountdownRef.current = null }
     setInputTimeRemaining(null)
+    if (cancelSequenceAudioRef.current) {
+      cancelSequenceAudioRef.current()
+      cancelSequenceAudioRef.current = null
+    }
   }
 
   function getNextColorIndex(): number {
@@ -246,7 +252,6 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
   function flashButton(color: Color, duration: number) {
     setActiveButton(color)
-    playSound(color, duration)
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     addTimeout(() => setActiveButton(null), duration)
   }
@@ -255,6 +260,9 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     const toneDuration = getToneDuration(currentLevel)
     const interval = getSequenceInterval(currentLevel)
     const flashDuration = Math.min(toneDuration, interval - 80)
+
+    // Pre-schedule all audio at precise audio-clock times (avoids pops from JS timer drift)
+    cancelSequenceAudioRef.current = playSequenceTones(seq, interval, flashDuration)
 
     seq.forEach((color, index) => {
       addTimeout(() => {

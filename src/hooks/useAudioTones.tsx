@@ -65,6 +65,7 @@ interface AudioTonesHook {
   initialize: () => Promise<void>
   cleanup: () => Promise<void>
   playSound: (color: Color, duration?: number) => void
+  playSequenceTones: (colors: Color[], intervalMs: number, flashDurationMs: number) => (() => void) | null
   playPreview: (overrideType?: OscillatorType) => void
   playJingle: () => void
   playGameOverJingle: () => void
@@ -374,6 +375,75 @@ export function useAudioTones(
     }
   }
 
+  // Pre-schedule all tones for a sequence in one pass using the audio clock.
+  // Avoids the pops caused by scheduling each note at JS-callback time.
+  // Returns a cancel function to silence remaining notes on early exit.
+  function playSequenceTones(
+    colors: Color[],
+    intervalMs: number,
+    flashDurationMs: number,
+  ): (() => void) | null {
+    if (!soundEnabled || !contextReadyRef.current) return null
+
+    trackNodeCount()
+    if (!ensureResumed()) {
+      recreateContext()
+    }
+    try {
+      const ctx = getContext()
+      const master = getMasterGain()
+      if (!ctx || !master) return null
+
+      const seqGain = ctx.createGain()
+      seqGain.gain.setValueAtTime(1.0, ctx.currentTime)
+      seqGain.connect(master)
+
+      const now = ctx.currentTime
+      const intervalS = intervalMs / 1000
+      const durationS = flashDurationMs / 1000
+      const oscillators: OscillatorNode[] = []
+
+      colors.forEach((color, index) => {
+        const noteStart = now + (index + 1) * intervalS
+        const frequency = colorMap[color].sound
+
+        const osc = ctx.createOscillator()
+        const g = ctx.createGain()
+        osc.type = oscillatorType
+        osc.frequency.setValueAtTime(frequency, noteStart)
+        g.gain.setValueAtTime(EPSILON, noteStart)
+        g.gain.exponentialRampToValueAtTime(TARGET_GAIN, noteStart + ATTACK_S)
+        g.gain.exponentialRampToValueAtTime(EPSILON, noteStart + durationS)
+        osc.connect(g)
+        g.connect(seqGain)
+        osc.start(noteStart)
+        osc.stop(noteStart + durationS + 0.02)
+        nodeCountRef.current += 1
+        oscillators.push(osc)
+      })
+
+      const totalS = (colors.length + 1) * intervalS + durationS + 0.05
+      const cleanupTimer = setTimeout(() => {
+        try { seqGain.disconnect() } catch {}
+      }, totalS * 1000)
+
+      return () => {
+        try {
+          const t = ctx.currentTime
+          seqGain.gain.setTargetAtTime(0, t, 0.01)
+          for (const osc of oscillators) {
+            try { osc.stop(t + 0.05) } catch {}
+          }
+          clearTimeout(cleanupTimer)
+          setTimeout(() => { try { seqGain.disconnect() } catch {} }, 100)
+        } catch {}
+      }
+    } catch {
+      recreateContext()
+      return null
+    }
+  }
+
   // Used by the player on touch — SYNCHRONOUS node creation, no async race
   function startContinuousSound(color: Color) {
     if (!soundEnabled || !contextReadyRef.current) return
@@ -536,6 +606,7 @@ export function useAudioTones(
     initialize,
     cleanup,
     playSound,
+    playSequenceTones,
     playPreview,
     playJingle,
     playGameOverJingle,

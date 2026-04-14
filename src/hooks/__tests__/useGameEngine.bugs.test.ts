@@ -7,6 +7,7 @@ jest.mock("@/hooks/useAudioTones", () => ({
     initialize: jest.fn().mockResolvedValue(undefined),
     cleanup: jest.fn().mockResolvedValue(undefined),
     playSound: jest.fn(),
+    playSequenceTones: jest.fn().mockReturnValue(null),
     startContinuousSound: jest.fn(),
     stopContinuousSoundWithFade: jest.fn(),
   }),
