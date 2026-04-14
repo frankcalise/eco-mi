@@ -69,6 +69,12 @@
 - [x] **Manually test review pre-prompt flow on device**
       The review prompt requires 5+ games played, no ad shown this session, and 30-day cooldown. Temporarily lower `MIN_GAMES_FOR_REVIEW` to 1 and bypass the `adShownThisSession` check to verify the "Love it!" and "Not really" paths work correctly. Verify the "Not really" path opens the feedback channel. Revert thresholds after testing.
 
+- [ ] **Intermittent audio pops/static at tone onset (post-XState refactor)**
+      After the B6 XState migration, audio pops reappear intermittently at the start of tones during both sequence playback (`playSound` in `flashButton`) and player input (`startContinuousSound`). Jingles are unaffected (separate audio path). The pops are color-specific — once a frequency channel (e.g., red=220Hz, blue=277Hz) starts popping, it persists for that color while others remain clean. Observed on Pixel 9 Pro (not simulator). `useAudioTones` was not modified in the refactor, but the timing of when `playSound` fires relative to state transitions shifted — the machine transitions first, then the wrapper calls `showSequence` imperatively, vs the old code where `setGameState("showing")` and `showSequence` ran in the same synchronous block. Investigate whether the slight async gap between state transition and first `playSound` call leaves a previous oscillator node undisposed, causing gain discontinuity when the new one starts on the same frequency.
+
+- [ ] **Continue via ad logs duplicate leaderboard entry**
+      When a player gets game over with a high score, the score is added to the leaderboard (`useHighScores.addHighScore` called from `GameScreen.tsx` game-over effect). If they continue via rewarded ad and then lose again, a second entry is logged — potentially the same or a different score. Stats are already guarded against double-counting by `gameResultRecorded`, but the leaderboard path in GameScreen fires on every gameover transition. Fix: only log to the leaderboard on the final gameover (skip if `continuedThisGame` is false on the first game-over, or defer logging until the game truly ends). Alternatively, if the continued score is higher, replace the first entry rather than adding a second.
+
 ## Animation Polish
 
 - [x] **Chaos mode: animated shuffle sequences (shell game style)**
@@ -595,7 +601,7 @@ These compound: do them before the retention work so the Phase C additions slot 
 - [x] **Add semantic color tokens to `GameTheme` and migrate hardcoded literals**
       32 hex literals across 7 files (e.g., `#22c55e`, `#ef4444`, `#fbbf24`) bypass the theme. `ReviewPrompt.tsx` is actually broken on the Pastel theme because `rgba(255,255,255,0.5)` becomes white-on-lavender. Add `accentColor`, `destructiveColor`, `successColor`, `warningColor` to `src/config/themes.ts` and replace literals in `GameOverOverlay.tsx`, `ReviewPrompt.tsx`, and `GameScreen.tsx`. Priority files first: the two overlays users see most.
 
-- [ ] **Adopt XState for `useGameEngine` state machine**
+- [x] **Adopt XState for `useGameEngine` state machine**
       `src/hooks/__tests__/useGameEngine.bugs.test.ts` already documents 3 bugs caused by invalid state combinations (stale `isNewHighScore` after continue, input timeout only gated in timed mode, button presses during `showing` trigger haptics but no effect). XState scoped to the game engine would enforce transitions and eliminate this class of bug. Keep hooks for ads/stats/theme — don't globalize. States: `idle → showing → waiting → {gameOver, continuing}`. Entry/exit handlers own timer cleanup and sound/haptic side effects. Est. 2-3 days.
 
 - [x] **Consolidate storage keys into `src/config/storageKeys.ts`**

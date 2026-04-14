@@ -6,6 +6,25 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 
 ## [Unreleased]
 
+### Refactor (v1.1.0 Phase B — Code Foundation)
+- **XState game engine** — replaced bare `useState<GameState>` with XState v5 state machine (`gameEngineMachine.ts`). Enforces valid transitions declaratively; machine states `idle → starting → showing → waiting → advancing → gameover` with `replaying` for timed-mode wrong-input. Internal states map to the existing public API — no consumer changes. Mermaid state diagram at `docs/game-engine-states.md`.
+- **GameScreen split** — 1526 → 806 lines. Extracted `ModeItem`, `GameHeader` (with neon cycling state), `GameStatusBar`, `GameSettingsModal` (290 lines, owns its own hooks).
+- **Semantic color tokens** — added `accentColor`, `destructiveColor`, `warningColor`, `linkColor` to `GameTheme`. Migrated `GameOverOverlay` and `ReviewPrompt` from hardcoded hex values. Fixed invisible text on Pastel theme.
+- **ModalOverlay component** — shared backdrop + card + EaseView spring animation. Adopted by `ReviewPrompt`.
+- **Storage keys consolidation** — 25+ MMKV key constants centralized in `src/config/storageKeys.ts`, replacing inline strings across 15 files.
+- **ThemeProvider memo cleanup** — removed 5 redundant `useMemo`/`useCallback` wrappers (React Compiler handles these).
+
+### Feat (v1.1.0 Phase A — Signal & Telemetry)
+- **PostHog device context** — installed `expo-application`, `expo-device`, `expo-file-system`. All events now carry `$app_version`, `$os_name`, `$device_model`, etc.
+- **PostHog identify** — stable anonymous device ID (MMKV + nanoid), person properties: `firstSeenAt`, `preferredLocale`, `themeMode`, `hasPurchasedPremium`.
+- **Super properties** — `environment` and `appVariant` on every event (including SDK-emitted events like `$screen`).
+- **Route tracking** — `RouteTracker` component emits `posthog.screen()` on expo-router navigation, registers `$pathname` as super property.
+- **expo-insights** — installed for Expo dashboard update adoption telemetry.
+
+### Fix (v1.0.1)
+- Remove duplicate `@react-navigation/native` causing crash on launch — two copies of `@react-navigation/core` created mismatched PreventRemoveContext
+- Resolve App Store ATT rejection (5.1.1(v)) — added `NSUserTrackingUsageDescription` purpose string, collapsed pre-prompt to single "Continue" button that always fires the system ATT dialog
+
 ### Fix
 - `isNewHighScore` flag now resets when using rewarded ad continue — previously showed the high score celebration a second time on the subsequent game-over
 - Added input timeout to "waiting" state — players can no longer idle indefinitely mid-sequence. After `sequenceLength * 2000ms` with no input, the game ends. Timer clears on any button tap.
