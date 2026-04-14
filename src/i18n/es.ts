@@ -148,6 +148,10 @@ const es = {
     dailyReminder: "¡Hora de tu desafío de memoria diario!",
     streakAtRisk: "¡No pierdas tu racha de {{count}} días! Juega hoy.",
     winBack: "¡Te echamos de menos! Tus habilidades de memoria se están oxidando.",
+    prePromptTitle: "No te pierdas nada",
+    prePromptBody: "Recibe recordatorios de desafíos diarios, alertas para proteger tu racha y motivación para mantener tu memoria en forma.",
+    enableReminders: "Activar recordatorios",
+    notNow: "Ahora no",
   },
   iap: {
     postPBTitle: "¡Nueva Mejor Marca!",

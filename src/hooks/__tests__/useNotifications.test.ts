@@ -26,10 +26,9 @@ jest.mock("react-i18next", () => ({
 }))
 
 // eslint-disable-next-line import/first
-import { useNotifications } from "../useNotifications"
+import { useNotifications, shouldShowNotificationPrompt } from "../useNotifications"
 
 const mockGetPermissions = Notifications.getPermissionsAsync as jest.Mock
-const mockRequestPermissions = Notifications.requestPermissionsAsync as jest.Mock
 const mockCancel = Notifications.cancelAllScheduledNotificationsAsync as jest.Mock
 const mockSchedule = Notifications.scheduleNotificationAsync as jest.Mock
 
@@ -40,7 +39,6 @@ beforeEach(() => {
   jest.clearAllMocks()
 
   mockGetPermissions.mockResolvedValue({ status: "granted" })
-  mockRequestPermissions.mockResolvedValue({ status: "granted" })
   mockCancel.mockResolvedValue(undefined)
   mockSchedule.mockResolvedValue("notification-id")
 })
@@ -53,25 +51,34 @@ function todayKey() {
   return "2026-04-14"
 }
 
-describe("useNotifications", () => {
-  it("does not request permission when gamesPlayed < 3", async () => {
+describe("shouldShowNotificationPrompt", () => {
+  it("returns false when gamesPlayed < 3", () => {
     storage.set(STATS_GAMES_PLAYED, "2")
-
-    renderHook(() => useNotifications())
-    await act(async () => {})
-
-    expect(mockRequestPermissions).not.toHaveBeenCalled()
-    expect(mockGetPermissions).not.toHaveBeenCalled()
+    expect(shouldShowNotificationPrompt()).toBe(false)
   })
 
-  it("requests permission after 3+ games when not previously asked", async () => {
+  it("returns true when gamesPlayed >= 3 and not previously asked", () => {
     storage.set(STATS_GAMES_PLAYED, "5")
+    expect(shouldShowNotificationPrompt()).toBe(true)
+  })
+
+  it("returns false when already asked", () => {
+    storage.set(STATS_GAMES_PLAYED, "10")
+    storage.set(NOTIFICATIONS_PERMISSION_ASKED, "true")
+    expect(shouldShowNotificationPrompt()).toBe(false)
+  })
+})
+
+describe("useNotifications", () => {
+  it("does not schedule when permission not previously granted", async () => {
+    storage.set(STATS_GAMES_PLAYED, "5")
+    // Not asked yet — hook won't request, just checks
 
     renderHook(() => useNotifications())
     await act(async () => {})
 
-    expect(mockRequestPermissions).toHaveBeenCalled()
-    expect(storage.getString(NOTIFICATIONS_PERMISSION_ASKED)).toBe("true")
+    expect(mockGetPermissions).not.toHaveBeenCalled()
+    expect(mockSchedule).not.toHaveBeenCalled()
   })
 
   it("checks existing permission if already asked", async () => {
@@ -82,11 +89,10 @@ describe("useNotifications", () => {
     await act(async () => {})
 
     expect(mockGetPermissions).toHaveBeenCalled()
-    expect(mockRequestPermissions).not.toHaveBeenCalled()
   })
 
   it("cancels all existing notifications before scheduling", async () => {
-    storage.set(STATS_GAMES_PLAYED, "5")
+    storage.set(NOTIFICATIONS_PERMISSION_ASKED, "true")
 
     renderHook(() => useNotifications())
     await act(async () => {})
@@ -95,8 +101,7 @@ describe("useNotifications", () => {
   })
 
   it("schedules daily reminder at 19:00 if not played today (before 19:00)", async () => {
-    storage.set(STATS_GAMES_PLAYED, "5")
-    // No DAILY_LAST_PLAYED set — not played today
+    storage.set(NOTIFICATIONS_PERMISSION_ASKED, "true")
 
     renderHook(() => useNotifications())
     await act(async () => {})
@@ -112,7 +117,7 @@ describe("useNotifications", () => {
   })
 
   it("skips daily reminder if already played today", async () => {
-    storage.set(STATS_GAMES_PLAYED, "5")
+    storage.set(NOTIFICATIONS_PERMISSION_ASKED, "true")
     storage.set(DAILY_LAST_PLAYED, todayKey())
 
     renderHook(() => useNotifications())
@@ -126,7 +131,7 @@ describe("useNotifications", () => {
 
   it("skips daily reminder if after 19:00", async () => {
     jest.setSystemTime(new Date("2026-04-14T20:00:00"))
-    storage.set(STATS_GAMES_PLAYED, "5")
+    storage.set(NOTIFICATIONS_PERMISSION_ASKED, "true")
 
     renderHook(() => useNotifications())
     await act(async () => {})
@@ -138,7 +143,7 @@ describe("useNotifications", () => {
   })
 
   it("schedules streak-save at 10:00 tomorrow if streak active and played today", async () => {
-    storage.set(STATS_GAMES_PLAYED, "5")
+    storage.set(NOTIFICATIONS_PERMISSION_ASKED, "true")
     storage.set(DAILY_CURRENT_STREAK, "5")
     storage.set(DAILY_LAST_PLAYED, todayKey())
 
@@ -157,9 +162,8 @@ describe("useNotifications", () => {
   })
 
   it("skips streak-save if no active streak", async () => {
-    storage.set(STATS_GAMES_PLAYED, "5")
+    storage.set(NOTIFICATIONS_PERMISSION_ASKED, "true")
     storage.set(DAILY_LAST_PLAYED, todayKey())
-    // No streak set (defaults to 0)
 
     renderHook(() => useNotifications())
     await act(async () => {})
@@ -172,7 +176,7 @@ describe("useNotifications", () => {
   })
 
   it("always schedules win-back notification 3 days out", async () => {
-    storage.set(STATS_GAMES_PLAYED, "5")
+    storage.set(NOTIFICATIONS_PERMISSION_ASKED, "true")
 
     renderHook(() => useNotifications())
     await act(async () => {})
@@ -188,7 +192,7 @@ describe("useNotifications", () => {
   })
 
   it("rescheduleAfterGameOver triggers new scheduling", async () => {
-    storage.set(STATS_GAMES_PLAYED, "5")
+    storage.set(NOTIFICATIONS_PERMISSION_ASKED, "true")
 
     const { result } = renderHook(() => useNotifications())
     await act(async () => {})

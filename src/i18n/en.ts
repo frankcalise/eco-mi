@@ -148,6 +148,10 @@ const en = {
     dailyReminder: "Time for your daily memory challenge!",
     streakAtRisk: "Don't lose your {{count}}-day streak! Play today.",
     winBack: "We miss you! Your memory skills are getting rusty.",
+    prePromptTitle: "Never Miss a Beat",
+    prePromptBody: "Get daily challenge reminders, streak protection alerts, and gentle nudges to keep your memory sharp.",
+    enableReminders: "Enable Reminders",
+    notNow: "Not Now",
   },
   iap: {
     postPBTitle: "New Personal Best!",

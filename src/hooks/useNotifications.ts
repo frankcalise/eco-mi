@@ -27,27 +27,26 @@ function getTodayKey(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
 }
 
+export function shouldShowNotificationPrompt(): boolean {
+  const asked = loadString(NOTIFICATIONS_PERMISSION_ASKED)
+  if (asked === "true") return false
+  const gamesPlayed = parseInt(loadString(STATS_GAMES_PLAYED) ?? "0", 10)
+  return gamesPlayed >= MIN_GAMES_BEFORE_ASK
+}
+
 export function useNotifications() {
   const { t } = useTranslation()
   const scheduled = useRef(false)
 
-  async function requestPermissionIfNeeded(): Promise<boolean> {
+  async function checkExistingPermission(): Promise<boolean> {
     const asked = loadString(NOTIFICATIONS_PERMISSION_ASKED)
-    if (asked === "true") {
-      const { status } = await Notifications.getPermissionsAsync()
-      return status === "granted"
-    }
-
-    const gamesPlayed = parseInt(loadString(STATS_GAMES_PLAYED) ?? "0", 10)
-    if (gamesPlayed < MIN_GAMES_BEFORE_ASK) return false
-
-    saveString(NOTIFICATIONS_PERMISSION_ASKED, "true")
-    const { status } = await Notifications.requestPermissionsAsync()
+    if (asked !== "true") return false
+    const { status } = await Notifications.getPermissionsAsync()
     return status === "granted"
   }
 
   async function scheduleNotifications() {
-    const granted = await requestPermissionIfNeeded()
+    const granted = await checkExistingPermission()
     if (!granted) return
 
     await Notifications.cancelAllScheduledNotificationsAsync()
