@@ -22,6 +22,7 @@ import { AchievementToast } from "@/components/AchievementToast"
 import { AnimatedCountdown } from "@/components/AnimatedCountdown"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
 import { GameButton } from "@/components/GameButton"
+import { ModeItem } from "@/components/ModeItem"
 import { GameOverOverlay } from "@/components/GameOverOverlay"
 import { HighScoreTable } from "@/components/HighScoreTable"
 import { InitialEntryModal } from "@/components/InitialEntryModal"
@@ -55,69 +56,6 @@ const GAME_MODES: { id: GameMode; label: string; icon: keyof typeof Ionicons.gly
 const PULSE_DURATION = 150
 const PULSE_COUNT = 3
 const DISMISS_DELAY = 200
-
-function ModeItem({
-  m,
-  isSelected,
-  isPulsing,
-  pulsePhase,
-  streak,
-  theme,
-  onPress,
-}: {
-  m: (typeof GAME_MODES)[number]
-  isSelected: boolean
-  isPulsing: boolean
-  pulsePhase: "bright" | "dim"
-  streak: number
-  theme: { textColor: string; secondaryTextColor: string; borderColor: string }
-  onPress: () => void
-}) {
-  const { t } = useTranslation()
-
-  const pulseBright = isPulsing && pulsePhase === "bright"
-  const showGreen = isSelected || pulseBright
-
-  return (
-    <Pressable testID={`btn-mode-${m.id}`} onPress={onPress}>
-      <EaseView
-        animate={{
-          scale: pulseBright ? 1.03 : 1,
-          backgroundColor: pulseBright
-            ? "rgba(34, 197, 94, 0.25)"
-            : isSelected
-              ? "rgba(34, 197, 94, 0.1)"
-              : "rgba(0, 0, 0, 0)",
-        }}
-        transition={{
-          default: { type: "timing", duration: PULSE_DURATION, easing: "easeOut" },
-        }}
-        style={[styles.modeItem, { borderColor: showGreen ? "#22c55e" : theme.borderColor }]}
-      >
-        <Ionicons
-          name={m.icon}
-          size={22}
-          color={showGreen ? "#22c55e" : theme.secondaryTextColor}
-        />
-        <View style={styles.modeItemText}>
-          <Text style={[styles.modeItemLabel, { color: showGreen ? "#22c55e" : theme.textColor }]}>
-            {t(`game:modes.${m.id}`)}
-            {m.id === "daily" && streak > 0 ? ` (${streak}d)` : ""}
-          </Text>
-          <Text style={[styles.modeItemDesc, { color: theme.secondaryTextColor }]}>
-            {t(`game:modeDescriptions.${m.id}`)}
-          </Text>
-        </View>
-        <EaseView
-          animate={{ opacity: isSelected ? 1 : 0, scale: isSelected ? 1 : 0.5 }}
-          transition={{ default: { type: "spring", stiffness: 400, damping: 15 } }}
-        >
-          <Ionicons name="checkmark-circle" size={22} color="#22c55e" />
-        </EaseView>
-      </EaseView>
-    </Pressable>
-  )
-}
 
 export function GameScreen() {
   const { t } = useTranslation()
@@ -771,7 +709,7 @@ export function GameScreen() {
               return (
                 <ModeItem
                   key={m.id}
-                  m={m}
+                  mode={m}
                   isSelected={mode === m.id}
                   isPulsing={pulsingMode === m.id}
                   pulsePhase={pulsePhase}
@@ -1269,28 +1207,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 2,
     textTransform: "uppercase",
-  },
-  modeItem: {
-    alignItems: "center",
-    borderRadius: 10,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  modeItemDesc: {
-    fontFamily: "Oxanium-Regular",
-    fontSize: 12,
-    marginTop: 2,
-  },
-  modeItemLabel: {
-    fontFamily: "Oxanium-SemiBold",
-    fontSize: 15,
-  },
-  modeItemText: {
-    flex: 1,
   },
   progressDot: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
