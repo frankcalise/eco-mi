@@ -589,22 +589,22 @@ Unblock learning from the 1.0.1 launch. All three items live in **Tech Debt** ab
 
 These compound: do them before the retention work so the Phase C additions slot into a clean house instead of adding to the sprawl.
 
-- [ ] **Split `GameScreen.tsx` (~1500 lines) into focused components**
+- [x] **Split `GameScreen.tsx` (~1500 lines) into focused components**
       Clean extraction seams already exist in the file. Extract `GameModeSelector` (ModeItem + Mode modal ~58-115, ~746-803), `GameSettingsPanel` (~787-1077), `GameHeader` + Status row (~446-713), leaving the screen as composition + state wiring (~800 lines). Required before xstate migration — passing 13 props into `GameOverOverlay` is a smell that gets worse as we add retention features.
 
-- [ ] **Add semantic color tokens to `GameTheme` and migrate hardcoded literals**
+- [x] **Add semantic color tokens to `GameTheme` and migrate hardcoded literals**
       32 hex literals across 7 files (e.g., `#22c55e`, `#ef4444`, `#fbbf24`) bypass the theme. `ReviewPrompt.tsx` is actually broken on the Pastel theme because `rgba(255,255,255,0.5)` becomes white-on-lavender. Add `accentColor`, `destructiveColor`, `successColor`, `warningColor` to `src/config/themes.ts` and replace literals in `GameOverOverlay.tsx`, `ReviewPrompt.tsx`, and `GameScreen.tsx`. Priority files first: the two overlays users see most.
 
 - [ ] **Adopt XState for `useGameEngine` state machine**
       `src/hooks/__tests__/useGameEngine.bugs.test.ts` already documents 3 bugs caused by invalid state combinations (stale `isNewHighScore` after continue, input timeout only gated in timed mode, button presses during `showing` trigger haptics but no effect). XState scoped to the game engine would enforce transitions and eliminate this class of bug. Keep hooks for ads/stats/theme — don't globalize. States: `idle → showing → waiting → {gameOver, continuing}`. Entry/exit handlers own timer cleanup and sound/haptic side effects. Est. 2-3 days.
 
-- [ ] **Consolidate storage keys into `src/config/storageKeys.ts`**
+- [x] **Consolidate storage keys into `src/config/storageKeys.ts`**
       MMKV keys are scattered across `useAds.ts`, `usePurchases.ts`, `useGameEngine.ts`, `useStats.ts`, and the tracking screen. Centralize all `"ecomi:*"` keys as exported constants so schema changes are atomic and tests reference the same source of truth.
 
-- [ ] **Extract shared `ModalOverlay` component**
+- [x] **Extract shared `ModalOverlay` component**
       `ReviewPrompt.tsx`, `GameOverOverlay.tsx`, and the Settings/Mode/Leaderboard modals in `GameScreen.tsx` repeat the backdrop + card + dismiss-on-outer pattern. Consolidate into `<ModalOverlay onDismiss>` with consistent entrance animation (scale 0.95→1 + fade), matching the springy feel already in `GameOverOverlay`. Applies the Phase C "modal animation consistency" fix as a side effect.
 
-- [ ] **Drop redundant manual memoization in `theme/context.tsx`**
+- [x] **Drop redundant manual memoization in `theme/context.tsx`**
       React Compiler is enabled via SDK 55, but `src/theme/context.tsx` still has 4 `useCallback`/`useMemo` instances (lines ~69, 81, 86, 95, 108). Safe to delete. Quick win that reinforces the "no manual memo" project rule.
 
 #### Phase C — Retention & Polish
