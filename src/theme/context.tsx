@@ -1,12 +1,4 @@
-import {
-  createContext,
-  FC,
-  PropsWithChildren,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-} from "react"
+import { createContext, FC, PropsWithChildren, useContext, useEffect } from "react"
 import { StyleProp, useColorScheme } from "react-native"
 import {
   DarkTheme as NavDarkTheme,
@@ -66,60 +58,37 @@ export const ThemeProvider: FC<PropsWithChildren<ThemeProviderProps>> = ({
    *  - setThemeContextOverride("light") sets the app theme to light no matter what the system theme is.
    *  - setThemeContextOverride(undefined) the app will follow the operating system theme.
    */
-  const setThemeContextOverride = useCallback(
-    (newTheme: ThemeContextModeT) => {
-      setThemeScheme(newTheme)
-    },
-    [setThemeScheme],
-  )
+  function setThemeContextOverride(newTheme: ThemeContextModeT) {
+    setThemeScheme(newTheme)
+  }
 
   /**
    * initialContext is the theme context passed in from the app.tsx file and always takes precedence.
    * themeScheme is the value from MMKV. If undefined, we fall back to the system theme
    * systemColorScheme is the value from the device. If undefined, we fall back to "light"
    */
-  const themeContext: ImmutableThemeContextModeT = useMemo(() => {
-    const t = initialContext || themeScheme || (!!systemColorScheme ? systemColorScheme : "light")
-    return t === "dark" ? "dark" : "light"
-  }, [initialContext, themeScheme, systemColorScheme])
+  const t = initialContext || themeScheme || (!!systemColorScheme ? systemColorScheme : "light")
+  const themeContext: ImmutableThemeContextModeT = t === "dark" ? "dark" : "light"
 
-  const navigationTheme: NavTheme = useMemo(() => {
-    switch (themeContext) {
-      case "dark":
-        return NavDarkTheme
-      default:
-        return NavDefaultTheme
-    }
-  }, [themeContext])
+  const navigationTheme: NavTheme = themeContext === "dark" ? NavDarkTheme : NavDefaultTheme
 
-  const theme: Theme = useMemo(() => {
-    switch (themeContext) {
-      case "dark":
-        return darkTheme
-      default:
-        return lightTheme
-    }
-  }, [themeContext])
+  const theme: Theme = themeContext === "dark" ? darkTheme : lightTheme
 
   useEffect(() => {
     setImperativeTheming(theme)
   }, [theme])
 
-  const themed = useCallback(
-    <T,>(styleOrStyleFn: AllowedStylesT<T>) => {
-      const flatStyles = [styleOrStyleFn].flat(3) as (ThemedStyle<T> | StyleProp<T>)[]
-      const stylesArray = flatStyles.map((f) => {
-        if (typeof f === "function") {
-          return (f as ThemedStyle<T>)(theme)
-        } else {
-          return f
-        }
-      })
-      // Flatten the array of styles into a single object
-      return Object.assign({}, ...stylesArray) as T
-    },
-    [theme],
-  )
+  function themed<T>(styleOrStyleFn: AllowedStylesT<T>) {
+    const flatStyles = [styleOrStyleFn].flat(3) as (ThemedStyle<T> | StyleProp<T>)[]
+    const stylesArray = flatStyles.map((f) => {
+      if (typeof f === "function") {
+        return (f as ThemedStyle<T>)(theme)
+      } else {
+        return f
+      }
+    })
+    return Object.assign({}, ...stylesArray) as T
+  }
 
   const value = {
     navigationTheme,
