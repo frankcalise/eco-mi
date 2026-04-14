@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react"
 
 import { ACHIEVEMENTS, type AchievementId } from "@/config/achievements"
+import { ACHIEVEMENTS as ACHIEVEMENTS_STORAGE_KEY } from "@/config/storageKeys"
 import { load, save } from "@/utils/storage"
-
-const ACHIEVEMENTS_KEY = "ecomi:achievements"
 
 type AchievementRecord = Record<string, { unlocked: boolean; unlockedAt?: string }>
 
@@ -24,11 +23,11 @@ type AchievementContext = {
 }
 
 function loadAchievements(): AchievementRecord {
-  return load<AchievementRecord>(ACHIEVEMENTS_KEY) ?? {}
+  return load<AchievementRecord>(ACHIEVEMENTS_STORAGE_KEY) ?? {}
 }
 
 function saveAchievements(data: AchievementRecord) {
-  save(ACHIEVEMENTS_KEY, data)
+  save(ACHIEVEMENTS_STORAGE_KEY, data)
 }
 
 function unlock(

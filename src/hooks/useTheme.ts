@@ -1,12 +1,11 @@
 import { useState } from "react"
 
+import { SETTINGS_SELECTED_THEME } from "@/config/storageKeys"
 import { getThemeById, type GameTheme } from "@/config/themes"
 import { loadString, saveString } from "@/utils/storage"
 
-const THEME_KEY = "ecomi:settings:selectedTheme"
-
 export function useTheme() {
-  const [themeId, setThemeId] = useState(() => loadString(THEME_KEY) ?? "classic")
+  const [themeId, setThemeId] = useState(() => loadString(SETTINGS_SELECTED_THEME) ?? "classic")
   const [previewThemeId, setPreviewThemeId] = useState<string | null>(null)
 
   const theme = getThemeById(themeId)
@@ -15,7 +14,7 @@ export function useTheme() {
 
   function setTheme(id: string) {
     setThemeId(id)
-    saveString(THEME_KEY, id)
+    saveString(SETTINGS_SELECTED_THEME, id)
     setPreviewThemeId(null)
   }
 

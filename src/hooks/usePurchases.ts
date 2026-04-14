@@ -6,12 +6,11 @@ import Purchases, {
   LOG_LEVEL,
 } from "react-native-purchases"
 
+import { PURCHASES_ENTITLEMENT_PREFIX, PURCHASES_REMOVE_ADS } from "@/config/storageKeys"
 import { saveString, loadString } from "@/utils/storage"
 
 const REVENUECAT_IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? ""
 const REVENUECAT_ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? ""
-const REMOVE_ADS_CACHE_KEY = "ecomi:purchases:removeAds"
-const ENTITLEMENTS_CACHE_PREFIX = "ecomi:purchases:entitlement:"
 
 const THEME_ENTITLEMENT_MAP: Record<string, string> = {
   neon: "theme_neon",
@@ -56,7 +55,7 @@ export function usePurchases(): UsePurchasesReturn {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null)
   const configuredRef = useRef(false)
 
-  const removeAdsCached = loadString(REMOVE_ADS_CACHE_KEY) === "true"
+  const removeAdsCached = loadString(PURCHASES_REMOVE_ADS) === "true"
   const removeAds = customerInfo
     ? !!customerInfo.entitlements.active["remove_ads"]
     : removeAdsCached
@@ -92,7 +91,7 @@ export function usePurchases(): UsePurchasesReturn {
 
   function cacheEntitlements(info: CustomerInfo) {
     const hasRemoveAds = !!info.entitlements.active["remove_ads"]
-    saveString(REMOVE_ADS_CACHE_KEY, hasRemoveAds.toString())
+    saveString(PURCHASES_REMOVE_ADS, hasRemoveAds.toString())
 
     const allEntitlements = [
       ...Object.values(THEME_ENTITLEMENT_MAP),
@@ -100,7 +99,7 @@ export function usePurchases(): UsePurchasesReturn {
     ]
     for (const entId of allEntitlements) {
       const owned = !!info.entitlements.active[entId]
-      saveString(`${ENTITLEMENTS_CACHE_PREFIX}${entId}`, owned.toString())
+      saveString(`${PURCHASES_ENTITLEMENT_PREFIX}${entId}`, owned.toString())
     }
   }
 
@@ -108,7 +107,7 @@ export function usePurchases(): UsePurchasesReturn {
     if (customerInfo) {
       return !!customerInfo.entitlements.active[entitlementId]
     }
-    return loadString(`${ENTITLEMENTS_CACHE_PREFIX}${entitlementId}`) === "true"
+    return loadString(`${PURCHASES_ENTITLEMENT_PREFIX}${entitlementId}`) === "true"
   }
 
   function ownsTheme(themeId: string): boolean {

@@ -1,9 +1,7 @@
 import { useRef, useState } from "react"
 
+import { REVIEW_LAST_PROMPT_DATE, STATS_GAMES_PLAYED } from "@/config/storageKeys"
 import { loadString, saveString } from "@/utils/storage"
-
-const GAMES_PLAYED_KEY = "ecomi:stats:gamesPlayed"
-const LAST_PROMPT_KEY = "ecomi:review:lastPromptDate"
 const MIN_GAMES_FOR_REVIEW = 5
 const COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
 const PROMPT_DELAY_MS = 2500 // show 2.5s after game over
@@ -21,7 +19,7 @@ export function useStoreReview(): UseStoreReviewReturn {
   const delayTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function isWithinCooldown(): boolean {
-    const lastPrompt = loadString(LAST_PROMPT_KEY)
+    const lastPrompt = loadString(REVIEW_LAST_PROMPT_DATE)
     if (!lastPrompt) return false
     return Date.now() - parseInt(lastPrompt, 10) < COOLDOWN_MS
   }
@@ -29,7 +27,7 @@ export function useStoreReview(): UseStoreReviewReturn {
   function triggerReviewCheck(trigger: string, adShownThisSession: boolean) {
     if (adShownThisSession) return
 
-    const gamesPlayed = parseInt(loadString(GAMES_PLAYED_KEY) ?? "0", 10)
+    const gamesPlayed = parseInt(loadString(STATS_GAMES_PLAYED) ?? "0", 10)
     if (gamesPlayed < MIN_GAMES_FOR_REVIEW) return
 
     if (isWithinCooldown()) return
@@ -39,7 +37,7 @@ export function useStoreReview(): UseStoreReviewReturn {
     delayTimeout.current = setTimeout(() => {
       setReviewTrigger(trigger)
       setShowReviewPrompt(true)
-      saveString(LAST_PROMPT_KEY, Date.now().toString())
+      saveString(REVIEW_LAST_PROMPT_DATE, Date.now().toString())
     }, PROMPT_DELAY_MS)
   }
 

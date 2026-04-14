@@ -9,16 +9,17 @@ import {
   AdsConsent,
 } from "react-native-google-mobile-ads"
 
+import {
+  ADS_GAMES_PER_SESSION,
+  ADS_LAST_INTERSTITIAL_TIME,
+  ADS_SESSION_COUNT,
+} from "@/config/storageKeys"
 import { loadString, saveString } from "@/utils/storage"
 
 const INTERSTITIAL_IOS = process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_IOS ?? ""
 const INTERSTITIAL_ANDROID = process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ANDROID ?? ""
 const REWARDED_IOS = process.env.EXPO_PUBLIC_ADMOB_REWARDED_IOS ?? ""
 const REWARDED_ANDROID = process.env.EXPO_PUBLIC_ADMOB_REWARDED_ANDROID ?? ""
-
-const LAST_INTERSTITIAL_KEY = "ecomi:ads:lastInterstitialTime"
-const SESSION_COUNT_KEY = "ecomi:ads:sessionCount"
-const GAMES_THIS_SESSION_KEY = "ecomi:ads:gamesPerSession"
 
 const GRACE_PERIOD_SESSIONS = 3
 const MIN_GAP_MS = 3 * 60 * 1000
@@ -184,12 +185,12 @@ export function useAds(): UseAdsReturn {
     if (removeAds) return false
     if (roundsPlayed < MIN_ROUNDS_TO_SHOW) return false
 
-    const sessionCount = parseInt(loadString(SESSION_COUNT_KEY) ?? "0", 10)
+    const sessionCount = parseInt(loadString(ADS_SESSION_COUNT) ?? "0", 10)
     if (sessionCount < GRACE_PERIOD_SESSIONS) return false
 
     if (gamesThisSessionRef.current < GAMES_BETWEEN_ADS) return false
 
-    const lastTime = parseInt(loadString(LAST_INTERSTITIAL_KEY) ?? "0", 10)
+    const lastTime = parseInt(loadString(ADS_LAST_INTERSTITIAL_TIME) ?? "0", 10)
     if (Date.now() - lastTime < MIN_GAP_MS) return false
 
     return true
@@ -201,7 +202,7 @@ export function useAds(): UseAdsReturn {
 
     try {
       interstitialRef.current.show()
-      saveString(LAST_INTERSTITIAL_KEY, Date.now().toString())
+      saveString(ADS_LAST_INTERSTITIAL_TIME, Date.now().toString())
       gamesThisSessionRef.current = 0
       setAdShownThisSession(true)
       return true
@@ -212,12 +213,12 @@ export function useAds(): UseAdsReturn {
 
   function incrementGamesPlayed() {
     gamesThisSessionRef.current += 1
-    saveString(GAMES_THIS_SESSION_KEY, gamesThisSessionRef.current.toString())
+    saveString(ADS_GAMES_PER_SESSION, gamesThisSessionRef.current.toString())
   }
 
   function incrementSessionCount() {
-    const current = parseInt(loadString(SESSION_COUNT_KEY) ?? "0", 10)
-    saveString(SESSION_COUNT_KEY, (current + 1).toString())
+    const current = parseInt(loadString(ADS_SESSION_COUNT) ?? "0", 10)
+    saveString(ADS_SESSION_COUNT, (current + 1).toString())
   }
 
   return {

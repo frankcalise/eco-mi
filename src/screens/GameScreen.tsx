@@ -30,6 +30,7 @@ import { ReviewPrompt } from "@/components/ReviewPrompt"
 import { TimerRing } from "@/components/TimerRing"
 import { ACHIEVEMENTS } from "@/config/achievements"
 import { SOUND_PACKS } from "@/config/soundPacks"
+import { DAILY_CURRENT_STREAK, STATS_GAMES_PLAYED } from "@/config/storageKeys"
 import { themeIds, gameThemes } from "@/config/themes"
 import { useAchievements } from "@/hooks/useAchievements"
 import { useAds } from "@/hooks/useAds"
@@ -328,15 +329,15 @@ export function GameScreen() {
 
       // Check daily streak milestones (3-day, 7-day)
       if (mode === "daily") {
-        const streak = parseInt(loadString("ecomi:daily:currentStreak") ?? "0", 10)
+        const streak = parseInt(loadString(DAILY_CURRENT_STREAK) ?? "0", 10)
         if (streak === 3 || streak === 7) {
           triggerReviewCheck(`streak_${streak}`, adShownThisSession)
         }
       }
 
       // Check achievement unlock conditions
-      const gamesPlayed = parseInt(loadString("ecomi:stats:gamesPlayed") ?? "0", 10)
-      const currentStreak = parseInt(loadString("ecomi:daily:currentStreak") ?? "0", 10)
+      const gamesPlayed = parseInt(loadString(STATS_GAMES_PLAYED) ?? "0", 10)
+      const currentStreak = parseInt(loadString(DAILY_CURRENT_STREAK) ?? "0", 10)
       checkAchievements({
         score,
         level,
@@ -766,7 +767,7 @@ export function GameScreen() {
             </Text>
             {GAME_MODES.map((m) => {
               const streak =
-                m.id === "daily" ? parseInt(loadString("ecomi:daily:currentStreak") ?? "0", 10) : 0
+                m.id === "daily" ? parseInt(loadString(DAILY_CURRENT_STREAK) ?? "0", 10) : 0
               return (
                 <ModeItem
                   key={m.id}

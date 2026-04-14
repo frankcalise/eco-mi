@@ -1,6 +1,5 @@
+import { HIGH_SCORES_PREFIX } from "@/config/storageKeys"
 import { load, save } from "@/utils/storage"
-
-const STORAGE_KEY_PREFIX = "ecomi:highScores"
 const MAX_ENTRIES = 10
 
 export type GameMode = "classic" | "daily" | "timed" | "reverse" | "chaos"
@@ -14,7 +13,7 @@ export type HighScoreEntry = {
 }
 
 function storageKey(mode: GameMode): string {
-  return `${STORAGE_KEY_PREFIX}:${mode}`
+  return `${HIGH_SCORES_PREFIX}:${mode}`
 }
 
 function getHighScores(mode: GameMode): HighScoreEntry[] {

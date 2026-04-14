@@ -1,5 +1,6 @@
 import { renderHook, act } from "@testing-library/react-native"
 
+import { REVIEW_LAST_PROMPT_DATE, STATS_GAMES_PLAYED } from "@/config/storageKeys"
 import { storage } from "@/utils/storage"
 
 import { useStoreReview } from "../useStoreReview"
@@ -15,7 +16,7 @@ afterEach(() => {
 
 describe("useStoreReview", () => {
   it("does not show prompt when gamesPlayed < 5", () => {
-    storage.set("ecomi:stats:gamesPlayed", "4")
+    storage.set(STATS_GAMES_PLAYED, "4")
 
     const { result } = renderHook(() => useStoreReview())
 
@@ -30,7 +31,7 @@ describe("useStoreReview", () => {
   })
 
   it("does not show prompt when adShownThisSession is true", () => {
-    storage.set("ecomi:stats:gamesPlayed", "10")
+    storage.set(STATS_GAMES_PLAYED, "10")
 
     const { result } = renderHook(() => useStoreReview())
 
@@ -45,9 +46,9 @@ describe("useStoreReview", () => {
   })
 
   it("does not show prompt within 30-day cooldown", () => {
-    storage.set("ecomi:stats:gamesPlayed", "10")
+    storage.set(STATS_GAMES_PLAYED, "10")
     // Last prompted 10 days ago
-    storage.set("ecomi:review:lastPromptDate", (Date.now() - 10 * 24 * 60 * 60 * 1000).toString())
+    storage.set(REVIEW_LAST_PROMPT_DATE, (Date.now() - 10 * 24 * 60 * 60 * 1000).toString())
 
     const { result } = renderHook(() => useStoreReview())
 
@@ -62,7 +63,7 @@ describe("useStoreReview", () => {
   })
 
   it("shows prompt after 2500ms delay when all conditions met", () => {
-    storage.set("ecomi:stats:gamesPlayed", "10")
+    storage.set(STATS_GAMES_PLAYED, "10")
 
     const { result } = renderHook(() => useStoreReview())
 
@@ -82,9 +83,9 @@ describe("useStoreReview", () => {
   })
 
   it("shows prompt after cooldown expires", () => {
-    storage.set("ecomi:stats:gamesPlayed", "10")
+    storage.set(STATS_GAMES_PLAYED, "10")
     // Last prompted 31 days ago
-    storage.set("ecomi:review:lastPromptDate", (Date.now() - 31 * 24 * 60 * 60 * 1000).toString())
+    storage.set(REVIEW_LAST_PROMPT_DATE, (Date.now() - 31 * 24 * 60 * 60 * 1000).toString())
 
     const { result } = renderHook(() => useStoreReview())
 
@@ -99,7 +100,7 @@ describe("useStoreReview", () => {
   })
 
   it("dismissReviewPrompt resets state", () => {
-    storage.set("ecomi:stats:gamesPlayed", "10")
+    storage.set(STATS_GAMES_PLAYED, "10")
 
     const { result } = renderHook(() => useStoreReview())
 

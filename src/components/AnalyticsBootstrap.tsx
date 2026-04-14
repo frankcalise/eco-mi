@@ -4,12 +4,13 @@ import i18n from "i18next"
 import { nanoid } from "nanoid/non-secure"
 import { usePostHog } from "posthog-react-native"
 
+import {
+  ANALYTICS_DISTINCT_ID,
+  ANALYTICS_FIRST_SEEN,
+  PURCHASES_REMOVE_ADS,
+  SETTINGS_THEME_SCHEME,
+} from "@/config/storageKeys"
 import { loadString, saveString } from "@/utils/storage"
-
-const DISTINCT_ID_KEY = "ecomi:analytics:distinctId"
-const FIRST_SEEN_KEY = "ecomi:analytics:firstSeenAt"
-const REMOVE_ADS_KEY = "ecomi:purchases:removeAds"
-const THEME_KEY = "ignite.themeScheme"
 
 export function AnalyticsBootstrap() {
   const posthog = usePostHog()
@@ -21,20 +22,20 @@ export function AnalyticsBootstrap() {
     const appVariant = Constants.expoConfig?.extra?.appVariant ?? "production"
     posthog.register({ environment, appVariant })
 
-    let distinctId = loadString(DISTINCT_ID_KEY)
+    let distinctId = loadString(ANALYTICS_DISTINCT_ID)
     if (!distinctId) {
       distinctId = nanoid(21)
-      saveString(DISTINCT_ID_KEY, distinctId)
+      saveString(ANALYTICS_DISTINCT_ID, distinctId)
     }
 
-    let firstSeenAt = loadString(FIRST_SEEN_KEY)
+    let firstSeenAt = loadString(ANALYTICS_FIRST_SEEN)
     if (!firstSeenAt) {
       firstSeenAt = new Date().toISOString()
-      saveString(FIRST_SEEN_KEY, firstSeenAt)
+      saveString(ANALYTICS_FIRST_SEEN, firstSeenAt)
     }
 
-    const hasPurchasedPremium = loadString(REMOVE_ADS_KEY) === "true"
-    const themeMode = loadString(THEME_KEY) ?? "system"
+    const hasPurchasedPremium = loadString(PURCHASES_REMOVE_ADS) === "true"
+    const themeMode = loadString(SETTINGS_THEME_SCHEME) ?? "system"
     const preferredLocale = i18n.language
 
     posthog.identify(distinctId, {

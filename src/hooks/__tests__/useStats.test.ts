@@ -1,3 +1,4 @@
+import { DAILY_CURRENT_STREAK } from "@/config/storageKeys"
 import { storage } from "@/utils/storage"
 
 import { recordGameResult, getStats } from "../useStats"
@@ -67,11 +68,11 @@ describe("getStats", () => {
 
 describe("streak isolation", () => {
   // BUG: recordGameResult reads daily streak key and copies it to longestStreak
-  // even in non-daily modes. The currentStreak key ("ecomi:daily:currentStreak")
+  // even in non-daily modes. The currentStreak key (DAILY_CURRENT_STREAK)
   // is a daily-mode concept but recordGameResult always reads it.
   it("does not update longestStreak from daily streak when playing classic", () => {
     // Simulate a daily streak of 5 written by daily mode
-    storage.set("ecomi:daily:currentStreak", "5")
+    storage.set(DAILY_CURRENT_STREAK, "5")
 
     // Play a classic game
     recordGameResult(50)

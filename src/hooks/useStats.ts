@@ -1,12 +1,20 @@
+import {
+  DAILY_CURRENT_STREAK,
+  STATS_BEST_SCORE,
+  STATS_GAMES_PLAYED,
+  STATS_LAST_PLAYED_DATE,
+  STATS_LONGEST_STREAK,
+  STATS_TOTAL_SCORE,
+} from "@/config/storageKeys"
 import { loadString, saveString } from "@/utils/storage"
 
 const KEYS = {
-  gamesPlayed: "ecomi:stats:gamesPlayed",
-  totalScore: "ecomi:stats:totalScore",
-  bestScore: "ecomi:stats:bestScore",
-  currentStreak: "ecomi:daily:currentStreak",
-  longestStreak: "ecomi:stats:longestStreak",
-  lastPlayedDate: "ecomi:stats:lastPlayedDate",
+  gamesPlayed: STATS_GAMES_PLAYED,
+  totalScore: STATS_TOTAL_SCORE,
+  bestScore: STATS_BEST_SCORE,
+  currentStreak: DAILY_CURRENT_STREAK,
+  longestStreak: STATS_LONGEST_STREAK,
+  lastPlayedDate: STATS_LAST_PLAYED_DATE,
 }
 
 export type Stats = {

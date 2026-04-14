@@ -6,12 +6,11 @@ import { useTranslation } from "react-i18next"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { PressableScale } from "@/components/PressableScale"
+import { TRACKING_ASKED } from "@/config/storageKeys"
 import { saveString } from "@/utils/storage"
 
-const TRACKING_ASKED_KEY = "ecomi:tracking:asked"
-
 function markAsked() {
-  saveString(TRACKING_ASKED_KEY, "true")
+  saveString(TRACKING_ASKED, "true")
 }
 
 export default function TrackingScreen() {

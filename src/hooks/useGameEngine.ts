@@ -99,12 +99,17 @@ interface UseGameEngineReturn {
   setMode: (mode: GameMode) => void
 }
 
+import {
+  DAILY_CURRENT_STREAK,
+  DAILY_LAST_PLAYED,
+  DAILY_PREFIX,
+  HIGH_SCORE_PREFIX,
+  STATS_LONGEST_STREAK,
+} from "@/config/storageKeys"
+
 function highScoreKey(mode: string): string {
-  return `ecomi:highScore:${mode}`
+  return `${HIGH_SCORE_PREFIX}${mode}`
 }
-const DAILY_HIGH_SCORE_PREFIX = "ecomi:daily:"
-const DAILY_STREAK_KEY = "ecomi:daily:currentStreak"
-const DAILY_LAST_PLAYED_KEY = "ecomi:daily:lastPlayed"
 
 function getDailySeed(): number {
   const now = new Date()
@@ -238,34 +243,34 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
   function saveDailyResult(finalScore: number) {
     const todayKey = getTodayKey()
-    const bestKey = `${DAILY_HIGH_SCORE_PREFIX}${todayKey}:bestScore`
+    const bestKey = `${DAILY_PREFIX}${todayKey}:bestScore`
     const currentBest = parseInt(loadString(bestKey) ?? "0", 10)
     if (finalScore > currentBest) {
       saveString(bestKey, finalScore.toString())
     }
 
-    const lastPlayed = loadString(DAILY_LAST_PLAYED_KEY) ?? ""
+    const lastPlayed = loadString(DAILY_LAST_PLAYED) ?? ""
     const yesterday = new Date()
     yesterday.setDate(yesterday.getDate() - 1)
     const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`
 
     if (lastPlayed === yesterdayKey) {
-      const streak = parseInt(loadString(DAILY_STREAK_KEY) ?? "1", 10)
+      const streak = parseInt(loadString(DAILY_CURRENT_STREAK) ?? "1", 10)
       const newStreak = streak + 1
-      saveString(DAILY_STREAK_KEY, newStreak.toString())
-      const longestStreak = parseInt(loadString("ecomi:stats:longestStreak") ?? "0", 10)
+      saveString(DAILY_CURRENT_STREAK, newStreak.toString())
+      const longestStreak = parseInt(loadString(STATS_LONGEST_STREAK) ?? "0", 10)
       if (newStreak > longestStreak) {
-        saveString("ecomi:stats:longestStreak", newStreak.toString())
+        saveString(STATS_LONGEST_STREAK, newStreak.toString())
       }
     } else if (lastPlayed !== todayKey) {
-      saveString(DAILY_STREAK_KEY, "1")
-      const longestStreak = parseInt(loadString("ecomi:stats:longestStreak") ?? "0", 10)
+      saveString(DAILY_CURRENT_STREAK, "1")
+      const longestStreak = parseInt(loadString(STATS_LONGEST_STREAK) ?? "0", 10)
       if (longestStreak === 0) {
-        saveString("ecomi:stats:longestStreak", "1")
+        saveString(STATS_LONGEST_STREAK, "1")
       }
     }
 
-    saveString(DAILY_LAST_PLAYED_KEY, todayKey)
+    saveString(DAILY_LAST_PLAYED, todayKey)
   }
 
   // --- Init + cleanup ---
