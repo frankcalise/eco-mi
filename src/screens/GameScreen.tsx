@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import type ViewShot from "react-native-view-shot"
 import {
   View,
   Text,
@@ -32,6 +33,7 @@ import { HighScoreTable } from "@/components/HighScoreTable"
 import { InitialEntryModal } from "@/components/InitialEntryModal"
 import { PressableScale } from "@/components/PressableScale"
 import { ReviewPrompt } from "@/components/ReviewPrompt"
+import { ShareScoreCard } from "@/components/ShareScoreCard"
 import { TimerRing } from "@/components/TimerRing"
 import { ACHIEVEMENTS } from "@/config/achievements"
 import { DAILY_CURRENT_STREAK, ONBOARDING_COMPLETED, STATS_GAMES_PLAYED } from "@/config/storageKeys"
@@ -133,6 +135,7 @@ export function GameScreen() {
   const [highlightIndex, setHighlightIndex] = useState<number | undefined>(undefined)
   const pendingGameOver = useRef(false)
   const previousHighScoreRef = useRef(highScore)
+  const shareCardRef = useRef<ViewShot>(null)
   const [pulsingMode, setPulsingMode] = useState<GameMode | null>(null)
   const [pulsePhase, setPulsePhase] = useState<"bright" | "dim">("bright")
   const pulseTimers = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -317,7 +320,12 @@ export function GameScreen() {
     analytics.trackShareTapped(score, level)
     const message = t("game:shareMessage", { level, score, mode: t(`game:modes.${mode}`) })
     try {
-      await Share.share({ message })
+      const uri = await shareCardRef.current?.capture?.()
+      if (uri) {
+        await Share.share({ url: uri, message })
+      } else {
+        await Share.share({ message })
+      }
     } catch {}
   }
 
@@ -642,6 +650,15 @@ export function GameScreen() {
         onHome={resetGame}
         onViewStats={() => router.push("/stats")}
         onViewAchievements={() => router.push("/achievements")}
+      />
+
+      <ShareScoreCard
+        ref={shareCardRef}
+        score={score}
+        level={level}
+        mode={mode}
+        isNewHighScore={isNewHighScore}
+        theme={activeTheme}
       />
 
       {/* Leaderboard Modal */}

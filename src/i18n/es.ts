@@ -71,6 +71,8 @@ const es = {
     streakAtRisk: "🔥 Racha de {{count}} días — ¡juega Daily para mantenerla!",
     pbDelta: "+{{delta}} sobre tu mejor marca anterior!",
     nearMiss: "¡Casi! Solo {{delta}} puntos de tu mejor marca!",
+    shareCardWatermark: "Juega Eco Mi — ¿Puedes superarlo?",
+    mode: "Modo",
   },
   stats: {
     title: "Estadísticas",

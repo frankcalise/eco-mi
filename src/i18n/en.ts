@@ -71,6 +71,8 @@ const en = {
     streakAtRisk: "🔥 Day {{count}} streak — play Daily to keep it!",
     pbDelta: "+{{delta}} from your previous best!",
     nearMiss: "So close! Just {{delta}} away from your best!",
+    shareCardWatermark: "Play Eco Mi — Can you beat this?",
+    mode: "Mode",
   },
   stats: {
     title: "Statistics",
