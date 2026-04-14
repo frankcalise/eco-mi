@@ -44,5 +44,8 @@ export const SETTINGS_THEME_SCHEME = "ignite.themeScheme"
 // Achievements
 export const ACHIEVEMENTS = "ecomi:achievements"
 
+// Onboarding
+export const ONBOARDING_COMPLETED = "ecomi:onboarding:completed"
+
 // High scores (leaderboard)
 export const HIGH_SCORES_PREFIX = "ecomi:highScores:"

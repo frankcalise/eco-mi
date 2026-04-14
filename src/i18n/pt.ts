@@ -68,6 +68,7 @@ const pt = {
     emptyInitials: "---",
     emptyScore: "----",
     emptyLeaderboard: "Jogue uma partida para conseguir sua primeira pontuação!",
+    streakAtRisk: "🔥 Sequência de {{count}} dias — jogue Daily para manter!",
   },
   stats: {
     title: "Estatísticas",
@@ -134,6 +135,9 @@ const pt = {
     subtitle:
       "Na próxima tela, o iOS perguntará se o Eco Mi pode exibir anúncios personalizados. Você pode permitir ou negar; o jogo funciona da mesma forma nos dois casos.",
     continueButton: "Continuar",
+  },
+  onboarding: {
+    tapHint: "Toque no botão que acendeu!",
   },
   a11y: {
     modeSelector: "Selecionar modo",

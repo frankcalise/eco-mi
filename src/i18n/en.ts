@@ -68,6 +68,7 @@ const en = {
     emptyInitials: "---",
     emptyScore: "----",
     emptyLeaderboard: "Play a game to set your first score!",
+    streakAtRisk: "🔥 Day {{count}} streak — play Daily to keep it!",
   },
   stats: {
     title: "Statistics",
@@ -135,6 +136,9 @@ const en = {
     subtitle:
       "On the next screen, iOS will ask whether Eco Mi can deliver personalized ads. You can choose to allow or deny — either way the game works the same.",
     continueButton: "Continue",
+  },
+  onboarding: {
+    tapHint: "Tap the button that lit up!",
   },
   a11y: {
     modeSelector: "Select game mode",

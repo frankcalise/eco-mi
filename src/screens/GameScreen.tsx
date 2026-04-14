@@ -26,13 +26,15 @@ import { GameSettingsModal } from "@/components/GameSettingsModal"
 import { GameStatusBar } from "@/components/GameStatusBar"
 import { ModeItem } from "@/components/ModeItem"
 import { GameOverOverlay } from "@/components/GameOverOverlay"
+import { OnboardingTooltip } from "@/components/OnboardingTooltip"
+import { StreakBanner } from "@/components/StreakBanner"
 import { HighScoreTable } from "@/components/HighScoreTable"
 import { InitialEntryModal } from "@/components/InitialEntryModal"
 import { PressableScale } from "@/components/PressableScale"
 import { ReviewPrompt } from "@/components/ReviewPrompt"
 import { TimerRing } from "@/components/TimerRing"
 import { ACHIEVEMENTS } from "@/config/achievements"
-import { DAILY_CURRENT_STREAK, STATS_GAMES_PLAYED } from "@/config/storageKeys"
+import { DAILY_CURRENT_STREAK, ONBOARDING_COMPLETED, STATS_GAMES_PLAYED } from "@/config/storageKeys"
 import { useAchievements } from "@/hooks/useAchievements"
 import { useAds } from "@/hooks/useAds"
 import { useGameEngine, colors, type GameMode } from "@/hooks/useGameEngine"
@@ -43,7 +45,7 @@ import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { useAnalytics } from "@/utils/analytics"
-import { loadString } from "@/utils/storage"
+import { loadString, saveString } from "@/utils/storage"
 
 const GAME_MODES: { id: GameMode; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { id: "classic", label: "Classic", icon: "game-controller" },
@@ -139,6 +141,15 @@ export function GameScreen() {
     icon?: string
   } | null>(null)
   const isIdle = gameState === "idle"
+  const [onboardingDone, setOnboardingDone] = useState(() => loadString(ONBOARDING_COMPLETED) === "true")
+  const showOnboardingTooltip = !onboardingDone && gameState === "waiting"
+
+  useEffect(() => {
+    if (!onboardingDone && playerSequence.length === 1) {
+      saveString(ONBOARDING_COMPLETED, "true")
+      setOnboardingDone(true)
+    }
+  }, [playerSequence.length, onboardingDone])
 
   useEffect(() => {
     if (newlyUnlocked.length > 0) {
@@ -389,6 +400,8 @@ export function GameScreen() {
         </View>
       </View>
 
+      <OnboardingTooltip visible={showOnboardingTooltip} theme={activeTheme} />
+
       {/* Game Board */}
       <View style={styles.gameBoard}>
         {wrongFlash && (
@@ -465,6 +478,7 @@ export function GameScreen() {
       <View style={styles.controlsContainer}>
         {gameState === "idle" && (
           <>
+            <StreakBanner theme={activeTheme} />
             <EaseView
               animate={{ scale: 1.02 }}
               transition={{
