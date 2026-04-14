@@ -22,6 +22,7 @@ import { AchievementToast } from "@/components/AchievementToast"
 import { AnimatedCountdown } from "@/components/AnimatedCountdown"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
 import { GameButton } from "@/components/GameButton"
+import { GameHeader } from "@/components/GameHeader"
 import { ModeItem } from "@/components/ModeItem"
 import { GameOverOverlay } from "@/components/GameOverOverlay"
 import { HighScoreTable } from "@/components/HighScoreTable"
@@ -162,34 +163,6 @@ export function GameScreen() {
       clearNewlyUnlocked()
     }
   }, [newlyUnlocked])
-
-  // Neon sign color cycling for idle title
-  const NEON_COLOR_ORDER = ["red", "blue", "green"] as const
-  const [neonColorIndex, setNeonColorIndex] = useState(0)
-  const neonIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  useEffect(() => {
-    if (isIdle) {
-      setNeonColorIndex(0)
-      neonIntervalRef.current = setInterval(() => {
-        setNeonColorIndex((prev) => (prev + 1) % NEON_COLOR_ORDER.length)
-      }, 2000)
-    } else {
-      if (neonIntervalRef.current) {
-        clearInterval(neonIntervalRef.current)
-        neonIntervalRef.current = null
-      }
-    }
-    return () => {
-      if (neonIntervalRef.current) {
-        clearInterval(neonIntervalRef.current)
-        neonIntervalRef.current = null
-      }
-    }
-  }, [isIdle])
-
-  const neonColors = NEON_COLOR_ORDER.map((c) => activeTheme.buttonColors[c].color)
-  const activeNeonColor = isIdle ? neonColors[neonColorIndex] : activeTheme.textColor
 
   function handleModeSelect(id: GameMode) {
     if (id === mode) return
@@ -381,101 +354,14 @@ export function GameScreen() {
       >
         <StatusBar style={activeTheme.statusBarStyle} backgroundColor={activeTheme.backgroundColor} />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <PressableScale
-          testID="btn-mode-selector"
-          accessibilityLabel={t("a11y:modeSelector")}
-          accessibilityRole="button"
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-            setModeModalVisible(true)
-          }}
-          disabled={!isIdle}
-          style={styles.headerAction}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons
-            name="game-controller-outline"
-            size={26}
-            color={isIdle ? activeTheme.textColor : activeTheme.secondaryTextColor}
-            style={{ opacity: isIdle ? 1 : 0.4 }}
-          />
-        </PressableScale>
-        <EaseView
-          animate={{ scale: isIdle ? 1.03 : 1 }}
-          transition={{
-            default: { type: "timing", duration: 1500, easing: "easeInOut", loop: "reverse" },
-          }}
-          style={styles.headerCenter}
-        >
-          <View style={styles.titleStack}>
-            {isIdle ? (
-              neonColors.map((color, i) => (
-                <EaseView
-                  key={i}
-                  animate={{ opacity: neonColorIndex === i ? 1 : 0 }}
-                  transition={{ default: { type: "timing", duration: 600, easing: "easeInOut" } }}
-                  style={i > 0 ? styles.titleLayerAbsolute : undefined}
-                >
-                  <Text
-                    style={[
-                      styles.title,
-                      {
-                        color,
-                        textShadowColor: color,
-                        textShadowOffset: { width: 0, height: 0 },
-                        textShadowRadius: 12,
-                      },
-                    ]}
-                  >
-                    {t("game:title")}
-                  </Text>
-                </EaseView>
-              ))
-            ) : (
-              <Text style={[styles.title, { color: activeTheme.textColor }]}>
-                {t("game:title")}
-              </Text>
-            )}
-          </View>
-          {(() => {
-            const currentMode = GAME_MODES.find((m) => m.id === mode)
-            if (!currentMode) return null
-            return (
-              <View style={styles.modeIndicator}>
-                <Ionicons
-                  name={currentMode.icon}
-                  size={12}
-                  color={activeTheme.secondaryTextColor}
-                />
-                <Text style={[styles.modeIndicatorText, { color: activeTheme.secondaryTextColor }]}>
-                  {t(`game:modes.${mode}`)}
-                </Text>
-              </View>
-            )
-          })()}
-        </EaseView>
-        <PressableScale
-          testID="btn-settings"
-          accessibilityLabel={t("a11y:settings")}
-          accessibilityRole="button"
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-            setSettingsModalVisible(true)
-          }}
-          disabled={!isIdle}
-          style={styles.headerAction}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons
-            name="settings-outline"
-            size={26}
-            color={isIdle ? activeTheme.textColor : activeTheme.secondaryTextColor}
-            style={{ opacity: isIdle ? 1 : 0.4 }}
-          />
-        </PressableScale>
-      </View>
+      <GameHeader
+        mode={mode}
+        gameState={gameState}
+        isIdle={isIdle}
+        theme={activeTheme}
+        onModePress={() => setModeModalVisible(true)}
+        onSettingsPress={() => setSettingsModalVisible(true)}
+      />
 
       {/* Score Display */}
       <View style={styles.scoreContainer}>
@@ -1149,23 +1035,6 @@ const styles = StyleSheet.create({
   gestureRoot: {
     flex: 1,
   },
-  header: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 12,
-    paddingHorizontal: 20,
-    width: "100%",
-  },
-  headerAction: {
-    alignItems: "center",
-    height: 44,
-    justifyContent: "center",
-    width: 44,
-  },
-  headerCenter: {
-    alignItems: "center",
-  },
   hintHidden: {
     height: 0,
     overflow: "hidden",
@@ -1195,18 +1064,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginBottom: 16,
     textAlign: "center",
-  },
-  modeIndicator: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 4,
-    marginTop: 2,
-  },
-  modeIndicatorText: {
-    fontFamily: "Oxanium-Medium",
-    fontSize: 12,
-    letterSpacing: 2,
-    textTransform: "uppercase",
   },
   progressDot: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
@@ -1396,19 +1253,6 @@ const styles = StyleSheet.create({
     left: 0,
     position: "absolute",
     top: 0,
-  },
-  title: {
-    color: "white",
-    fontFamily: "Oxanium-Bold",
-    fontSize: 36,
-    letterSpacing: 4,
-  },
-  titleLayerAbsolute: {
-    position: "absolute",
-  },
-  titleStack: {
-    alignItems: "center",
-    justifyContent: "center",
   },
   trophyButton: {
     alignItems: "center",
