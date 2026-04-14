@@ -1,7 +1,8 @@
-import { View, Text, Pressable, Linking, StyleSheet } from "react-native"
+import { View, Text, Linking, StyleSheet } from "react-native"
 import * as StoreReview from "expo-store-review"
 import { useTranslation } from "react-i18next"
 
+import { ModalOverlay } from "@/components/ModalOverlay"
 import { PressableScale } from "@/components/PressableScale"
 import type { GameTheme } from "@/config/themes"
 
@@ -14,8 +15,6 @@ type ReviewPromptProps = {
 
 export function ReviewPrompt({ visible, theme, onDismiss, onResponse }: ReviewPromptProps) {
   const { t } = useTranslation()
-
-  if (!visible) return null
 
   async function handleLoveIt() {
     onResponse?.("love_it")
@@ -33,57 +32,47 @@ export function ReviewPrompt({ visible, theme, onDismiss, onResponse }: ReviewPr
   }
 
   return (
-    <Pressable style={styles.backdrop} onPress={onDismiss}>
-      <Pressable
-        style={[
-          styles.card,
-          { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor },
-        ]}
-        onPress={() => {}}
-      >
-        <Text style={[styles.title, { color: theme.textColor }]}>{t("review:title")}</Text>
-        <Text style={[styles.subtitle, { color: theme.secondaryTextColor }]}>
-          {t("review:subtitle")}
-        </Text>
-        <View style={styles.buttons}>
-          <PressableScale
-            testID="review-love-it"
-            style={[styles.loveItButton, { backgroundColor: theme.accentColor }]}
-            onPress={handleLoveIt}
-          >
-            <Text style={styles.loveItText}>{t("review:loveIt")}</Text>
-          </PressableScale>
-          <PressableScale
-            testID="review-not-really"
-            style={styles.notReallyButton}
-            onPress={handleNotReally}
-          >
-            <Text style={styles.notReallyText}>{t("review:notReally")}</Text>
-          </PressableScale>
-        </View>
+    <ModalOverlay
+      visible={visible}
+      theme={theme}
+      onDismiss={onDismiss}
+      cardStyle={styles.card}
+    >
+      <Text style={[styles.title, { color: theme.textColor }]}>{t("review:title")}</Text>
+      <Text style={[styles.subtitle, { color: theme.secondaryTextColor }]}>
+        {t("review:subtitle")}
+      </Text>
+      <View style={styles.buttons}>
         <PressableScale
-          testID="review-maybe-later"
-          style={styles.maybeLaterButton}
-          onPress={onDismiss}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          testID="review-love-it"
+          style={[styles.loveItButton, { backgroundColor: theme.accentColor }]}
+          onPress={handleLoveIt}
         >
-          <Text style={[styles.maybeLaterText, { color: theme.secondaryTextColor }]}>
-            {t("review:maybeLater")}
-          </Text>
+          <Text style={styles.loveItText}>{t("review:loveIt")}</Text>
         </PressableScale>
-      </Pressable>
-    </Pressable>
+        <PressableScale
+          testID="review-not-really"
+          style={styles.notReallyButton}
+          onPress={handleNotReally}
+        >
+          <Text style={styles.notReallyText}>{t("review:notReally")}</Text>
+        </PressableScale>
+      </View>
+      <PressableScale
+        testID="review-maybe-later"
+        style={styles.maybeLaterButton}
+        onPress={onDismiss}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Text style={[styles.maybeLaterText, { color: theme.secondaryTextColor }]}>
+          {t("review:maybeLater")}
+        </Text>
+      </PressableScale>
+    </ModalOverlay>
   )
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    justifyContent: "center",
-    zIndex: 200,
-  },
   buttons: {
     flexDirection: "row",
     gap: 12,
@@ -91,12 +80,8 @@ const styles = StyleSheet.create({
   },
   card: {
     alignItems: "center",
-    borderRadius: 16,
-    borderWidth: 1,
-    maxWidth: 380,
     paddingHorizontal: 28,
     paddingVertical: 24,
-    width: "85%",
   },
   loveItButton: {
     borderRadius: 8,
