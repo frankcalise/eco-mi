@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(npm *)",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"This project uses bun, not npm. Use the equivalent bun command (bun install, bun run, bun test, etc.).\"}}'",
+            "statusMessage": "Checking for npm usage..."
+          }
+        ]
+      }
+    ]
+  }
+}
