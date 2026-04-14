@@ -143,6 +143,16 @@ const pt = {
   onboarding: {
     tapHint: "Toque no botão que acendeu!",
   },
+  notifications: {
+    dailyReminder: "Hora do seu desafio de memória diário!",
+    streakAtRisk: "Não perca sua sequência de {{count}} dias! Jogue hoje.",
+    winBack: "Sentimos sua falta! Suas habilidades de memória estão enferrujando.",
+  },
+  iap: {
+    postPBTitle: "Novo Recorde Pessoal!",
+    postPBBody: "Desfrute de uma experiência sem anúncios",
+    maybeLater: "Talvez Depois",
+  },
   a11y: {
     modeSelector: "Selecionar modo",
     settings: "Configurações",

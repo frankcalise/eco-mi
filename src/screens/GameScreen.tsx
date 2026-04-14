@@ -32,6 +32,7 @@ import { StreakBanner } from "@/components/StreakBanner"
 import { HighScoreTable } from "@/components/HighScoreTable"
 import { InitialEntryModal } from "@/components/InitialEntryModal"
 import { PressableScale } from "@/components/PressableScale"
+import { PostPBPrompt } from "@/components/PostPBPrompt"
 import { ReviewPrompt } from "@/components/ReviewPrompt"
 import { ShareScoreCard } from "@/components/ShareScoreCard"
 import { TimerRing } from "@/components/TimerRing"
@@ -43,6 +44,8 @@ import { useGameEngine, colors, type GameMode } from "@/hooks/useGameEngine"
 import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useSoundPack } from "@/hooks/useSoundPack"
+import { useNotifications } from "@/hooks/useNotifications"
+import { usePostPBPrompt } from "@/hooks/usePostPBPrompt"
 import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
@@ -127,6 +130,8 @@ export function GameScreen() {
   const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
     useStoreReview()
   const { checkAchievements, newlyUnlocked, clearNewlyUnlocked } = useAchievements()
+  const { showPostPBPrompt, triggerPostPBCheck, dismissPostPBPrompt } = usePostPBPrompt()
+  const { rescheduleAfterGameOver } = useNotifications()
   const sessionCounted = useRef(false)
   const [modeModalVisible, setModeModalVisible] = useState(false)
   const [settingsModalVisible, setSettingsModalVisible] = useState(false)
@@ -238,6 +243,9 @@ export function GameScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
         analytics.trackGameCompleted(score, level, true)
         triggerReviewCheck("new_high_score", adShownThisSession)
+        if (!removeAds && !showReviewPrompt) {
+          triggerPostPBCheck()
+        }
       } else {
         playGameOverJingle()
       }
@@ -266,6 +274,8 @@ export function GameScreen() {
         pendingGameOver.current = true
         setShowInitialEntry(true)
       }
+
+      rescheduleAfterGameOver()
     }
 
     if (prevGameState.current !== "idle" && gameState === "idle") {
@@ -689,6 +699,12 @@ export function GameScreen() {
         theme={activeTheme}
         onDismiss={dismissReviewPrompt}
         onResponse={handleReviewResponse}
+      />
+      <PostPBPrompt
+        visible={showPostPBPrompt && !showReviewPrompt}
+        theme={activeTheme}
+        onRemoveAds={handleRemoveAds}
+        onDismiss={dismissPostPBPrompt}
       />
       <AchievementToast
         title={achievementToast?.title ?? ""}

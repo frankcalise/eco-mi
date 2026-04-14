@@ -47,5 +47,11 @@ export const ACHIEVEMENTS = "ecomi:achievements"
 // Onboarding
 export const ONBOARDING_COMPLETED = "ecomi:onboarding:completed"
 
+// Notifications
+export const NOTIFICATIONS_PERMISSION_ASKED = "ecomi:notifications:permissionAsked"
+
+// Post-PB IAP prompt
+export const POST_PB_LAST_PROMPT_DATE = "ecomi:postPB:lastPromptDate"
+
 // High scores (leaderboard)
 export const HIGH_SCORES_PREFIX = "ecomi:highScores:"

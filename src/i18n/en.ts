@@ -144,6 +144,16 @@ const en = {
   onboarding: {
     tapHint: "Tap the button that lit up!",
   },
+  notifications: {
+    dailyReminder: "Time for your daily memory challenge!",
+    streakAtRisk: "Don't lose your {{count}}-day streak! Play today.",
+    winBack: "We miss you! Your memory skills are getting rusty.",
+  },
+  iap: {
+    postPBTitle: "New Personal Best!",
+    postPBBody: "Enjoy an uninterrupted, ad-free experience",
+    maybeLater: "Maybe Later",
+  },
   a11y: {
     modeSelector: "Select game mode",
     settings: "Settings",
