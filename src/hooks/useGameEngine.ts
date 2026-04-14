@@ -78,6 +78,7 @@ interface UseGameEngineReturn {
   buttonPositions: Color[]
   isShuffling: boolean
   inputTimeRemaining: number | null
+  wrongFlash: boolean
 
   startGame: () => void
   resetGame: () => void
@@ -128,6 +129,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   // Local UI state
   const [activeButton, setActiveButton] = useState<Color | null>(null)
   const [soundEnabled, setSoundEnabled] = useState(true)
+  const [wrongFlash, setWrongFlash] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [inputTimeRemaining, setInputTimeRemaining] = useState<number | null>(null)
   const [buttonPositions, setButtonPositions] = useState<Color[]>([...colors])
@@ -404,6 +406,8 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
     if (color !== expectedColor) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+      setWrongFlash(true)
+      addTimeout(() => setWrongFlash(false), 300)
       send({ type: "WRONG_INPUT" })
 
       if (mode === "timed") {
@@ -467,6 +471,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     buttonPositions,
     isShuffling,
     inputTimeRemaining,
+    wrongFlash,
 
     startGame,
     resetGame,

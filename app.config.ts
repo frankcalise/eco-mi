@@ -57,6 +57,7 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
       bundler: "metro" as const,
     },
     plugins: [
+      "expo-notifications",
       "expo-localization",
       [
         "expo-font",

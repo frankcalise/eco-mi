@@ -3,6 +3,7 @@ const en = {
     ok: "OK",
     cancel: "Cancel",
     back: "Back",
+    done: "Done",
     on: "On",
     off: "Off",
   },
@@ -78,6 +79,9 @@ const en = {
     longestStreak: "Longest Streak",
     dayUnit: "day",
     daysUnit: "days",
+    emptyTitle: "No games yet",
+    emptyBody: "Play your first game to see your stats here",
+    playNow: "Play Now",
   },
   achievements: {
     title: "Achievements",

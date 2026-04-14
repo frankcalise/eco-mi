@@ -3,6 +3,7 @@ const es = {
     ok: "OK",
     cancel: "Cancelar",
     back: "Volver",
+    done: "Listo",
     on: "Sí",
     off: "No",
   },
@@ -78,6 +79,9 @@ const es = {
     longestStreak: "Mejor Racha",
     dayUnit: "día",
     daysUnit: "días",
+    emptyTitle: "Sin partidas aún",
+    emptyBody: "Juega tu primera partida para ver tus estadísticas aquí",
+    playNow: "Jugar Ahora",
   },
   achievements: {
     title: "Logros",

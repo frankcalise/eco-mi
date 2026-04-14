@@ -48,19 +48,38 @@ export default function StatsScreen() {
         <Text style={[styles.title, { color: activeTheme.textColor }]}>{t("stats:title")}</Text>
       </View>
 
-      <View style={styles.grid}>
-        {statItems.map((item) => (
-          <View
-            key={item.label}
-            style={[styles.statCard, { backgroundColor: activeTheme.surfaceColor }]}
+      {stats.gamesPlayed === 0 ? (
+        <View style={styles.emptyState}>
+          <Ionicons name="game-controller-outline" size={48} color={activeTheme.secondaryTextColor} />
+          <Text style={[styles.emptyTitle, { color: activeTheme.textColor }]}>
+            {t("stats:emptyTitle")}
+          </Text>
+          <Text style={[styles.emptyBody, { color: activeTheme.secondaryTextColor }]}>
+            {t("stats:emptyBody")}
+          </Text>
+          <PressableScale
+            style={[styles.playNowButton, { backgroundColor: activeTheme.accentColor }]}
+            onPress={() => router.back()}
           >
-            <Text style={[styles.statValue, { color: activeTheme.textColor }]}>{item.value}</Text>
-            <Text style={[styles.statLabel, { color: activeTheme.secondaryTextColor }]}>
-              {item.label}
-            </Text>
-          </View>
-        ))}
-      </View>
+            <Ionicons name="play" size={18} color="white" />
+            <Text style={styles.playNowText}>{t("stats:playNow")}</Text>
+          </PressableScale>
+        </View>
+      ) : (
+        <View style={styles.grid}>
+          {statItems.map((item) => (
+            <View
+              key={item.label}
+              style={[styles.statCard, { backgroundColor: activeTheme.surfaceColor }]}
+            >
+              <Text style={[styles.statValue, { color: activeTheme.textColor }]}>{item.value}</Text>
+              <Text style={[styles.statLabel, { color: activeTheme.secondaryTextColor }]}>
+                {item.label}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   )
 }
@@ -73,6 +92,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
+  },
+  emptyBody: {
+    fontFamily: "Oxanium-Regular",
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: "center",
+  },
+  emptyState: {
+    alignItems: "center",
+    flex: 1,
+    gap: 8,
+    justifyContent: "center",
+    paddingBottom: 60,
+  },
+  emptyTitle: {
+    fontFamily: "Oxanium-Bold",
+    fontSize: 20,
+    marginTop: 16,
   },
   grid: {
     flexDirection: "row",
@@ -101,6 +138,20 @@ const styles = StyleSheet.create({
   statValue: {
     fontFamily: "Oxanium-Bold",
     fontSize: 28,
+  },
+  playNowButton: {
+    alignItems: "center",
+    borderRadius: 10,
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+  playNowText: {
+    color: "white",
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 16,
   },
   title: {
     fontFamily: "Oxanium-Bold",

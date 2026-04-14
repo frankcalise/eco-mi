@@ -98,6 +98,7 @@ export function GameScreen() {
     buttonPositions,
     isShuffling,
     inputTimeRemaining,
+    wrongFlash,
   } = useGameEngine({
     oscillatorType: soundPack.oscillatorType,
     theme: activeTheme,
@@ -390,6 +391,14 @@ export function GameScreen() {
 
       {/* Game Board */}
       <View style={styles.gameBoard}>
+        {wrongFlash && (
+          <EaseView
+            style={styles.wrongFlashOverlay}
+            initialAnimate={{ opacity: 0 }}
+            animate={{ opacity: 0.25 }}
+            transition={{ default: { type: "timing", duration: 100 } }}
+          />
+        )}
         <View style={gameContainerStyle}>
           {buttonPositions.map((color, index) => (
             <GameButton
@@ -456,22 +465,30 @@ export function GameScreen() {
       <View style={styles.controlsContainer}>
         {gameState === "idle" && (
           <>
-            <PressableScale
-              testID="btn-start"
-              accessibilityLabel={t("a11y:startGame")}
-              accessibilityRole="button"
-              style={styles.startButton}
-              onPress={handleStartGame}
+            <EaseView
+              animate={{ scale: 1.02 }}
+              transition={{
+                default: { type: "timing", duration: 1200, easing: "easeInOut", loop: "reverse" },
+              }}
+              style={styles.startButtonWrapper}
             >
-              <Ionicons name="play" size={24} color="white" />
-              <Text style={styles.buttonText}>{t("game:startGame")}</Text>
-            </PressableScale>
+              <PressableScale
+                testID="btn-start"
+                accessibilityLabel={t("a11y:startGame")}
+                accessibilityRole="button"
+                style={[styles.startButton, { backgroundColor: activeTheme.accentColor }]}
+                onPress={handleStartGame}
+              >
+                <Ionicons name="play" size={24} color="white" />
+                <Text style={styles.startButtonText}>{t("game:startGame")}</Text>
+              </PressableScale>
+            </EaseView>
             <View style={styles.idleActions}>
               <PressableScale
                 testID="btn-leaderboard"
                 accessibilityLabel={t("a11y:leaderboard")}
                 accessibilityRole="button"
-                style={styles.trophyButton}
+                style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -479,33 +496,33 @@ export function GameScreen() {
                   setLeaderboardModalVisible(true)
                 }}
               >
-                <Ionicons name="trophy" size={22} color="#fbbf24" />
+                <Ionicons name="trophy" size={20} color={activeTheme.warningColor} />
               </PressableScale>
               <PressableScale
                 testID="btn-stats"
                 accessibilityLabel={t("a11y:stats")}
                 accessibilityRole="button"
-                style={styles.trophyButton}
+                style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
                   router.push("/stats")
                 }}
               >
-                <Ionicons name="stats-chart" size={22} color={activeTheme.secondaryTextColor} />
+                <Ionicons name="stats-chart" size={20} color={activeTheme.secondaryTextColor} />
               </PressableScale>
               <PressableScale
                 testID="btn-achievements"
                 accessibilityLabel={t("a11y:achievements")}
                 accessibilityRole="button"
-                style={styles.trophyButton}
+                style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
                   router.push("/achievements")
                 }}
               >
-                <Ionicons name="ribbon" size={22} color={activeTheme.secondaryTextColor} />
+                <Ionicons name="ribbon" size={20} color={activeTheme.secondaryTextColor} />
               </PressableScale>
             </View>
           </>
@@ -715,9 +732,24 @@ const styles = StyleSheet.create({
   gestureRoot: {
     flex: 1,
   },
+  wrongFlashOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#ef4444",
+    borderRadius: 999,
+    zIndex: 10,
+  },
+  idleActionButton: {
+    alignItems: "center",
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
   idleActions: {
     flexDirection: "row",
-    gap: 10,
+    gap: 12,
+    marginTop: 16,
   },
   modalBackdrop: {
     alignItems: "center",
@@ -777,27 +809,30 @@ const styles = StyleSheet.create({
   },
   startButton: {
     alignItems: "center",
-    backgroundColor: "#22c55e",
-    borderRadius: 8,
+    borderRadius: 12,
     flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    gap: 10,
+    justifyContent: "center",
+    paddingHorizontal: 28,
+    paddingVertical: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  startButtonText: {
+    color: "white",
+    fontFamily: "Oxanium-Bold",
+    fontSize: 18,
+  },
+  startButtonWrapper: {
+    width: "70%",
   },
   timerRingContainer: {
     left: 0,
     position: "absolute",
     top: 0,
-  },
-  trophyButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(251, 191, 36, 0.15)",
-    borderColor: "#fbbf24",
-    borderRadius: 8,
-    borderWidth: 1,
-    justifyContent: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
   },
   waitingText: {
     color: "#22c55e",

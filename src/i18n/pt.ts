@@ -3,6 +3,7 @@ const pt = {
     ok: "OK",
     cancel: "Cancelar",
     back: "Voltar",
+    done: "Pronto",
     on: "Sim",
     off: "Não",
   },
@@ -78,6 +79,9 @@ const pt = {
     longestStreak: "Melhor Sequência",
     dayUnit: "dia",
     daysUnit: "dias",
+    emptyTitle: "Sem jogos ainda",
+    emptyBody: "Jogue sua primeira partida para ver suas estatísticas aqui",
+    playNow: "Jogar Agora",
   },
   achievements: {
     title: "Conquistas",

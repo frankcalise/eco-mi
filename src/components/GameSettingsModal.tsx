@@ -1,12 +1,13 @@
 import { useState } from "react"
-import { View, Text, Pressable, StyleSheet, ScrollView, Modal } from "react-native"
+import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native"
 import * as Haptics from "expo-haptics"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
 import { EaseView } from "react-native-ease"
-
-import { PressableScale } from "@/components/PressableScale"
 import type { OscillatorType } from "react-native-audio-api"
+
+import { ModalOverlay } from "@/components/ModalOverlay"
+import { PressableScale } from "@/components/PressableScale"
 
 import { SOUND_PACKS } from "@/config/soundPacks"
 import type { GameTheme } from "@/config/themes"
@@ -67,13 +68,22 @@ export function GameSettingsModal({
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleDismiss}>
-      <Pressable style={styles.modalBackdrop} onPress={handleDismiss}>
-        <Pressable style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}>
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={[styles.modalTitle, { color: activeTheme.textColor }]}>
-              {t("game:settings")}
+    <ModalOverlay visible={visible} theme={activeTheme} onDismiss={handleDismiss}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.modalHeader}>
+          <Text style={[styles.modalTitle, { color: activeTheme.textColor }]}>
+            {t("game:settings")}
+          </Text>
+          <PressableScale
+            testID="btn-settings-done"
+            onPress={handleDismiss}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={[styles.doneText, { color: activeTheme.accentColor }]}>
+              {t("common:done")}
             </Text>
+          </PressableScale>
+        </View>
 
             {/* Sound Toggle */}
             <View style={styles.settingsSection}>
@@ -341,14 +351,16 @@ export function GameSettingsModal({
                 </Text>
               </EaseView>
             </View>
-          </ScrollView>
-        </Pressable>
-      </Pressable>
-    </Modal>
+      </ScrollView>
+    </ModalOverlay>
   )
 }
 
 const styles = StyleSheet.create({
+  doneText: {
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 16,
+  },
   hintHidden: {
     height: 0,
     overflow: "hidden",
@@ -356,24 +368,15 @@ const styles = StyleSheet.create({
   lockIcon: {
     opacity: 0.6,
   },
-  modalBackdrop: {
+  modalHeader: {
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    flex: 1,
-    justifyContent: "center",
-    padding: 24,
-  },
-  modalContent: {
-    borderRadius: 16,
-    maxWidth: 380,
-    padding: 20,
-    width: "85%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
   },
   modalTitle: {
     fontFamily: "Oxanium-Bold",
     fontSize: 20,
-    marginBottom: 16,
-    textAlign: "center",
   },
   removeAdsBtn: {
     alignItems: "center",
