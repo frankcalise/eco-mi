@@ -290,7 +290,7 @@
       `npx expo install @sentry/react-native` and add the config plugin to `app.config.ts`. Initialize in `_layout.tsx` with DSN from env var (`EXPO_PUBLIC_SENTRY_DSN`). Gives stack traces with source maps, JS error capture, and breadcrumbs. Add DSN to `.env.example` and EAS Secrets. Do this before public release — TestFlight/Play Console crash reports are sufficient for internal testing.
   - Blocked by: Sentry account created, project DSN noted
 
-- [ ] **Enrich PostHog events with device + app context**
+- [x] **Enrich PostHog events with device + app context**
       Today, analytics events only carry custom properties + `environment` ("development"/"production") + `$locale`/`$timezone` (auto-captured because `expo-localization` is installed). Missing critical context: app version, app build, OS name/version, device model, device manufacturer. This made the v1.0.0 launch crash hard to attribute — we couldn't see which version users were on. PostHog's RN SDK auto-captures these when the relevant optional peer deps are installed — no code changes needed beyond the installs.
   - `npx expo install expo-application` → adds `$app_version`, `$app_build`, `$app_namespace`
   - `npx expo install expo-device` → adds `$os_name`, `$os_version`, `$device_model`, `$device_manufacturer`
@@ -298,10 +298,10 @@
   - Verify in PostHog dashboard that events include the new `$`-prefixed props after a release build
   - Consider adding a super-property for `appVariant` (development vs production) via `posthog.register()` so dev events are trivially filterable
 
-- [ ] **Add PostHog identify() + person properties**
+- [x] **Add PostHog identify() + person properties**
       Currently all events are anonymous per-install device ID with no person properties. Without `identify()`, we can't track retention cohorts, link sessions across reinstalls, or attribute revenue. Add a stable anonymous ID stored in MMKV (not tied to any PII) and call `posthog.identify(id, properties)` on app launch. Person properties to set: `firstSeenAt`, `preferredLocale`, `themeContextMode`, `hasPurchasedPremium`. Keep fully anonymous — no email, no external IDs — to match our privacy-first posture.
 
-- [ ] **Install expo-insights for update + adoption telemetry**
+- [x] **Install expo-insights for update + adoption telemetry**
       `npx expo install expo-insights` adds first-class visibility into OTA update adoption, launch success/failure rates, and version distribution across the install base — visible in the Expo dashboard without needing to wire anything into PostHog/Sentry. Especially useful once we start shipping EAS Updates: we'll be able to see how quickly users pick up a new JS bundle and whether a bad update is causing launch failures. No runtime config required beyond the install; data flows automatically on production builds.
 
 ---
