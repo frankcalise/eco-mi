@@ -12,6 +12,7 @@ type GameOverOverlayProps = {
   score: number
   level: number
   highScore: number
+  previousHighScore?: number
   isNewHighScore: boolean
   showRemoveAds?: boolean
   showContinue?: boolean
@@ -25,11 +26,14 @@ type GameOverOverlayProps = {
   onViewAchievements?: () => void
 }
 
+const NEAR_MISS_THRESHOLD = 5
+
 export function GameOverOverlay({
   visible,
   score,
   level,
   highScore,
+  previousHighScore,
   isNewHighScore,
   showRemoveAds,
   showContinue,
@@ -45,6 +49,13 @@ export function GameOverOverlay({
   const { t } = useTranslation()
 
   if (!visible) return null
+
+  const pbDelta = isNewHighScore && previousHighScore !== undefined && previousHighScore > 0
+    ? score - previousHighScore
+    : null
+  const nearMiss = !isNewHighScore && highScore > 0 && highScore - score <= NEAR_MISS_THRESHOLD && highScore - score > 0
+    ? highScore - score
+    : null
 
   return (
     <EaseView
@@ -76,8 +87,21 @@ export function GameOverOverlay({
           </PressableScale>
         )}
 
-        <Text style={[styles.title, { color: theme.destructiveColor }]}>{t("game:gameOver")}</Text>
+        <EaseView
+          initialAnimate={{ opacity: 0, translateY: 8 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ default: { type: "timing", duration: 300 } }}
+        >
+          <Text style={[styles.title, { color: isNewHighScore ? theme.warningColor : theme.destructiveColor }]}>
+            {isNewHighScore ? t("game:newHighScore") : t("game:gameOver")}
+          </Text>
+        </EaseView>
 
+        <EaseView
+          initialAnimate={{ opacity: 0, translateY: 8 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ default: { type: "timing", duration: 300, delay: 100 } }}
+        >
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
             <Text style={[styles.statLabel, { color: theme.secondaryTextColor }]}>
@@ -99,6 +123,18 @@ export function GameOverOverlay({
           </View>
         </View>
 
+        {pbDelta !== null && (
+          <Text style={[styles.deltaText, { color: theme.accentColor }]}>
+            {t("game:pbDelta", { delta: pbDelta })}
+          </Text>
+        )}
+        {nearMiss !== null && (
+          <Text style={[styles.deltaText, { color: theme.warningColor }]}>
+            {t("game:nearMiss", { delta: nearMiss })}
+          </Text>
+        )}
+        </EaseView>
+
         {isNewHighScore && (
           <View style={styles.celebrationContainer}>
             <LottieView
@@ -116,6 +152,11 @@ export function GameOverOverlay({
           </View>
         )}
 
+        <EaseView
+          initialAnimate={{ opacity: 0, translateY: 8 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ default: { type: "timing", duration: 300, delay: 250 } }}
+        >
         <View style={styles.actions}>
           <PressableScale
             testID="btn-play-again"
@@ -198,6 +239,7 @@ export function GameOverOverlay({
             </Text>
           </PressableScale>
         )}
+        </EaseView>
       </EaseView>
     </EaseView>
   )
@@ -243,6 +285,12 @@ const styles = StyleSheet.create({
   celebrationContainer: {
     alignItems: "center",
     marginTop: 12,
+  },
+  deltaText: {
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: "center",
   },
   continueButton: {
     alignItems: "center",

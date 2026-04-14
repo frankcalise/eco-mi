@@ -132,6 +132,7 @@ export function GameScreen() {
   const [showInitialEntry, setShowInitialEntry] = useState(false)
   const [highlightIndex, setHighlightIndex] = useState<number | undefined>(undefined)
   const pendingGameOver = useRef(false)
+  const previousHighScoreRef = useRef(highScore)
   const [pulsingMode, setPulsingMode] = useState<GameMode | null>(null)
   const [pulsePhase, setPulsePhase] = useState<"bright" | "dim">("bright")
   const pulseTimers = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -272,7 +273,7 @@ export function GameScreen() {
   }, [gameState])
 
   async function handleStartGame() {
-    // Show interstitial before starting next game (not on game over)
+    previousHighScoreRef.current = highScore
     const adShown = await showInterstitial(level, removeAds)
     if (adShown) {
       analytics.trackAdShown("interstitial", "game_over")
@@ -629,6 +630,7 @@ export function GameScreen() {
         score={score}
         level={level}
         highScore={highScore}
+        previousHighScore={previousHighScoreRef.current}
         isNewHighScore={isNewHighScore}
         showRemoveAds={!removeAds && adShownThisSession}
         showContinue={rewardedReady && !continuedThisGame}

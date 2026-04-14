@@ -69,6 +69,8 @@ const pt = {
     emptyScore: "----",
     emptyLeaderboard: "Jogue uma partida para conseguir sua primeira pontuação!",
     streakAtRisk: "🔥 Sequência de {{count}} dias — jogue Daily para manter!",
+    pbDelta: "+{{delta}} acima da sua melhor marca anterior!",
+    nearMiss: "Quase lá! Apenas {{delta}} do seu melhor!",
   },
   stats: {
     title: "Estatísticas",
