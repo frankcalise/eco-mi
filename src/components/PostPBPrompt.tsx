@@ -70,13 +70,12 @@ const styles = StyleSheet.create({
   },
   removeAdsButton: {
     alignItems: "center",
+    alignSelf: "center",
     borderRadius: 10,
     flexDirection: "row",
     gap: 8,
-    paddingHorizontal: 24,
+    paddingHorizontal: 32,
     paddingVertical: 12,
-    width: "100%",
-    justifyContent: "center",
   },
   removeAdsText: {
     color: "white",
