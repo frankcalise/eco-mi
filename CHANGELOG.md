@@ -6,6 +6,17 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 
 ## [Unreleased]
 
+### Feat (v1.1.0 Phase C — Retention & Polish)
+- **First-launch onboarding** — tooltip "Tap the button that lit up!" appears during first waiting state, auto-dismisses after first correct input
+- **Wrong-input juice** — red flash overlay (300ms, EaseView opacity) + error haptic on wrong input across all modes
+- **Game-over emotional arc** — staggered card animation (title/stats/actions), PB delta text ("+X from your previous best!"), near-miss text ("So close! Just X away") when within 5 points, title shows "New High Score!" in warningColor on PB
+- **Visual score card sharing** — branded themed card captured via react-native-view-shot, shared as image + fallback text
+- **Local notifications** — 3 local schedules (daily reminder 19:00, streak-save 10:00 next day, win-back after 3 days). Permission asked after 3+ games. Reschedules on every game-over.
+- **Streak loss-aversion banner** — "Day N streak — play Daily to keep it!" on idle screen when streak active + not played today
+- **Stats empty state** — icon + "No games yet" message + "Play Now" CTA when gamesPlayed === 0
+- **Play button dominance** — full-width, larger padding, shadow/elevation, themed accentColor, idle pulse animation. Secondary icons in separate row below.
+- **Post-PB soft IAP prompt** — "New Personal Best! Go ad-free" modal after PB with 7-day cooldown, 3-game minimum, skipped if ReviewPrompt showing
+
 ### Refactor (v1.1.0 Phase B — Code Foundation)
 - **XState game engine** — replaced bare `useState<GameState>` with XState v5 state machine (`gameEngineMachine.ts`). Enforces valid transitions declaratively; machine states `idle → starting → showing → waiting → advancing → gameover` with `replaying` for timed-mode wrong-input. Internal states map to the existing public API — no consumer changes. Mermaid state diagram at `docs/game-engine-states.md`.
 - **GameScreen split** — 1526 → 806 lines. Extracted `ModeItem`, `GameHeader` (with neon cycling state), `GameStatusBar`, `GameSettingsModal` (290 lines, owns its own hooks).

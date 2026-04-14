@@ -641,7 +641,7 @@ These are where v1.1 earns its keep. Ship on top of Phase B foundation.
 - [ ] **Play button visual dominance on idle screen**
       Today the Start button is a modest pill in a row with trophy/stats/achievements icons (`GameScreen.tsx:1441-1449`) — it competes with 4 peer buttons. For F2P, the Play button is the single most important conversion surface. Make it ~70% width, `paddingVertical: 16`, add subtle accent-colored shadow, optional idle pulse (scale 1.0→1.02 loop). Move secondary icons to a less-prominent row below with more spacing.
 
-- [ ] **Post-PB soft IAP prompt**
+- [x] **Post-PB soft IAP prompt**
       Highest-converting IAP moment in casual games is right after a personal best, when emotional investment peaks. Today the game-over overlay shows only Play Again / Share there. Add a dismissible "Go ad-free to stay in the zone" row beneath the celebration Lottie in `GameOverOverlay.tsx`. Cap at once per 7 days per user. Independent of `adShownThisSession` guard (the current remove-ads CTA).
 
 #### Store Submission Prep
