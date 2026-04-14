@@ -91,7 +91,7 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 - AchievementToast respects active theme colors
 
 ### Test
-- 68 unit tests (useGameEngine bugs, useHighScores, useStats, useAchievements, useStoreReview, game flow integration)
+- 103 unit tests — added 35 Phase C tests: usePostPBPrompt (cooldown, delay, dismiss), useNotifications (permission gating, schedule logic), GameOverOverlay (PB delta, near-miss, conditional UI), StreakBanner (visibility conditions)
 - 9 Maestro E2E flows: app-launches, happy-path, game-over, game-over-home, navigation, settings, mode-switch, leaderboard, tracking-screen — all passing
 - Accessibility labels on back buttons (stats, achievements) — Maestro finds via a11y, doubles as VoiceOver support
 
