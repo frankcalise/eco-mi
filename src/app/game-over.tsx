@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { View, Text, Share, StyleSheet } from "react-native"
+import { View, Text, Platform, Share, StyleSheet } from "react-native"
 import type ViewShot from "react-native-view-shot"
 import { useRouter } from "expo-router"
 import * as Sharing from "expo-sharing"
@@ -299,7 +299,11 @@ export default function GameOverScreen() {
               accessibilityLabel={t("game:share")}
               accessibilityRole="button"
             >
-              <Ionicons name="share-outline" size={22} color={activeTheme.textColor} />
+              <Ionicons
+                name={Platform.OS === "ios" ? "share-outline" : "share-social-outline"}
+                size={22}
+                color={activeTheme.textColor}
+              />
             </PressableScale>
             <PressableScale testID="btn-home" style={styles.mainMenuLink} onPress={handleMainMenu}>
               <Text style={[styles.mainMenuText, { color: activeTheme.secondaryTextColor }]}>

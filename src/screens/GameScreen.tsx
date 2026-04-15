@@ -445,10 +445,14 @@ export function GameScreen() {
             </View>
             {timerDelta !== null && (
               <EaseView
-                initialAnimate={{ opacity: 0, translateY: 6 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ default: { type: "spring", stiffness: 300, damping: 20 } }}
-                style={styles.timerDeltaContainer}
+                // Pop in at 1.3x and fully opaque, then drift up + shrink + fade
+                key={`${timerDelta}-${Date.now()}`}
+                initialAnimate={{ opacity: 1, scale: 1.3, translateY: 0 }}
+                animate={{ opacity: 0, scale: 1, translateY: -70 }}
+                transition={{
+                  default: { type: "timing", duration: 900, easing: "easeOut" },
+                }}
+                style={styles.timerDeltaFloat}
               >
                 <Text
                   style={[
@@ -650,13 +654,21 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-Bold",
     fontSize: 24,
   },
-  timerDeltaContainer: {
-    marginTop: 4,
+  timerDeltaFloat: {
+    alignItems: "center",
+    left: "50%",
+    position: "absolute",
+    top: "50%",
+    transform: [{ translateX: -50 }, { translateY: -60 }],
+    width: 100,
   },
   timerDeltaText: {
     fontFamily: "Oxanium-Bold",
-    fontSize: 18,
+    fontSize: 22,
     textAlign: "center",
+    textShadowColor: "rgba(0, 0, 0, 0.4)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   container: {
     alignItems: "center",
