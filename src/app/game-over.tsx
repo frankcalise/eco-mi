@@ -211,22 +211,22 @@ export default function GameOverScreen() {
             style={styles.statsRow}
           >
             <View style={[styles.statPill, { backgroundColor: activeTheme.surfaceColor }]}>
-              <Text style={[styles.statValue, { color: activeTheme.textColor }]}>{score}</Text>
               <Text style={[styles.statLabel, { color: activeTheme.secondaryTextColor }]}>
                 {t("game:score")}
               </Text>
+              <Text style={[styles.statValue, { color: activeTheme.textColor }]}>{score}</Text>
             </View>
             <View style={[styles.statPill, { backgroundColor: activeTheme.surfaceColor }]}>
-              <Text style={[styles.statValue, { color: activeTheme.textColor }]}>{level}</Text>
               <Text style={[styles.statLabel, { color: activeTheme.secondaryTextColor }]}>
                 {t("game:level")}
               </Text>
+              <Text style={[styles.statValue, { color: activeTheme.textColor }]}>{level}</Text>
             </View>
             <View style={[styles.statPill, { backgroundColor: activeTheme.surfaceColor }]}>
-              <Text style={[styles.statValue, { color: activeTheme.textColor }]}>{highScore}</Text>
               <Text style={[styles.statLabel, { color: activeTheme.secondaryTextColor }]}>
                 {t("game:best")}
               </Text>
+              <Text style={[styles.statValue, { color: activeTheme.textColor }]}>{highScore}</Text>
             </View>
           </EaseView>
 
@@ -468,7 +468,6 @@ const styles = StyleSheet.create({
   statLabel: {
     fontFamily: "Oxanium-Regular",
     fontSize: 12,
-    marginTop: 4,
   },
   statPill: {
     alignItems: "center",
@@ -487,6 +486,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontFamily: "Oxanium-Bold",
     fontSize: 28,
+    marginTop: 4,
   },
   title: {
     fontFamily: "Oxanium-Bold",

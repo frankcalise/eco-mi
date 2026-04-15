@@ -9,9 +9,16 @@ type GameStatusBarProps = {
   sequence: Color[]
   playerSequence: Color[]
   theme: GameTheme
+  timerDelta?: number | null
 }
 
-export function GameStatusBar({ gameState, sequence, playerSequence, theme }: GameStatusBarProps) {
+export function GameStatusBar({
+  gameState,
+  sequence,
+  playerSequence,
+  theme,
+  timerDelta,
+}: GameStatusBarProps) {
   const { t } = useTranslation()
 
   return (
@@ -49,11 +56,39 @@ export function GameStatusBar({ gameState, sequence, playerSequence, theme }: Ga
             </Text>
           ))}
       </View>
+      {/* Reserved slot for timer delta feedback — prevents layout shift */}
+      <View style={styles.deltaSlot}>
+        {timerDelta !== null && timerDelta !== undefined && (
+          <Text
+            style={[
+              styles.deltaText,
+              {
+                color: timerDelta > 0 ? theme.accentColor : theme.destructiveColor,
+              },
+            ]}
+          >
+            {timerDelta > 0
+              ? t("game:timeGained", { delta: timerDelta })
+              : t("game:timePenalty", { delta: Math.abs(timerDelta) })}
+          </Text>
+        )}
+      </View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
+  deltaSlot: {
+    alignItems: "center",
+    height: 22,
+    justifyContent: "center",
+    marginTop: 6,
+  },
+  deltaText: {
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 14,
+    textAlign: "center",
+  },
   progressDot: {
     borderRadius: 5,
     height: 10,

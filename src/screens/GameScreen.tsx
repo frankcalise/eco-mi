@@ -452,29 +452,6 @@ export function GameScreen() {
                 </Text>
               )}
             </View>
-            {timerDelta !== null && (
-              <EaseView
-                // Pop in at 1.2x and fully opaque, then drift up + fade as it clears the board
-                key={`${timerDelta}-${Date.now()}`}
-                initialAnimate={{ opacity: 1, scale: 1.2, translateY: 0 }}
-                animate={{ opacity: 0, scale: 1, translateY: -180 }}
-                transition={{
-                  default: { type: "timing", duration: 1100, easing: "easeOut" },
-                }}
-                style={styles.timerDeltaFloat}
-              >
-                <View style={[styles.timerDeltaPill, { backgroundColor: activeTheme.backgroundColor }]}>
-                  <Text
-                    style={[
-                      styles.timerDeltaText,
-                      { color: timerDelta > 0 ? activeTheme.accentColor : activeTheme.destructiveColor },
-                    ]}
-                  >
-                    {timerDelta > 0 ? `+${timerDelta}s` : `${timerDelta}s`}
-                  </Text>
-                </View>
-              </EaseView>
-            )}
           </View>
         </View>
       </View>
@@ -565,6 +542,7 @@ export function GameScreen() {
         sequence={sequence}
         playerSequence={playerSequence}
         theme={activeTheme}
+        timerDelta={mode === "timed" ? timerDelta : null}
       />
 
       {/* Mode Selector Modal */}
@@ -672,25 +650,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: 48,
     justifyContent: "center",
-  },
-  timerDeltaFloat: {
-    alignItems: "center",
-    left: "50%",
-    marginLeft: -60,
-    marginTop: -20,
-    position: "absolute",
-    top: "50%",
-    width: 120,
-  },
-  timerDeltaPill: {
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  timerDeltaText: {
-    fontFamily: "Oxanium-Bold",
-    fontSize: 20,
-    textAlign: "center",
   },
   container: {
     alignItems: "center",

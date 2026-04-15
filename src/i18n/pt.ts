@@ -23,6 +23,8 @@ const pt = {
     best: "Melhor",
     watchSequence: "Observe a sequência...",
     repeatSequence: "Repita a sequência!",
+    timeGained: "Bom trabalho! +{{delta}}s",
+    timePenalty: "Ops, tente novamente! -{{delta}}s",
     pressStart: "Pressione Iniciar Jogo para começar!",
     continue: "Assistir Anúncio para Continuar",
     removeAds: "Remover Anúncios",

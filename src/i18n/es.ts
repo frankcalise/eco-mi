@@ -23,6 +23,8 @@ const es = {
     best: "Mejor",
     watchSequence: "Observa la secuencia...",
     repeatSequence: "¡Repite la secuencia!",
+    timeGained: "¡Buen trabajo! +{{delta}}s",
+    timePenalty: "¡Ups, inténtalo de nuevo! -{{delta}}s",
     pressStart: "¡Pulsa Iniciar Juego para empezar!",
     continue: "Ver Anuncio para Continuar",
     removeAds: "Eliminar Anuncios",
