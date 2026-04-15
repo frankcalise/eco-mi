@@ -268,10 +268,10 @@
   - [x] Skip game-over entirely on score 0 (bounce to idle)
 
   **Still TODO:**
-  - [ ] Track session play time in useGameEngine (start on startGame, stop on gameover, expose as `sessionTime`)
-  - [ ] Add Time stat pill (replaces Best? or alongside) with colored borders like Duo's XP/Amazing/Speedy
+  - [x] Track session play time in useGameEngine (start on startGame, stop on gameover, expose as `sessionTime`)
+  - [x] Add Time stat pill alongside Score/Level/Best (4-pill 2x2 grid mirrors game-pad color layout)
   - [ ] Browse LottieFiles for a premium game-over animation (current trophy is placeholder)
-  - [ ] Colored accent borders on stat pills (Duolingo-style)
+  - [x] Colored accent borders on stat pills (Duolingo-style) — borders mirror game-pad red/blue/green/yellow
   - [ ] Inline initials entry on game-over screen (replace InitialEntryModal) — separate backlog entry below
 
 - [x] **Add time penalty for wrong input in timed mode**
