@@ -1,6 +1,6 @@
-# Game over: start game, tap wrong color, verify game-over screen appears with all buttons
+# Game over: complete level 1, fail level 2, verify full game-over flow
 # Requires app built with EXPO_PUBLIC_TEST_SEED=42
-# Seed 42 level 1 expects green — we tap red to fail
+# Seed 42 level 1 expects green; level 2 also starts with green
 appId: ${MAESTRO_APP_ID}
 tags:
   - gameplay
@@ -13,15 +13,33 @@ onFlowStart:
 - tapOn:
     id: "btn-start"
 
+# Wait for initial sequence delay (500ms) + level 1 sequence playback
+- waitForAnimationToEnd
 - waitForAnimationToEnd
 
-# Tap wrong color (seed 42 expects green, tap red)
+# Complete level 1 (green)
+- tapOn:
+    id: "btn-green"
+
+# Wait for level 2 sequence (2 colors × ~1s interval + advancing delay)
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+
+# Tap wrong color — level 2 also starts with green, so red is wrong
 - tapOn:
     id: "btn-red"
 
-- waitForAnimationToEnd
+# Score is 10 → qualifies for leaderboard → InitialEntryModal first
+- extendedWaitUntil:
+    visible:
+      id: "btn-initial-dismiss"
+    timeout: 10000
 
-# Wait for game-over screen (full route now, not overlay)
+- tapOn:
+    id: "btn-initial-dismiss"
+
+# Now the game-over screen should appear
 - extendedWaitUntil:
     visible:
       id: "btn-play-again"
@@ -29,12 +47,11 @@ onFlowStart:
 - assertVisible:
     id: "btn-share"
 
-# Tap play again — returns to game screen and starts new game
+# Tap play again → returns to game and starts new round
 - tapOn:
     id: "btn-play-again"
 
 - waitForAnimationToEnd
 
-# Game-over screen should be gone, gameplay button visible
 - assertNotVisible:
     id: "btn-play-again"

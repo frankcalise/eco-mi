@@ -1,0 +1,30 @@
+# Losing at level 1 (score 0) should skip game-over screen and return to idle
+# — nothing meaningful to show. Requires EXPO_PUBLIC_TEST_SEED=42.
+appId: ${MAESTRO_APP_ID}
+tags:
+  - gameplay
+onFlowStart:
+  - runFlow: ../shared/_OnFlowStart.yaml
+---
+- runFlow: ../shared/_dismiss-tracking.yaml
+
+- tapOn:
+    id: "btn-start"
+
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+
+# Lose at level 1 immediately (seed 42 expects green, tap red)
+- tapOn:
+    id: "btn-red"
+
+- waitForAnimationToEnd
+
+# Should bounce back to idle — btn-start visible, no game-over screen
+- extendedWaitUntil:
+    visible:
+      id: "btn-start"
+    timeout: 5000
+
+- assertNotVisible:
+    id: "btn-play-again"

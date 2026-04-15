@@ -1,4 +1,5 @@
-# Game over → tap Home link → returns to idle
+# Game over → tap Main Menu link → returns to idle
+# Complete level 1 first (score 0 bypasses game-over now)
 appId: ${MAESTRO_APP_ID}
 tags:
   - gameplay
@@ -9,27 +10,44 @@ onFlowStart:
 
 - tapOn:
     id: "btn-start"
+
+- waitForAnimationToEnd
 - waitForAnimationToEnd
 
-# Lose immediately (seed 42 expects green, tap red)
+# Complete level 1 (green) to score 10
+- tapOn:
+    id: "btn-green"
+
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+
+# Fail level 2 (red when expected green)
 - tapOn:
     id: "btn-red"
-- waitForAnimationToEnd
 
-# Wait for game-over screen
+# InitialEntryModal appears for qualifying score
 - extendedWaitUntil:
     visible:
-      id: "btn-play-again"
+      id: "btn-initial-dismiss"
+    timeout: 10000
+
+- tapOn:
+    id: "btn-initial-dismiss"
+
+# Game-over screen
+- extendedWaitUntil:
+    visible:
+      id: "btn-home"
     timeout: 10000
 
 - assertVisible:
     id: "btn-share"
-- assertVisible:
-    id: "btn-home"
 
-# Tap home — returns to idle screen
+# Main Menu → back to idle
 - tapOn:
     id: "btn-home"
+
 - waitForAnimationToEnd
 
 - assertVisible:

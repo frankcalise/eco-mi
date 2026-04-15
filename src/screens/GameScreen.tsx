@@ -233,9 +233,15 @@ export function GameScreen() {
       rescheduleAfterGameOver()
 
       // Navigate to game-over screen only if initials modal isn't pending
-      // (if it is, handleInitialSubmit will navigate after submission)
+      // (if it is, handleInitialSubmit will navigate after submission).
+      // Skip the game-over screen entirely for a score of 0 — nothing to show,
+      // just bounce back to the main menu.
       if (!pendingGameOver.current) {
-        navigateToGameOver()
+        if (score === 0) {
+          resetGame()
+        } else {
+          navigateToGameOver()
+        }
       }
     }
 
