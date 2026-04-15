@@ -72,6 +72,17 @@ describe("useAchievements", () => {
     expect(result.current.isUnlocked("level_10")).toBe(false)
   })
 
+  it("unlocks level_12 at level 12", () => {
+    const { result } = renderHook(() => useAchievements())
+
+    act(() => {
+      result.current.checkAchievements({ ...baseContext, level: 12 })
+    })
+    expect(result.current.isUnlocked("level_10")).toBe(true)
+    expect(result.current.isUnlocked("level_12")).toBe(true)
+    expect(result.current.isUnlocked("level_15")).toBe(false)
+  })
+
   it("unlocks streak achievements", () => {
     const { result } = renderHook(() => useAchievements())
 

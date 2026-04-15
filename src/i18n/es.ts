@@ -103,6 +103,8 @@ const es = {
     level_5_desc: "Alcanza el nivel 5",
     level_10: "En Llamas",
     level_10_desc: "Alcanza el nivel 10",
+    level_12: "Esto se pone serio",
+    level_12_desc: "Alcanza el nivel 12",
     level_15: "Imparable",
     level_15_desc: "Alcanza el nivel 15",
     level_20: "Legendario",

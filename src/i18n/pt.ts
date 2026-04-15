@@ -103,6 +103,8 @@ const pt = {
     level_5_desc: "Alcance o nível 5",
     level_10: "Pegando Fogo",
     level_10_desc: "Alcance o nível 10",
+    level_12: "Ficando sério",
+    level_12_desc: "Alcance o nível 12",
     level_15: "Imparável",
     level_15_desc: "Alcance o nível 15",
     level_20: "Lendário",

@@ -5,6 +5,7 @@ export type AchievementId =
   | "score_1000"
   | "level_5"
   | "level_10"
+  | "level_12"
   | "level_15"
   | "level_20"
   | "streak_3"
@@ -27,6 +28,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "score_1000", icon: "trophy" },
   { id: "level_5", icon: "flame" },
   { id: "level_10", icon: "bonfire" },
+  { id: "level_12", icon: "flash" },
   { id: "level_15", icon: "rocket" },
   { id: "level_20", icon: "diamond" },
   { id: "streak_3", icon: "calendar" },

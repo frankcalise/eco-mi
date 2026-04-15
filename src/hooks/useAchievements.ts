@@ -66,6 +66,7 @@ export function useAchievements(): UseAchievementsReturn {
 
     if (ctx.level >= 5) record = unlock(record, "level_5", newUnlocks)
     if (ctx.level >= 10) record = unlock(record, "level_10", newUnlocks)
+    if (ctx.level >= 12) record = unlock(record, "level_12", newUnlocks)
     if (ctx.level >= 15) record = unlock(record, "level_15", newUnlocks)
     if (ctx.level >= 20) record = unlock(record, "level_20", newUnlocks)
 

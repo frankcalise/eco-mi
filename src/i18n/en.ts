@@ -103,6 +103,8 @@ const en = {
     level_5_desc: "Reach level 5",
     level_10: "On Fire",
     level_10_desc: "Reach level 10",
+    level_12: "Getting Serious",
+    level_12_desc: "Reach level 12",
     level_15: "Unstoppable",
     level_15_desc: "Reach level 15",
     level_20: "Legendary",
