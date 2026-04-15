@@ -49,7 +49,11 @@ function Root() {
   }, [loaded])
 
   if (!loaded) {
-    return null
+    return (
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+        <View style={{ flex: 1, backgroundColor: "#1a1a2e" }} />
+      </SafeAreaProvider>
+    )
   }
 
   const navigation = (
