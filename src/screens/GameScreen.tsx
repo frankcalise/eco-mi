@@ -4,6 +4,7 @@ import {
   View,
   Text,
   Pressable,
+  Platform,
   Share,
   StyleSheet,
   useWindowDimensions,
@@ -11,6 +12,7 @@ import {
 } from "react-native"
 import * as Haptics from "expo-haptics"
 import { useRouter } from "expo-router"
+import * as Sharing from "expo-sharing"
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
@@ -338,7 +340,12 @@ export function GameScreen() {
     try {
       const uri = await shareCardRef.current?.capture?.()
       if (uri) {
-        await Share.share({ url: uri, message })
+        if (Platform.OS === "android") {
+          const fileUri = uri.startsWith("file://") ? uri : `file://${uri}`
+          await Sharing.shareAsync(fileUri, { mimeType: "image/png", dialogTitle: message })
+        } else {
+          await Share.share({ url: uri, message })
+        }
       } else {
         await Share.share({ message })
       }
