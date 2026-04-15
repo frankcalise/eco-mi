@@ -1,7 +1,4 @@
-# Game over → verify overlay elements and dismiss
-# NOTE: The home/X button (btn-home) is not reliably findable by Maestro
-# due to PressableScale + EaseView wrapper and small touch target.
-# This will improve after game-over UX refactor.
+# Game over → tap Home link → returns to idle
 appId: ${MAESTRO_APP_ID}
 tags:
   - gameplay
@@ -19,22 +16,21 @@ onFlowStart:
     id: "btn-red"
 - waitForAnimationToEnd
 
-# Wait for game over overlay
+# Wait for game-over screen
 - extendedWaitUntil:
     visible:
-      id: "overlay-game-over"
+      id: "btn-play-again"
     timeout: 10000
 
-# Verify core overlay elements are present
-- assertVisible:
-    id: "btn-play-again"
 - assertVisible:
     id: "btn-share"
+- assertVisible:
+    id: "btn-home"
 
-# Use Play Again to dismiss and verify game restarts
+# Tap home — returns to idle screen
 - tapOn:
-    id: "btn-play-again"
+    id: "btn-home"
 - waitForAnimationToEnd
 
-- assertNotVisible:
-    id: "overlay-game-over"
+- assertVisible:
+    id: "btn-start"

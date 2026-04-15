@@ -1,8 +1,4 @@
-# Settings: verify settings button exists on idle screen
-# NOTE: ModalOverlay (absolute-positioned) has known Maestro visibility issues
-# on iOS — the overlay renders correctly but Maestro's accessibility tree
-# doesn't reliably detect elements inside it. Full settings interaction is
-# verified via manual testing. This flow verifies the button exists.
+# Settings: navigate to dedicated /settings screen, verify, go back
 appId: ${MAESTRO_APP_ID}
 tags:
   - settings
@@ -15,3 +11,22 @@ onFlowStart:
     id: "btn-start"
 - assertVisible:
     id: "btn-settings"
+
+# Open settings via testID
+- tapOn:
+    id: "btn-settings"
+- waitForAnimationToEnd
+
+# Settings screen visible
+- assertVisible: "Settings"
+
+# Sound toggle present
+- assertVisible:
+    id: "btn-sound-toggle"
+
+# Back via accessibility label on header back button
+- tapOn: "Back"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "btn-start"

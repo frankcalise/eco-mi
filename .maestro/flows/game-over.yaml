@@ -1,4 +1,4 @@
-# Game over: start game, tap wrong color, verify overlay appears with all buttons
+# Game over: start game, tap wrong color, verify game-over screen appears with all buttons
 # Requires app built with EXPO_PUBLIC_TEST_SEED=42
 # Seed 42 level 1 expects green — we tap red to fail
 appId: ${MAESTRO_APP_ID}
@@ -21,22 +21,20 @@ onFlowStart:
 
 - waitForAnimationToEnd
 
-# Wait for game over overlay to appear
+# Wait for game-over screen (full route now, not overlay)
 - extendedWaitUntil:
     visible:
-      id: "overlay-game-over"
+      id: "btn-play-again"
     timeout: 10000
-- assertVisible:
-    id: "btn-play-again"
 - assertVisible:
     id: "btn-share"
 
-# Tap play again to start a new game
+# Tap play again — returns to game screen and starts new game
 - tapOn:
     id: "btn-play-again"
 
 - waitForAnimationToEnd
 
-# Game over overlay should disappear
+# Game-over screen should be gone, gameplay button visible
 - assertNotVisible:
-    id: "overlay-game-over"
+    id: "btn-play-again"

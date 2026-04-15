@@ -193,6 +193,7 @@ export default function GameOverScreen() {
       >
         {showContinue && (
           <PressableScale
+            testID="btn-continue"
             style={[styles.continueButton, { borderColor: activeTheme.borderColor }]}
             onPress={handleContinue}
           >
@@ -205,6 +206,7 @@ export default function GameOverScreen() {
 
         <View style={styles.primaryRow}>
           <PressableScale
+            testID="btn-share"
             style={[styles.shareButton, { backgroundColor: activeTheme.surfaceColor }]}
             onPress={handleShare}
             accessibilityLabel={t("game:share")}
@@ -213,6 +215,7 @@ export default function GameOverScreen() {
             <Ionicons name="share-outline" size={22} color={activeTheme.textColor} />
           </PressableScale>
           <PressableScale
+            testID="btn-play-again"
             style={[styles.playAgainButton, { backgroundColor: activeTheme.accentColor }]}
             onPress={handlePlayAgain}
             accessibilityLabel={t("game:playAgain")}
@@ -225,6 +228,7 @@ export default function GameOverScreen() {
 
         {showRemoveAds && (
           <PressableScale
+            testID="btn-remove-ads"
             style={styles.removeAdsLink}
             onPress={() => router.push("/settings")}
           >
@@ -235,7 +239,7 @@ export default function GameOverScreen() {
           </PressableScale>
         )}
 
-        <PressableScale style={styles.homeLink} onPress={handleHome}>
+        <PressableScale testID="btn-home" style={styles.homeLink} onPress={handleHome}>
           <Text style={[styles.homeLinkText, { color: activeTheme.secondaryTextColor }]}>
             {t("game:home")}
           </Text>

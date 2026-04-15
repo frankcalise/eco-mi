@@ -1,5 +1,4 @@
-# Leaderboard: open modal, verify it appeared, close
-# NOTE: Same Modal visibility issue — use coordinate dismiss
+# Leaderboard: navigate to dedicated /leaderboard screen, verify, go back
 appId: ${MAESTRO_APP_ID}
 tags:
   - navigation
@@ -11,14 +10,15 @@ onFlowStart:
 - assertVisible:
     id: "btn-start"
 
-# Open leaderboard via accessibility label
+# Open leaderboard via accessibility label on idle trophy button
 - tapOn: "Leaderboard"
 - waitForAnimationToEnd
-- waitForAnimationToEnd
 
-# Close by tapping above the modal
-- tapOn:
-    point: "50%,8%"
+# Leaderboard screen visible
+- assertVisible: "Leaderboard"
+
+# Back via accessibility label on header back button
+- tapOn: "Back"
 - waitForAnimationToEnd
 
 - assertVisible:
