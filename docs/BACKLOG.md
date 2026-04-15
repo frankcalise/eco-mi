@@ -315,6 +315,9 @@
 
 ## Tech Debt
 
+- [ ] **Shared Button component with variants + fullWidth preset**
+      We have ~8 bespoke button styles across screens (Play Again, Continue, Share, Remove Ads, Restore Purchases, Sound toggle, Enable Reminders, etc.) each with near-identical padding/radius/flex rules. Every time a button is full width, centering icon+text in a flex row has to be remembered manually — missed it on Remove Ads and Sound toggle until a visual review. Create `<Button variant="primary|secondary|outlined|ghost" fullWidth size="sm|md|lg">` with centering baked into `fullWidth`, consistent padding/radius tokens, and theme-aware colors. Migrate existing buttons incrementally. Prevents future inconsistency drift and kills ~100 lines of duplicated StyleSheet rules.
+
 - [x] **Remove unused navigation dependencies**
       Remove `@react-navigation/native-stack` and `react-native-drawer-layout` from `package.json`. Expo Router brings in its own navigation stack — these are unused Ignite boilerplate leftovers.
 
