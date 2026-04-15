@@ -379,7 +379,10 @@ export function GameScreen() {
         </View>
       </View>
 
-      <OnboardingTooltip visible={showOnboardingTooltip} theme={activeTheme} />
+      {/* Reserved space prevents layout shift when tooltip appears on first run */}
+      <View style={styles.onboardingSlot}>
+        <OnboardingTooltip visible={showOnboardingTooltip} theme={activeTheme} />
+      </View>
 
       {/* Game Board */}
       <View style={styles.gameBoard}>
@@ -451,23 +454,25 @@ export function GameScreen() {
             </View>
             {timerDelta !== null && (
               <EaseView
-                // Pop in at 1.3x and fully opaque, then drift up + shrink + fade
+                // Pop in at 1.2x and fully opaque, then drift up + shrink + fade
                 key={`${timerDelta}-${Date.now()}`}
-                initialAnimate={{ opacity: 1, scale: 1.3, translateY: 0 }}
+                initialAnimate={{ opacity: 1, scale: 1.2, translateY: 0 }}
                 animate={{ opacity: 0, scale: 1, translateY: -70 }}
                 transition={{
                   default: { type: "timing", duration: 900, easing: "easeOut" },
                 }}
                 style={styles.timerDeltaFloat}
               >
-                <Text
-                  style={[
-                    styles.timerDeltaText,
-                    { color: timerDelta > 0 ? activeTheme.accentColor : activeTheme.destructiveColor },
-                  ]}
-                >
-                  {timerDelta > 0 ? `+${timerDelta}s` : `${timerDelta}s`}
-                </Text>
+                <View style={[styles.timerDeltaPill, { backgroundColor: activeTheme.backgroundColor }]}>
+                  <Text
+                    style={[
+                      styles.timerDeltaText,
+                      { color: timerDelta > 0 ? activeTheme.accentColor : activeTheme.destructiveColor },
+                    ]}
+                  >
+                    {timerDelta > 0 ? `+${timerDelta}s` : `${timerDelta}s`}
+                  </Text>
+                </View>
               </EaseView>
             )}
           </View>
@@ -663,6 +668,11 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-Bold",
     fontSize: 24,
   },
+  onboardingSlot: {
+    alignItems: "center",
+    height: 48,
+    justifyContent: "center",
+  },
   timerDeltaFloat: {
     alignItems: "center",
     left: "50%",
@@ -671,13 +681,15 @@ const styles = StyleSheet.create({
     transform: [{ translateX: -50 }, { translateY: -60 }],
     width: 100,
   },
+  timerDeltaPill: {
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
   timerDeltaText: {
     fontFamily: "Oxanium-Bold",
-    fontSize: 22,
+    fontSize: 20,
     textAlign: "center",
-    textShadowColor: "rgba(0, 0, 0, 0.4)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
   },
   container: {
     alignItems: "center",

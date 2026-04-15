@@ -37,7 +37,7 @@ export function InitialEntryModal({
   const cursorAnim = useRef(new Animated.Value(1)).current
 
   const accent = theme.buttonColors.green.color
-  const highlight = theme.buttonColors.red.color
+  const highlight = theme.warningColor
   const inputColor = theme.textColor
 
   useEffect(() => {
