@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { View, Text, Share, StyleSheet } from "react-native"
 import type ViewShot from "react-native-view-shot"
-import { useRouter, useLocalSearchParams } from "expo-router"
+import { useRouter } from "expo-router"
 import * as Sharing from "expo-sharing"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
@@ -17,11 +17,11 @@ import { ShareScoreCard } from "@/components/ShareScoreCard"
 import { ACHIEVEMENTS } from "@/config/achievements"
 import { DAILY_CURRENT_STREAK, STATS_GAMES_PLAYED } from "@/config/storageKeys"
 import { useAchievements } from "@/hooks/useAchievements"
-import type { GameMode } from "@/hooks/useGameEngine"
 import { usePostPBPrompt } from "@/hooks/usePostPBPrompt"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
+import { useGameOverStore } from "@/stores/gameOverStore"
 import { usePendingActionStore } from "@/stores/pendingActionStore"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { useAnalytics } from "@/utils/analytics"
@@ -37,25 +37,8 @@ export default function GameOverScreen() {
   const analytics = useAnalytics()
   const shareCardRef = useRef<ViewShot>(null)
 
-  const params = useLocalSearchParams<{
-    score?: string
-    level?: string
-    highScore?: string
-    previousHighScore?: string
-    isNewHighScore?: string
-    mode?: string
-    showRemoveAds?: string
-    showContinue?: string
-  }>()
-
-  const score = parseInt(params.score ?? "0", 10)
-  const level = parseInt(params.level ?? "1", 10)
-  const highScore = parseInt(params.highScore ?? "0", 10)
-  const previousHighScore = parseInt(params.previousHighScore ?? "0", 10)
-  const isNewHighScore = params.isNewHighScore === "true"
-  const mode = (params.mode ?? "classic") as GameMode
-  const showRemoveAds = params.showRemoveAds === "true"
-  const showContinue = params.showContinue === "true"
+  const { score, level, highScore, previousHighScore, isNewHighScore, mode, showRemoveAds, showContinue } =
+    useGameOverStore()
 
   const { removeAds } = usePurchases()
   const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } = useStoreReview()

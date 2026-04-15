@@ -34,6 +34,7 @@ import { usePurchases } from "@/hooks/usePurchases"
 import { useSoundPack } from "@/hooks/useSoundPack"
 import { useNotifications, shouldShowNotificationPrompt } from "@/hooks/useNotifications"
 import { useTheme } from "@/hooks/useTheme"
+import { useGameOverStore } from "@/stores/gameOverStore"
 import { usePendingActionStore } from "@/stores/pendingActionStore"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { useAnalytics } from "@/utils/analytics"
@@ -261,19 +262,17 @@ export function GameScreen() {
   }
 
   function navigateToGameOver() {
-    router.push({
-      pathname: "/game-over",
-      params: {
-        score: String(score),
-        level: String(level),
-        highScore: String(highScore),
-        previousHighScore: String(previousHighScoreRef.current),
-        isNewHighScore: String(isNewHighScore),
-        mode,
-        showRemoveAds: String(!removeAds && adShownThisSession),
-        showContinue: String(rewardedReady && !continuedThisGame),
-      },
+    useGameOverStore.getState().setGameOver({
+      score,
+      level,
+      highScore,
+      previousHighScore: previousHighScoreRef.current,
+      isNewHighScore,
+      mode,
+      showRemoveAds: !removeAds && adShownThisSession,
+      showContinue: rewardedReady && !continuedThisGame,
     })
+    router.push("/game-over")
   }
 
   async function handleContinue() {
