@@ -120,6 +120,23 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
           iosAppId: ADMOB_IOS_APP_ID,
         },
       ],
+      [
+        "./plugins/withLocalizedPermissions",
+        {
+          es: {
+            NSUserTrackingUsageDescription:
+              "Tus datos se utilizan para mostrar anuncios personalizados y medir su rendimiento, lo que nos permite mantener Eco Mi gratis.",
+            NSMicrophoneUsageDescription:
+              "Esta aplicación no utiliza el micrófono. Este permiso es requerido por la biblioteca del motor de audio.",
+          },
+          pt: {
+            NSUserTrackingUsageDescription:
+              "Seus dados são usados para exibir anúncios personalizados e medir o desempenho dos anúncios, o que nos permite manter o Eco Mi gratuito.",
+            NSMicrophoneUsageDescription:
+              "Este aplicativo não usa o microfone. Esta permissão é exigida pela biblioteca do motor de áudio.",
+          },
+        },
+      ],
     ],
     experiments: {
       tsconfigPaths: true,
