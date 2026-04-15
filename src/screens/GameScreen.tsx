@@ -26,7 +26,7 @@ import { StreakBanner } from "@/components/StreakBanner"
 import { InitialEntryModal } from "@/components/InitialEntryModal"
 import { PressableScale } from "@/components/PressableScale"
 import { TimerRing } from "@/components/TimerRing"
-import { DAILY_CURRENT_STREAK, ONBOARDING_COMPLETED, PENDING_GAME_ACTION, STATS_GAMES_PLAYED } from "@/config/storageKeys"
+import { DAILY_CURRENT_STREAK, ONBOARDING_COMPLETED, STATS_GAMES_PLAYED } from "@/config/storageKeys"
 import { useAds } from "@/hooks/useAds"
 import { useGameEngine, colors, type GameMode } from "@/hooks/useGameEngine"
 import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
@@ -34,6 +34,7 @@ import { usePurchases } from "@/hooks/usePurchases"
 import { useSoundPack } from "@/hooks/useSoundPack"
 import { useNotifications, shouldShowNotificationPrompt } from "@/hooks/useNotifications"
 import { useTheme } from "@/hooks/useTheme"
+import { usePendingActionStore } from "@/stores/pendingActionStore"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { useAnalytics } from "@/utils/analytics"
 import { loadString, saveString } from "@/utils/storage"
@@ -104,14 +105,18 @@ export function GameScreen() {
 
   useFocusEffect(() => {
     syncSoundState()
-    const pending = loadString(PENDING_GAME_ACTION)
-    if (pending) {
-      saveString(PENDING_GAME_ACTION, "")
-      if (pending === "play_again") handleStartGame()
-      else if (pending === "continue") handleContinue()
-      else if (pending === "main_menu") resetGame()
-    }
   })
+
+  const pendingAction = usePendingActionStore((s) => s.action)
+  const clearPendingAction = usePendingActionStore((s) => s.clear)
+
+  useEffect(() => {
+    if (!pendingAction) return
+    clearPendingAction()
+    if (pendingAction === "play_again") handleStartGame()
+    else if (pendingAction === "continue") handleContinue()
+    else if (pendingAction === "main_menu") resetGame()
+  }, [pendingAction])
 
   const {
     showInterstitial,

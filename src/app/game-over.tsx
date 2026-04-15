@@ -15,16 +15,17 @@ import { PressableScale } from "@/components/PressableScale"
 import { ReviewPrompt } from "@/components/ReviewPrompt"
 import { ShareScoreCard } from "@/components/ShareScoreCard"
 import { ACHIEVEMENTS } from "@/config/achievements"
-import { DAILY_CURRENT_STREAK, PENDING_GAME_ACTION, STATS_GAMES_PLAYED } from "@/config/storageKeys"
+import { DAILY_CURRENT_STREAK, STATS_GAMES_PLAYED } from "@/config/storageKeys"
 import { useAchievements } from "@/hooks/useAchievements"
 import type { GameMode } from "@/hooks/useGameEngine"
 import { usePostPBPrompt } from "@/hooks/usePostPBPrompt"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
+import { usePendingActionStore } from "@/stores/pendingActionStore"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { useAnalytics } from "@/utils/analytics"
-import { loadString, saveString } from "@/utils/storage"
+import { loadString } from "@/utils/storage"
 
 const NEAR_MISS_THRESHOLD = 5
 
@@ -135,18 +136,20 @@ export default function GameOverScreen() {
     } catch {}
   }
 
+  const setPendingAction = usePendingActionStore((s) => s.setAction)
+
   function handlePlayAgain() {
-    saveString(PENDING_GAME_ACTION, "play_again")
+    setPendingAction("play_again")
     router.back()
   }
 
   function handleContinue() {
-    saveString(PENDING_GAME_ACTION, "continue")
+    setPendingAction("continue")
     router.back()
   }
 
   function handleMainMenu() {
-    saveString(PENDING_GAME_ACTION, "main_menu")
+    setPendingAction("main_menu")
     router.back()
   }
 

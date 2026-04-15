@@ -76,7 +76,7 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
           image: "./assets/images/app-icon-android-adaptive-foreground.png",
           imageWidth: 300,
           resizeMode: "contain",
-          backgroundColor: "#191015",
+          backgroundColor: "#1a1a2e",
         },
       ],
       [

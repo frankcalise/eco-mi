@@ -60,6 +60,3 @@ export const POST_PB_LAST_PROMPT_DATE = "ecomi:postPB:lastPromptDate"
 
 // High scores (leaderboard)
 export const HIGH_SCORES_PREFIX = "ecomi:highScores:"
-
-// Transient: action to execute on GameScreen focus (from game-over screen)
-export const PENDING_GAME_ACTION = "ecomi:pending:gameAction"
