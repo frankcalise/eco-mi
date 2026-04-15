@@ -6,8 +6,13 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 
 ## [Unreleased]
 
+### Feat (v1.1.0)
+- **Timed mode wrong-input penalty** — escalating time deduction (1s first wrong, 2s second, etc.) + 2s bonus on correct sequence. Floating "+2s"/"-Ns" text with spring animation.
+- **Timed countdown haptics** — light impact under 10s, medium under 5s, heavy under 3s. Fires once per second boundary.
+- **Level 12 achievement** — "Getting Serious" fills feedback gap between levels 10-15. Localized en/es/pt.
+- **Localized iOS permission strings** — custom config plugin creates es.lproj/pt.lproj InfoPlist.strings for ATT and microphone dialogs.
+
 ### Fix (v1.1.0)
-- **Audio pops at tone onset** — pre-schedule all sequence tones in one pass using audio-clock offsets (same pattern as jingles). Eliminates JS timer drift and oscillator overlap that caused intermittent pops at high levels.
 - **Duplicate leaderboard entry on rewarded-ad continue** — added `leaderboardRecorded` ref guard. First game-over records to leaderboard; continue + second loss is skipped. Resets on new game.
 
 ### Feat (v1.1.0 Phase C — Retention & Polish)
