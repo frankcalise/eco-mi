@@ -245,7 +245,8 @@
       Resolved by the full-screen game-over redesign below — ad fires on Play Again but the full-screen context makes the transition to a full-screen ad feel natural rather than jarring.
 
 - [ ] **Full-screen game-over experience (Duolingo-style)**
-      Replace the small overlay card with a full-screen game-over screen. Reference: Duolingo's "Perfect lesson!" end screen — big centered animation, title/subtitle, colored stat pills, share + CTA pinned to bottom. Single screen, no streak interstitial.
+      Replace the `GameOverOverlay` modal with a full-screen `/game-over` Expo Router route. This absorbs the post-game modal migration — once implemented, all major screens (game-over, leaderboard, settings, stats, achievements) are consistent dedicated routes. Only the mode selector remains as an overlay (quick contextual picker, not a destination).
+      Reference: Duolingo's "Perfect lesson!" end screen — big centered animation, title/subtitle, colored stat pills, share + CTA pinned to bottom.
 
   **Layout (top to bottom):**
   - Lottie animation centered (game-over animation, or celebration for new high score)
@@ -257,8 +258,9 @@
 
   **Implementation tasks:**
   - [ ] Track session play time in useGameEngine (start on startGame, stop on gameover, expose as `sessionTime`)
-  - [ ] Create full-screen GameOverScreen component (replaces GameOverOverlay)
-  - [ ] 3 stat pills with icons: Score (⚡), Level (🎯), Time (⏱) — colored borders like Duo's XP/Amazing/Speedy
+  - [ ] Create `/game-over` route as full-screen component (replaces GameOverOverlay modal)
+  - [ ] Pass game state (score, level, mode, isNewHighScore, etc.) via route params or shared context
+  - [ ] 3 stat pills with icons: Score, Level, Time — colored borders like Duo's XP/Amazing/Speedy
   - [ ] Platform-specific share button: `Platform.select({ ios: "share-outline", android: "share-social" })` Ionicons
   - [ ] "Play Again" as wide primary button (green, matches Start Game style)
   - [ ] "Watch Ad to Continue" conditional secondary button
@@ -267,6 +269,7 @@
   - [ ] Entry animation: staggered reveal (bg → animation → title → pills cascade → buttons slide up)
   - [ ] Preserve existing game-over/high-score jingles and haptics
   - [ ] Browse LottieFiles for game-over and celebration animations
+  - [ ] Remove GameOverOverlay component and PostPBPrompt modal (absorbed into game-over screen)
   - [ ] Update Maestro E2E flows for new game-over screen
 
 - [x] **Add time penalty for wrong input in timed mode**
