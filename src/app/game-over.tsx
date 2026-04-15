@@ -246,24 +246,24 @@ export default function GameOverScreen() {
             </Text>
           )}
 
-          {/* Navigation Links */}
+          {/* Navigation Links — aligned under each stat pill */}
           <EaseView
             initialAnimate={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ default: { type: "timing", duration: 300, delay: 250 } }}
             style={styles.linkRow}
           >
-            <PressableScale onPress={() => router.push("/stats")}>
+            <PressableScale wrapperStyle={styles.linkItem} onPress={() => router.push("/stats")}>
               <Text style={[styles.linkText, { color: activeTheme.secondaryTextColor }]}>
                 {t("stats:title")}
               </Text>
             </PressableScale>
-            <PressableScale onPress={() => router.push("/achievements")}>
+            <PressableScale wrapperStyle={styles.linkItem} onPress={() => router.push("/achievements")}>
               <Text style={[styles.linkText, { color: activeTheme.secondaryTextColor }]}>
                 {t("achievements:title")}
               </Text>
             </PressableScale>
-            <PressableScale onPress={() => router.push({ pathname: "/leaderboard", params: { mode } })}>
+            <PressableScale wrapperStyle={styles.linkItem} onPress={() => router.push({ pathname: "/leaderboard", params: { mode } })}>
               <Text style={[styles.linkText, { color: activeTheme.secondaryTextColor }]}>
                 {t("game:leaderboard")}
               </Text>
@@ -412,14 +412,21 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: "center",
   },
+  linkItem: {
+    alignItems: "center",
+    flex: 1,
+  },
   linkRow: {
     flexDirection: "row",
-    gap: 24,
-    marginTop: 24,
+    gap: 12,
+    marginTop: 16,
+    paddingHorizontal: 24,
+    width: "100%",
   },
   linkText: {
     fontFamily: "Oxanium-Medium",
     fontSize: 13,
+    textAlign: "center",
   },
   lottie: {
     height: 100,
