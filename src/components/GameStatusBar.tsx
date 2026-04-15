@@ -52,20 +52,27 @@ export function GameStatusBar({
       <View style={styles.progressRow}>
         {(gameState === "showing" || gameState === "waiting") &&
           (sequence.length <= 15 ? (
-            sequence.map((_, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.progressDot,
-                  { backgroundColor: theme.borderColor },
-                  gameState === "waiting" &&
-                    i < playerSequence.length &&
-                    styles.progressDotFilled,
-                  gameState === "waiting" &&
-                    i < playerSequence.length && { backgroundColor: theme.accentColor },
-                ]}
-              />
-            ))
+            sequence.map((_, i) => {
+              const isFilled = gameState === "waiting" && i < playerSequence.length
+              return (
+                <View
+                  key={i}
+                  style={[styles.progressDot, { backgroundColor: theme.borderColor }]}
+                >
+                  <EaseView
+                    style={[styles.progressDotFill, { backgroundColor: theme.accentColor }]}
+                    initialAnimate={{ opacity: 0, scale: 0.5 }}
+                    animate={{
+                      opacity: isFilled ? 1 : 0,
+                      scale: isFilled ? 1 : 0.5,
+                    }}
+                    transition={{
+                      default: { type: "spring", stiffness: 400, damping: 18, mass: 0.6 },
+                    }}
+                  />
+                </View>
+              )
+            })
           ) : (
             <Text style={[styles.progressFraction, { color: theme.secondaryTextColor }]}>
               {playerSequence.length}/{sequence.length}
@@ -117,11 +124,17 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   progressDot: {
+    alignItems: "center",
+    borderRadius: 5,
+    height: 10,
+    justifyContent: "center",
+    width: 10,
+  },
+  progressDotFill: {
     borderRadius: 5,
     height: 10,
     width: 10,
   },
-  progressDotFilled: {},
   progressFraction: {
     fontFamily: "Oxanium-Regular",
     fontSize: 14,
