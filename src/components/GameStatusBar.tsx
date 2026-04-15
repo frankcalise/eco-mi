@@ -60,22 +60,32 @@ export function GameStatusBar({
               // includes "advancing" so the last dot animates before the next level starts.
               const isFilled = i < playerSequence.length
               return (
-                <View
+                <EaseView
                   key={i}
-                  style={[styles.progressDot, { backgroundColor: theme.borderColor }]}
+                  // Outer animation runs on mount — existing dots don't re-mount
+                  // (stable key), so only new dots pop in when the sequence grows.
+                  initialAnimate={{ opacity: 0, scale: 0.3 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{
+                    default: { type: "spring", stiffness: 300, damping: 20 },
+                  }}
                 >
-                  <EaseView
-                    style={[styles.progressDotFill, { backgroundColor: theme.accentColor }]}
-                    initialAnimate={{ opacity: 0, scale: 0.5 }}
-                    animate={{
-                      opacity: isFilled ? 1 : 0,
-                      scale: isFilled ? 1 : 0.5,
-                    }}
-                    transition={{
-                      default: { type: "spring", stiffness: 400, damping: 18, mass: 0.6 },
-                    }}
-                  />
-                </View>
+                  <View
+                    style={[styles.progressDot, { backgroundColor: theme.borderColor }]}
+                  >
+                    <EaseView
+                      style={[styles.progressDotFill, { backgroundColor: theme.accentColor }]}
+                      initialAnimate={{ opacity: 0, scale: 0.5 }}
+                      animate={{
+                        opacity: isFilled ? 1 : 0,
+                        scale: isFilled ? 1 : 0.5,
+                      }}
+                      transition={{
+                        default: { type: "spring", stiffness: 400, damping: 18, mass: 0.6 },
+                      }}
+                    />
+                  </View>
+                </EaseView>
               )
             })
           ) : (
