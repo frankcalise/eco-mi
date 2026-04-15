@@ -31,7 +31,7 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 
 ### Feat (v1.1.0)
 
-- **Game-over 2x2 stat pill grid** — 4 pills (Score/Level/Best/Time) laid out in a 2x2 grid that mirrors the game-pad color layout (red TL, blue TR, green BL, yellow BR). Each pill has a thick colored border matching its game-board position, a colored icon (flash/trending-up/trophy/time), and a staggered spring entrance (250/350/450/550ms). Bottom CTA section delay bumped to 700ms to cascade after the pills. New Time pill uses `formatDuration(sessionTime)`. Statistics/Achievements/Leaderboard nav links removed from game-over — those entry points remain on the idle screen.
+- **Game-over 2x2 stat pill grid** — 4 pills (Score/Level/Best/Time) laid out in a 2x2 grid that mirrors the game-pad color layout (red TL, blue TR, green BL, yellow BR). Each pill has a thick colored border matching its game-board position, a colored icon (flash/trending-up/trophy/time), and a staggered spring entrance (250/350/450/550ms). Bottom CTA section delay bumped to 700ms to cascade after the pills. New Time pill uses `formatDuration(sessionTime)`. Content centered within each pill (label above icon+value, matches main-menu stacking). Statistics/Achievements/Leaderboard nav links removed from game-over — those entry points remain on the idle screen.
 - **Session time tracking in useGameEngine** — `sessionTime` (elapsed seconds) captured via `sessionStartTimeRef` on `startGame` and finalized on every `gameover` transition. Exposed through the hook return and persisted to `gameOverStore` for the /game-over screen.
 - **Timed mode wrong-input penalty** — escalating time deduction (1s first wrong, 2s second, etc.) + 2s bonus on correct sequence. Status-line feedback: "Great job! +2s" / "Oops, try again! -Ns" with 2-second display + fade in/out. Stale clear timers cancel on new delta so consecutive inputs don't clear early.
 - **Timed countdown haptics** — light impact under 10s, medium under 5s, heavy under 3s. Fires once per second boundary.
@@ -40,6 +40,13 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 - **Progress dot micro-animations** — spring fill-in when player taps correct input, new dot on level-up pops in (outer EaseView mount animation via stable keys). Last dot now animates on sequence complete (render gate widened to include advancing/replaying states).
 - **Mode selector pulse** — 3→2 pulses, snappier dismiss.
 - **npm-blocking PreToolUse hook** — `.claude/settings.json` denies any `npm *` bash commands with a reminder to use bun.
+
+### Chore (v1.1.0 — Lint Cleanup Pass)
+
+- **Lint baseline reset** — full codebase sweep reducing 79 errors → 0 errors. Remaining 16 `react-hooks/exhaustive-deps` warnings are intentional (mount-only effects). Organized as 5 focused commits: auto-fix (`eslint --fix` across `src/`), dead-code deletion (unused imports/vars/styles), inline-style extraction to StyleSheet entries, color-literal consolidation into `UI_COLORS` constants, and PostToolUse hook activation.
+- **New `src/theme/uiColors.ts`** — named constants (`white`, `shadowBlack`, `classicBackground`, `brandPurple`, `red500`, `greenTint10`, `backdropModal`, etc.) for the hex/rgb values previously inlined across 17 files. Each name describes what the value *is* in this app, not an abstract palette index.
+- **Note:** `src/theme/{colors,colorsDark,spacing,spacingDark,timing,typography,theme,styles,types}.ts` are Ignite boilerplate with zero imports — safe to delete in a follow-up pass.
+- **PostToolUse lint hook** — `.claude/hooks/lint-edit.sh` runs `eslint <file> --cache` scoped to the just-edited file on every Edit/Write/MultiEdit. No `--fix` (would race with subsequent Edit calls). Errors surface as system reminders so they're fixed in-context rather than accumulating as debt.
 
 ### Dependencies
 
