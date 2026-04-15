@@ -142,6 +142,9 @@
   - Whether worklet integration improves responsiveness during animations
   - Backward compatibility — ensure Android API 24+ coverage is acceptable
 
+- [ ] **Theme-aware navigation transition background**
+      `_layout.tsx` currently hardcodes the stack `contentStyle.backgroundColor` and the root wrapper View to `#1a1a2e` (Classic theme). Users on other themes (Neon, Retro, Pastel) see a momentary flash to that classic dark color during slide transitions. To fix: lift the theme context up to `_layout.tsx` so the root View and stack contentStyle use `activeTheme.backgroundColor` dynamically. Particularly noticeable on Pastel (light theme) where the flash goes from light → dark → light.
+
 - [ ] **Explore Expo UI adaptive/dynamic colors as a theme option**
       Investigate `expo-ui` adaptive colors (iOS dynamic colors, Android Material You). Could be a "System" theme that pulls the device's accent colors for the game buttons and UI chrome. Evaluate whether this works as the default theme (free, adapts to every user's device) or as a separate purchasable theme. Research: does `@expo/ui` expose adaptive color primitives that work cross-platform? What does it look like on Android Material You vs iOS?
       When the pastel theme is selected (light background), the status bar text/icons remain light — invisible against the light background. Use `expo-status-bar` to set `style="dark"` for pastel and `style="light"` for the other 3 themes. The theme config in `src/config/themes.ts` should include a `statusBarStyle` field (`"light" | "dark"`) per theme.
