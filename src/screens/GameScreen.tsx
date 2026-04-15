@@ -454,12 +454,12 @@ export function GameScreen() {
             </View>
             {timerDelta !== null && (
               <EaseView
-                // Pop in at 1.2x and fully opaque, then drift up + shrink + fade
+                // Pop in at 1.2x and fully opaque, then drift up + fade as it clears the board
                 key={`${timerDelta}-${Date.now()}`}
                 initialAnimate={{ opacity: 1, scale: 1.2, translateY: 0 }}
-                animate={{ opacity: 0, scale: 1, translateY: -70 }}
+                animate={{ opacity: 0, scale: 1, translateY: -180 }}
                 transition={{
-                  default: { type: "timing", duration: 900, easing: "easeOut" },
+                  default: { type: "timing", duration: 1100, easing: "easeOut" },
                 }}
                 style={styles.timerDeltaFloat}
               >
@@ -676,10 +676,11 @@ const styles = StyleSheet.create({
   timerDeltaFloat: {
     alignItems: "center",
     left: "50%",
+    marginLeft: -60,
+    marginTop: -20,
     position: "absolute",
     top: "50%",
-    transform: [{ translateX: -50 }, { translateY: -60 }],
-    width: 100,
+    width: 120,
   },
   timerDeltaPill: {
     borderRadius: 999,
