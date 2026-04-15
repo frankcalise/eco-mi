@@ -450,6 +450,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   pill: {
+    alignItems: "center",
     borderRadius: 14,
     borderWidth: 2.5,
     flexBasis: 0,
