@@ -21,6 +21,7 @@ const pt = {
     score: "Pontos",
     level: "Nível",
     best: "Melhor",
+    time: "Tempo",
     watchSequence: "Observe a sequência...",
     repeatSequence: "Repita a sequência!",
     timeGained: "Bom trabalho! +{{delta}}s",
@@ -157,7 +158,8 @@ const pt = {
     streakAtRisk: "Não perca sua sequência de {{count}} dias! Jogue hoje.",
     winBack: "Sentimos sua falta! Suas habilidades de memória estão enferrujando.",
     prePromptTitle: "Não perca nenhum momento",
-    prePromptBody: "Receba lembretes de desafios diários, alertas para proteger sua sequência e incentivos para manter sua memória afiada.",
+    prePromptBody:
+      "Receba lembretes de desafios diários, alertas para proteger sua sequência e incentivos para manter sua memória afiada.",
     enableReminders: "Ativar lembretes",
     maybeLater: "Talvez mais tarde",
   },

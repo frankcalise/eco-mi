@@ -21,6 +21,7 @@ const en = {
     score: "Score",
     level: "Level",
     best: "Best",
+    time: "Time",
     watchSequence: "Watch the sequence...",
     repeatSequence: "Repeat the sequence!",
     timeGained: "Great job! +{{delta}}s",
@@ -158,7 +159,8 @@ const en = {
     streakAtRisk: "Don't lose your {{count}}-day streak! Play today.",
     winBack: "We miss you! Your memory skills are getting rusty.",
     prePromptTitle: "Never Miss a Beat",
-    prePromptBody: "Get daily challenge reminders, streak protection alerts, and gentle nudges to keep your memory sharp.",
+    prePromptBody:
+      "Get daily challenge reminders, streak protection alerts, and gentle nudges to keep your memory sharp.",
     enableReminders: "Enable Reminders",
     maybeLater: "Maybe Later",
   },

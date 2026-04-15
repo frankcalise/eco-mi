@@ -375,6 +375,89 @@ describe("useGameEngine - continueGame", () => {
   })
 })
 
+describe("useGameEngine - sessionTime", () => {
+  it("tracks session time from startGame to gameover", () => {
+    const { result } = renderHook(() => useGameEngine())
+
+    expect(result.current.sessionTime).toBe(0)
+
+    act(() => {
+      result.current.startGame()
+    })
+    act(() => {
+      jest.advanceTimersByTime(500)
+    })
+
+    const firstColor = result.current.sequence[0]
+    const wrongColor = colors.find((c) => c !== firstColor)!
+
+    // Advance into waiting state
+    act(() => {
+      jest.advanceTimersByTime(2000)
+    })
+
+    // Simulate the player thinking for several more seconds
+    act(() => {
+      jest.advanceTimersByTime(3000)
+    })
+
+    // End the game via wrong input
+    act(() => {
+      result.current.handleButtonTouch(wrongColor)
+    })
+    act(() => {
+      jest.advanceTimersByTime(100)
+    })
+    act(() => {
+      result.current.handleButtonRelease(wrongColor)
+    })
+
+    expect(result.current.gameState).toBe("gameover")
+    // Total elapsed: 500 + 2000 + 3000 + 100 = 5600ms → floor(5.6) = 5
+    expect(result.current.sessionTime).toBeGreaterThanOrEqual(5)
+  })
+
+  it("resets session time on new startGame", () => {
+    const { result } = renderHook(() => useGameEngine())
+
+    act(() => {
+      result.current.startGame()
+    })
+    act(() => {
+      jest.advanceTimersByTime(500)
+    })
+
+    const firstColor = result.current.sequence[0]
+    const wrongColor = colors.find((c) => c !== firstColor)!
+
+    act(() => {
+      jest.advanceTimersByTime(2000)
+    })
+    act(() => {
+      jest.advanceTimersByTime(3000)
+    })
+
+    act(() => {
+      result.current.handleButtonTouch(wrongColor)
+    })
+    act(() => {
+      jest.advanceTimersByTime(100)
+    })
+    act(() => {
+      result.current.handleButtonRelease(wrongColor)
+    })
+
+    expect(result.current.sessionTime).toBeGreaterThan(0)
+
+    // Start a new game — session time should reset
+    act(() => {
+      result.current.startGame()
+    })
+
+    expect(result.current.sessionTime).toBe(0)
+  })
+})
+
 describe("useGameEngine - isNewHighScore", () => {
   it("sets isNewHighScore when score beats highScore", () => {
     const { result } = renderHook(() => useGameEngine())

@@ -21,6 +21,7 @@ const es = {
     score: "Puntos",
     level: "Nivel",
     best: "Mejor",
+    time: "Tiempo",
     watchSequence: "Observa la secuencia...",
     repeatSequence: "¡Repite la secuencia!",
     timeGained: "¡Buen trabajo! +{{delta}}s",
@@ -158,7 +159,8 @@ const es = {
     streakAtRisk: "¡No pierdas tu racha de {{count}} días! Juega hoy.",
     winBack: "¡Te echamos de menos! Tus habilidades de memoria se están oxidando.",
     prePromptTitle: "No te pierdas nada",
-    prePromptBody: "Recibe recordatorios de desafíos diarios, alertas para proteger tu racha y motivación para mantener tu memoria en forma.",
+    prePromptBody:
+      "Recibe recordatorios de desafíos diarios, alertas para proteger tu racha y motivación para mantener tu memoria en forma.",
     enableReminders: "Activar recordatorios",
     maybeLater: "Quizás más tarde",
   },

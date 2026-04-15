@@ -11,6 +11,7 @@ type GameOverData = {
   mode: GameMode
   showRemoveAds: boolean
   showContinue: boolean
+  sessionTime: number
 }
 
 type GameOverState = GameOverData & {
@@ -27,6 +28,7 @@ const DEFAULTS: GameOverData = {
   mode: "classic",
   showRemoveAds: false,
   showContinue: false,
+  sessionTime: 0,
 }
 
 /**

@@ -16,6 +16,7 @@ import { ReviewPrompt } from "@/components/ReviewPrompt"
 import { ShareScoreCard } from "@/components/ShareScoreCard"
 import { ACHIEVEMENTS } from "@/config/achievements"
 import { DAILY_CURRENT_STREAK, STATS_GAMES_PLAYED } from "@/config/storageKeys"
+import type { GameTheme } from "@/config/themes"
 import { useAchievements } from "@/hooks/useAchievements"
 import { usePostPBPrompt } from "@/hooks/usePostPBPrompt"
 import { usePurchases } from "@/hooks/usePurchases"
@@ -25,9 +26,38 @@ import { useGameOverStore } from "@/stores/gameOverStore"
 import { usePendingActionStore } from "@/stores/pendingActionStore"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { useAnalytics } from "@/utils/analytics"
+import { formatDuration } from "@/utils/formatTime"
 import { loadString } from "@/utils/storage"
 
 const NEAR_MISS_THRESHOLD = 5
+
+type StatPillProps = {
+  label: string
+  value: string | number
+  icon: keyof typeof Ionicons.glyphMap
+  borderColor: string
+  theme: GameTheme
+  delay: number
+  testID?: string
+}
+
+function StatPill({ label, value, icon, borderColor, theme, delay, testID }: StatPillProps) {
+  return (
+    <EaseView
+      testID={testID}
+      style={[styles.pill, { borderColor, backgroundColor: theme.surfaceColor }]}
+      initialAnimate={{ opacity: 0, translateY: 12, scale: 0.95 }}
+      animate={{ opacity: 1, translateY: 0, scale: 1 }}
+      transition={{ default: { type: "spring", stiffness: 220, damping: 18, delay } }}
+    >
+      <Text style={[styles.pillLabel, { color: borderColor }]}>{label}</Text>
+      <View style={styles.pillRow}>
+        <Ionicons name={icon} size={20} color={borderColor} />
+        <Text style={[styles.pillValue, { color: theme.textColor }]}>{value}</Text>
+      </View>
+    </EaseView>
+  )
+}
 
 export default function GameOverScreen() {
   const { t } = useTranslation()
@@ -37,8 +67,17 @@ export default function GameOverScreen() {
   const analytics = useAnalytics()
   const shareCardRef = useRef<ViewShot>(null)
 
-  const { score, level, highScore, previousHighScore, isNewHighScore, mode, showRemoveAds, showContinue } =
-    useGameOverStore()
+  const {
+    score,
+    level,
+    highScore,
+    previousHighScore,
+    isNewHighScore,
+    mode,
+    showRemoveAds,
+    showContinue,
+    sessionTime,
+  } = useGameOverStore()
 
   const { removeAds } = usePurchases()
   const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } = useStoreReview()
@@ -203,69 +242,62 @@ export default function GameOverScreen() {
             </EaseView>
           )}
 
-          {/* Stat Pills */}
-          <EaseView
-            initialAnimate={{ opacity: 0, translateY: 12 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ default: { type: "timing", duration: 300, delay: 100 } }}
-            style={styles.statsRow}
-          >
-            <View style={[styles.statPill, { backgroundColor: activeTheme.surfaceColor }]}>
-              <Text style={[styles.statLabel, { color: activeTheme.secondaryTextColor }]}>
-                {t("game:score")}
-              </Text>
-              <Text style={[styles.statValue, { color: activeTheme.textColor }]}>{score}</Text>
+          {/* Stat Pills — 2x2 grid mirrors the game pad layout (red/blue/green/yellow) */}
+          <View style={styles.statsGrid}>
+            <View style={styles.statsGridRow}>
+              <StatPill
+                testID="pill-score"
+                label={t("game:score")}
+                value={score}
+                icon="flash"
+                borderColor={activeTheme.buttonColors.red.color}
+                theme={activeTheme}
+                delay={250}
+              />
+              <StatPill
+                testID="pill-level"
+                label={t("game:level")}
+                value={level}
+                icon="trending-up"
+                borderColor={activeTheme.buttonColors.blue.color}
+                theme={activeTheme}
+                delay={350}
+              />
             </View>
-            <View style={[styles.statPill, { backgroundColor: activeTheme.surfaceColor }]}>
-              <Text style={[styles.statLabel, { color: activeTheme.secondaryTextColor }]}>
-                {t("game:level")}
-              </Text>
-              <Text style={[styles.statValue, { color: activeTheme.textColor }]}>{level}</Text>
+            <View style={styles.statsGridRow}>
+              <StatPill
+                testID="pill-best"
+                label={t("game:best")}
+                value={highScore}
+                icon="trophy"
+                borderColor={activeTheme.buttonColors.green.color}
+                theme={activeTheme}
+                delay={450}
+              />
+              <StatPill
+                testID="pill-time"
+                label={t("game:time")}
+                value={formatDuration(sessionTime)}
+                icon="time"
+                borderColor={activeTheme.buttonColors.yellow.color}
+                theme={activeTheme}
+                delay={550}
+              />
             </View>
-            <View style={[styles.statPill, { backgroundColor: activeTheme.surfaceColor }]}>
-              <Text style={[styles.statLabel, { color: activeTheme.secondaryTextColor }]}>
-                {t("game:best")}
-              </Text>
-              <Text style={[styles.statValue, { color: activeTheme.textColor }]}>{highScore}</Text>
-            </View>
-          </EaseView>
+          </View>
 
           {nearMiss !== null && (
             <Text style={[styles.deltaText, { color: activeTheme.warningColor }]}>
               {t("game:nearMiss", { delta: nearMiss })}
             </Text>
           )}
-
-          {/* Navigation Links — aligned under each stat pill */}
-          <EaseView
-            initialAnimate={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ default: { type: "timing", duration: 300, delay: 250 } }}
-            style={styles.linkRow}
-          >
-            <PressableScale wrapperStyle={styles.linkItem} onPress={() => router.push("/stats")}>
-              <Text style={[styles.linkText, { color: activeTheme.secondaryTextColor }]}>
-                {t("stats:title")}
-              </Text>
-            </PressableScale>
-            <PressableScale wrapperStyle={styles.linkItem} onPress={() => router.push("/achievements")}>
-              <Text style={[styles.linkText, { color: activeTheme.secondaryTextColor }]}>
-                {t("achievements:title")}
-              </Text>
-            </PressableScale>
-            <PressableScale wrapperStyle={styles.linkItem} onPress={() => router.push({ pathname: "/leaderboard", params: { mode } })}>
-              <Text style={[styles.linkText, { color: activeTheme.secondaryTextColor }]}>
-                {t("game:leaderboard")}
-              </Text>
-            </PressableScale>
-          </EaseView>
         </View>
 
         {/* Bottom Section: CTAs */}
         <EaseView
           initialAnimate={{ opacity: 0, translateY: 20 }}
           animate={{ opacity: 1, translateY: 0 }}
-          transition={{ default: { type: "timing", duration: 300, delay: 300 } }}
+          transition={{ default: { type: "timing", duration: 300, delay: 700 } }}
           style={styles.bottomSection}
         >
           {showContinue && (
@@ -406,22 +438,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: "center",
   },
-  linkItem: {
-    alignItems: "center",
-    flex: 1,
-  },
-  linkRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 16,
-    paddingHorizontal: 24,
-    width: "100%",
-  },
-  linkText: {
-    fontFamily: "Oxanium-Medium",
-    fontSize: 13,
-    textAlign: "center",
-  },
   lottie: {
     height: 100,
     width: 100,
@@ -432,6 +448,32 @@ const styles = StyleSheet.create({
   mainMenuText: {
     fontFamily: "Oxanium-Medium",
     fontSize: 14,
+  },
+  pill: {
+    borderRadius: 14,
+    borderWidth: 2.5,
+    flexBasis: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 0,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  pillLabel: {
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 10,
+    letterSpacing: 1,
+    marginBottom: 6,
+    textTransform: "uppercase",
+  },
+  pillRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  pillValue: {
+    fontFamily: "Oxanium-Bold",
+    fontSize: 24,
   },
   playAgainButton: {
     alignItems: "center",
@@ -466,28 +508,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
-  statLabel: {
-    fontFamily: "Oxanium-Regular",
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  statPill: {
-    alignItems: "center",
-    borderRadius: 12,
-    flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 16,
-  },
-  statsRow: {
-    flexDirection: "row",
+  statsGrid: {
+    flexDirection: "column",
     gap: 12,
     marginTop: 20,
     paddingHorizontal: 24,
     width: "100%",
   },
-  statValue: {
-    fontFamily: "Oxanium-Bold",
-    fontSize: 28,
+  statsGridRow: {
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
   },
   title: {
     fontFamily: "Oxanium-Bold",

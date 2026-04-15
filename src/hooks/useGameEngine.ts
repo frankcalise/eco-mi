@@ -81,6 +81,7 @@ interface UseGameEngineReturn {
   inputTimeRemaining: number | null
   wrongFlash: boolean
   timerDelta: number | null
+  sessionTime: number
 
   startGame: () => void
   resetGame: () => void
@@ -149,6 +150,8 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const lastHapticSecond = useRef(-1)
   const [timerDelta, setTimerDelta] = useState<number | null>(null)
   const deltaClearTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const sessionStartTimeRef = useRef<number | null>(null)
+  const [sessionTime, setSessionTime] = useState(0)
 
   function showTimerDelta(value: number, clearAfterMs = 2000) {
     if (deltaClearTimeoutRef.current) clearTimeout(deltaClearTimeoutRef.current)
@@ -339,6 +342,18 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     }
   }, [state.value])
 
+  // Capture elapsed session time whenever the machine enters gameover
+  const prevStateValueRef = useRef<string>(state.value as string)
+  useEffect(() => {
+    const sv = state.value as string
+    const prev = prevStateValueRef.current
+    if (prev !== "gameover" && sv === "gameover" && sessionStartTimeRef.current !== null) {
+      const elapsed = Math.floor((Date.now() - sessionStartTimeRef.current) / 1000)
+      setSessionTime(elapsed)
+    }
+    prevStateValueRef.current = sv
+  }, [state.value])
+
   // --- Public actions ---
 
   function startGame() {
@@ -350,6 +365,8 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     if (deltaClearTimeoutRef.current) clearTimeout(deltaClearTimeoutRef.current)
     deltaClearTimeoutRef.current = null
     setTimerDelta(null)
+    sessionStartTimeRef.current = Date.now()
+    setSessionTime(0)
     setActiveButton(null); setButtonPositions([...colors]); setIsShuffling(false)
 
     // Seed RNG
@@ -516,6 +533,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     inputTimeRemaining,
     wrongFlash,
     timerDelta,
+    sessionTime,
 
     startGame,
     resetGame,
