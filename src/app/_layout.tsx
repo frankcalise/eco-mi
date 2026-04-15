@@ -56,7 +56,7 @@ function Root() {
       screenOptions={{
         headerShown: false,
         animation: "ios_from_right",
-        contentStyle: { backgroundColor: "transparent" },
+        contentStyle: { backgroundColor: "#1a1a2e" },
       }}
     >
       <Stack.Screen name="index" />
