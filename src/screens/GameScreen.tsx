@@ -107,6 +107,7 @@ export function GameScreen() {
     isShuffling,
     inputTimeRemaining,
     wrongFlash,
+    timerDelta,
   } = useGameEngine({
     oscillatorType: soundPack.oscillatorType,
     theme: activeTheme,
@@ -497,6 +498,23 @@ export function GameScreen() {
                 </Text>
               )}
             </View>
+            {timerDelta !== null && (
+              <EaseView
+                initialAnimate={{ opacity: 0, translateY: 6 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ default: { type: "spring", stiffness: 300, damping: 20 } }}
+                style={styles.timerDeltaContainer}
+              >
+                <Text
+                  style={[
+                    styles.timerDeltaText,
+                    { color: timerDelta > 0 ? activeTheme.accentColor : activeTheme.destructiveColor },
+                  ]}
+                >
+                  {timerDelta > 0 ? `+${timerDelta}s` : `${timerDelta}s`}
+                </Text>
+              </EaseView>
+            )}
           </View>
         </View>
       </View>
@@ -765,6 +783,14 @@ const styles = StyleSheet.create({
   centerTimer: {
     fontFamily: "Oxanium-Bold",
     fontSize: 24,
+  },
+  timerDeltaContainer: {
+    marginTop: 4,
+  },
+  timerDeltaText: {
+    fontFamily: "Oxanium-Bold",
+    fontSize: 18,
+    textAlign: "center",
   },
   container: {
     alignItems: "center",

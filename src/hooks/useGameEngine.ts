@@ -79,6 +79,7 @@ interface UseGameEngineReturn {
   isShuffling: boolean
   inputTimeRemaining: number | null
   wrongFlash: boolean
+  timerDelta: number | null
 
   startGame: () => void
   resetGame: () => void
@@ -141,6 +142,10 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
   const buttonPressStartTime = useRef<number | null>(null)
   const inputLocked = useRef(false)
+  const timerBonusRef = useRef(0)
+  const wrongCountRef = useRef(0)
+  const lastHapticSecond = useRef(-1)
+  const [timerDelta, setTimerDelta] = useState<number | null>(null)
   const testSeed = getTestSeed()
   const seededRng = useRef(testSeed !== null ? mulberry32(testSeed) : null)
   const scoreRef = useRef(0)
@@ -223,7 +228,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     setTimeRemaining(durationSec)
     const startTime = Date.now()
     timerIntervalRef.current = setInterval(() => {
-      const remaining = durationSec - (Date.now() - startTime) / 1000
+      const remaining = durationSec + timerBonusRef.current - (Date.now() - startTime) / 1000
       if (remaining <= 0) {
         stopTimer(); clearAllTimeouts()
         send({ type: "TIMER_EXPIRED" })
@@ -231,6 +236,13 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
         handleGameOverSideEffects()
       } else {
         setTimeRemaining(remaining)
+        const sec = Math.ceil(remaining)
+        if (sec !== lastHapticSecond.current && sec <= 10 && sec > 0) {
+          lastHapticSecond.current = sec
+          if (sec <= 3) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
+          else if (sec <= 5) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+          else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+        }
       }
     }, 100)
   }
@@ -320,6 +332,10 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   function startGame() {
     clearAllTimeouts(); stopTimer()
     inputLocked.current = false
+    timerBonusRef.current = 0
+    wrongCountRef.current = 0
+    lastHapticSecond.current = -1
+    setTimerDelta(null)
     setActiveButton(null); setButtonPositions([...colors]); setIsShuffling(false)
 
     // Seed RNG
@@ -411,8 +427,10 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       send({ type: "WRONG_INPUT" })
 
       if (mode === "timed") {
-        // Timed mode: replay after 500ms (machine goes to replaying → showing)
-        // Wrapper triggers showSequence when replaying transitions to showing
+        wrongCountRef.current += 1
+        timerBonusRef.current -= wrongCountRef.current
+        setTimerDelta(-wrongCountRef.current)
+        addTimeout(() => setTimerDelta(null), 1000)
         addTimeout(() => showSequence(ctx.sequence, ctx.level), 500)
       } else {
         handleGameOverSideEffects()
@@ -426,7 +444,11 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     send({ type: "CORRECT_INPUT", color })
 
     if (willComplete) {
-      // Advance round — brief pause, then add color and show
+      if (mode === "timed") {
+        timerBonusRef.current += 2
+        setTimerDelta(2)
+        addTimeout(() => setTimerDelta(null), 1000)
+      }
       addTimeout(() => {
         if (mode === "chaos") {
           const shuffleDuration = animateShuffleSequence(ctx.level + 1)
@@ -472,6 +494,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     isShuffling,
     inputTimeRemaining,
     wrongFlash,
+    timerDelta,
 
     startGame,
     resetGame,
