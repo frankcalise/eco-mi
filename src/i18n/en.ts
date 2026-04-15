@@ -155,6 +155,14 @@ const en = {
     enableReminders: "Enable Reminders",
     maybeLater: "Maybe Later",
   },
+  settings: {
+    haptics: "Haptics",
+    hapticsToggle: "Vibration feedback",
+    notifications: "Notifications",
+    notifyDaily: "Daily challenge reminders",
+    notifyStreak: "Streak protection alerts",
+    notifyWinback: "Come back nudges",
+  },
   iap: {
     postPBTitle: "New Personal Best!",
     postPBBody: "Enjoy an uninterrupted, ad-free experience",

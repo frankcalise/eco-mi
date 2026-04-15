@@ -10,7 +10,7 @@ import {
   Modal,
 } from "react-native"
 import * as Haptics from "expo-haptics"
-import { useRouter } from "expo-router"
+import { useRouter, useFocusEffect } from "expo-router"
 import * as Sharing from "expo-sharing"
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
@@ -23,7 +23,6 @@ import { AnimatedCountdown } from "@/components/AnimatedCountdown"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
 import { GameButton } from "@/components/GameButton"
 import { GameHeader } from "@/components/GameHeader"
-import { GameSettingsModal } from "@/components/GameSettingsModal"
 import { GameStatusBar } from "@/components/GameStatusBar"
 import { ModeItem } from "@/components/ModeItem"
 import { GameOverOverlay } from "@/components/GameOverOverlay"
@@ -106,12 +105,17 @@ export function GameScreen() {
     inputTimeRemaining,
     wrongFlash,
     timerDelta,
+    syncSoundState,
   } = useGameEngine({
     oscillatorType: soundPack.oscillatorType,
     theme: activeTheme,
     onAudioContextRecycle: (nodeCount) => {
       analytics.trackAudioContextRecycle(nodeCount)
     },
+  })
+
+  useFocusEffect(() => {
+    syncSoundState()
   })
 
   const {
@@ -134,7 +138,6 @@ export function GameScreen() {
   const { rescheduleAfterGameOver } = useNotifications()
   const sessionCounted = useRef(false)
   const [modeModalVisible, setModeModalVisible] = useState(false)
-  const [settingsModalVisible, setSettingsModalVisible] = useState(false)
   const [showInitialEntry, setShowInitialEntry] = useState(false)
   const pendingGameOver = useRef(false)
   const leaderboardRecorded = useRef(false)
@@ -391,7 +394,7 @@ export function GameScreen() {
         isIdle={isIdle}
         theme={activeTheme}
         onModePress={() => setModeModalVisible(true)}
-        onSettingsPress={() => setSettingsModalVisible(true)}
+        onSettingsPress={() => router.push("/settings")}
       />
 
       {/* Score Display */}
@@ -650,14 +653,6 @@ export function GameScreen() {
           </Pressable>
         </Pressable>
       </Modal>
-
-      <GameSettingsModal
-        visible={settingsModalVisible}
-        onDismiss={() => setSettingsModalVisible(false)}
-        soundEnabled={soundEnabled}
-        toggleSound={toggleSound}
-        playPreview={playPreview}
-      />
 
       <InitialEntryModal
         visible={showInitialEntry}

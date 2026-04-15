@@ -6,6 +6,9 @@ import {
   DAILY_CURRENT_STREAK,
   DAILY_LAST_PLAYED,
   NOTIFICATIONS_PERMISSION_ASKED,
+  SETTINGS_NOTIFY_DAILY,
+  SETTINGS_NOTIFY_STREAK,
+  SETTINGS_NOTIFY_WINBACK,
   STATS_GAMES_PLAYED,
 } from "@/config/storageKeys"
 import { loadString, saveString } from "@/utils/storage"
@@ -55,7 +58,7 @@ export function useNotifications() {
     const lastPlayed = loadString(DAILY_LAST_PLAYED) ?? ""
 
     // Daily reminder at 19:00 if not played today
-    if (lastPlayed !== today) {
+    if (lastPlayed !== today && loadString(SETTINGS_NOTIFY_DAILY) !== "false") {
       const trigger = new Date()
       trigger.setHours(19, 0, 0, 0)
       if (trigger.getTime() > Date.now()) {
@@ -71,7 +74,7 @@ export function useNotifications() {
 
     // Streak save — tomorrow 10:00 if streak is active
     const streak = parseInt(loadString(DAILY_CURRENT_STREAK) ?? "0", 10)
-    if (streak > 0 && lastPlayed === today) {
+    if (streak > 0 && lastPlayed === today && loadString(SETTINGS_NOTIFY_STREAK) !== "false") {
       const tomorrow = new Date()
       tomorrow.setDate(tomorrow.getDate() + 1)
       tomorrow.setHours(10, 0, 0, 0)
@@ -85,6 +88,7 @@ export function useNotifications() {
     }
 
     // Win-back — 3 days from now
+    if (loadString(SETTINGS_NOTIFY_WINBACK) === "false") return
     const threeDays = new Date()
     threeDays.setDate(threeDays.getDate() + 3)
     threeDays.setHours(12, 0, 0, 0)

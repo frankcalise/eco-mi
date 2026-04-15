@@ -154,6 +154,14 @@ const pt = {
     enableReminders: "Ativar lembretes",
     maybeLater: "Talvez mais tarde",
   },
+  settings: {
+    haptics: "Hápticos",
+    hapticsToggle: "Vibração",
+    notifications: "Notificações",
+    notifyDaily: "Lembretes de desafio diário",
+    notifyStreak: "Alertas de proteção de sequência",
+    notifyWinback: "Lembretes de retorno",
+  },
   iap: {
     postPBTitle: "Novo Recorde Pessoal!",
     postPBBody: "Desfrute de uma experiência sem anúncios",

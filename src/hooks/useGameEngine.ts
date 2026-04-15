@@ -14,6 +14,7 @@ import {
   DAILY_LAST_PLAYED,
   DAILY_PREFIX,
   HIGH_SCORE_PREFIX,
+  SETTINGS_SOUND_ENABLED,
   STATS_LONGEST_STREAK,
 } from "@/config/storageKeys"
 
@@ -93,6 +94,7 @@ interface UseGameEngineReturn {
   playGameOverJingle: () => void
   playHighScoreJingle: () => void
   setMode: (mode: GameMode) => void
+  syncSoundState: () => void
 }
 
 function highScoreKey(mode: string): string {
@@ -129,7 +131,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
   // Local UI state
   const [activeButton, setActiveButton] = useState<Color | null>(null)
-  const [soundEnabled, setSoundEnabled] = useState(true)
+  const [soundEnabled, setSoundEnabled] = useState(() => loadString(SETTINGS_SOUND_ENABLED) !== "false")
   const [wrongFlash, setWrongFlash] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [inputTimeRemaining, setInputTimeRemaining] = useState<number | null>(null)
@@ -470,7 +472,16 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     inputLocked.current = false
   }
 
-  function toggleSound() { setSoundEnabled((prev) => !prev) }
+  function toggleSound() {
+    setSoundEnabled((prev) => {
+      saveString(SETTINGS_SOUND_ENABLED, prev ? "false" : "true")
+      return !prev
+    })
+  }
+
+  function syncSoundState() {
+    setSoundEnabled(loadString(SETTINGS_SOUND_ENABLED) !== "false")
+  }
 
   function setModeAction(newMode: GameMode) {
     send({ type: "SET_MODE", mode: newMode })
@@ -508,5 +519,6 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     playGameOverJingle,
     playHighScoreJingle,
     setMode: setModeAction,
+    syncSoundState,
   }
 }

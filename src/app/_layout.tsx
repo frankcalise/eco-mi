@@ -64,6 +64,7 @@ function Root() {
       <Stack.Screen name="achievements" />
       <Stack.Screen name="stats" />
       <Stack.Screen name="leaderboard" />
+      <Stack.Screen name="settings" />
     </Stack>
   )
 

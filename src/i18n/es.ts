@@ -155,6 +155,14 @@ const es = {
     enableReminders: "Activar recordatorios",
     maybeLater: "Quizás más tarde",
   },
+  settings: {
+    haptics: "Hápticos",
+    hapticsToggle: "Vibración",
+    notifications: "Notificaciones",
+    notifyDaily: "Recordatorios de desafío diario",
+    notifyStreak: "Alertas de protección de racha",
+    notifyWinback: "Recordatorios de regreso",
+  },
   iap: {
     postPBTitle: "¡Nueva Mejor Marca!",
     postPBBody: "Disfruta de una experiencia sin anuncios",

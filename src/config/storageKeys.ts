@@ -40,6 +40,11 @@ export const REVIEW_LAST_PROMPT_DATE = "ecomi:review:lastPromptDate"
 export const SETTINGS_SELECTED_THEME = "ecomi:settings:selectedTheme"
 export const SETTINGS_SELECTED_SOUND_PACK = "ecomi:settings:selectedSoundPack"
 export const SETTINGS_THEME_SCHEME = "ignite.themeScheme"
+export const SETTINGS_SOUND_ENABLED = "ecomi:settings:soundEnabled"
+export const SETTINGS_HAPTICS_ENABLED = "ecomi:settings:hapticsEnabled"
+export const SETTINGS_NOTIFY_DAILY = "ecomi:settings:notifyDaily"
+export const SETTINGS_NOTIFY_STREAK = "ecomi:settings:notifyStreak"
+export const SETTINGS_NOTIFY_WINBACK = "ecomi:settings:notifyWinback"
 
 // Achievements
 export const ACHIEVEMENTS = "ecomi:achievements"
