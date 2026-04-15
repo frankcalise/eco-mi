@@ -69,7 +69,7 @@
 - [x] **Manually test review pre-prompt flow on device**
       The review prompt requires 5+ games played, no ad shown this session, and 30-day cooldown. Temporarily lower `MIN_GAMES_FOR_REVIEW` to 1 and bypass the `adShownThisSession` check to verify the "Love it!" and "Not really" paths work correctly. Verify the "Not really" path opens the feedback channel. Revert thresholds after testing.
 
-- [x] **Intermittent audio pops/static at tone onset (post-XState refactor)**
+- [ ] **Intermittent audio pops/static at tone onset (post-XState refactor)**
       After the B6 XState migration, audio pops reappear intermittently at the start of tones during both sequence playback (`playSound` in `flashButton`) and player input (`startContinuousSound`). Jingles are unaffected (separate audio path). The pops are color-specific — once a frequency channel (e.g., red=220Hz, blue=277Hz) starts popping, it persists for that color while others remain clean. Observed on Pixel 9 Pro (not simulator). `useAudioTones` was not modified in the refactor, but the timing of when `playSound` fires relative to state transitions shifted — the machine transitions first, then the wrapper calls `showSequence` imperatively, vs the old code where `setGameState("showing")` and `showSequence` ran in the same synchronous block. Investigate whether the slight async gap between state transition and first `playSound` call leaves a previous oscillator node undisposed, causing gain discontinuity when the new one starts on the same frequency.
 
 - [x] **Continue via ad logs duplicate leaderboard entry**
