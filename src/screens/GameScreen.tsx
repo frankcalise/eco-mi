@@ -49,7 +49,7 @@ const GAME_MODES: { id: GameMode; label: string; icon: keyof typeof Ionicons.gly
 ]
 
 const PULSE_DURATION = 150
-const PULSE_COUNT = 3
+const PULSE_COUNT = 2
 const DISMISS_DELAY = 200
 
 export function GameScreen() {
