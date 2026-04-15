@@ -155,11 +155,11 @@ export function GameScreen() {
   const showOnboardingTooltip = !onboardingDone && gameState === "waiting"
 
   useEffect(() => {
-    if (!onboardingDone && playerSequence.length === 1) {
+    if (!onboardingDone && (playerSequence.length === 1 || wrongFlash)) {
       saveString(ONBOARDING_COMPLETED, "true")
       setOnboardingDone(true)
     }
-  }, [playerSequence.length, onboardingDone])
+  }, [playerSequence.length, onboardingDone, wrongFlash])
 
   useEffect(() => {
     if (newlyUnlocked.length > 0) {
