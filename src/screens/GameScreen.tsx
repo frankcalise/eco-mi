@@ -8,7 +8,7 @@ import {
   Modal,
 } from "react-native"
 import * as Haptics from "expo-haptics"
-import { useRouter, useFocusEffect, useLocalSearchParams } from "expo-router"
+import { useRouter, useFocusEffect } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
@@ -26,7 +26,7 @@ import { StreakBanner } from "@/components/StreakBanner"
 import { InitialEntryModal } from "@/components/InitialEntryModal"
 import { PressableScale } from "@/components/PressableScale"
 import { TimerRing } from "@/components/TimerRing"
-import { DAILY_CURRENT_STREAK, ONBOARDING_COMPLETED, STATS_GAMES_PLAYED } from "@/config/storageKeys"
+import { DAILY_CURRENT_STREAK, ONBOARDING_COMPLETED, PENDING_GAME_ACTION, STATS_GAMES_PLAYED } from "@/config/storageKeys"
 import { useAds } from "@/hooks/useAds"
 import { useGameEngine, colors, type GameMode } from "@/hooks/useGameEngine"
 import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
@@ -53,7 +53,6 @@ const DISMISS_DELAY = 200
 export function GameScreen() {
   const { t } = useTranslation()
   const router = useRouter()
-  const { action } = useLocalSearchParams<{ action?: string }>()
   const { width, height } = useWindowDimensions()
   const insets = useSafeAreaInsets()
   const gameSize = Math.min(width * 0.8, height * 0.5)
@@ -105,6 +104,12 @@ export function GameScreen() {
 
   useFocusEffect(() => {
     syncSoundState()
+    const pending = loadString(PENDING_GAME_ACTION)
+    if (pending) {
+      saveString(PENDING_GAME_ACTION, "")
+      if (pending === "play_again") handleStartGame()
+      else if (pending === "continue") handleContinue()
+    }
   })
 
   const {
@@ -223,19 +228,7 @@ export function GameScreen() {
       // Navigate to game-over screen only if initials modal isn't pending
       // (if it is, handleInitialSubmit will navigate after submission)
       if (!pendingGameOver.current) {
-        router.push({
-          pathname: "/game-over",
-          params: {
-            score: String(score),
-            level: String(level),
-            highScore: String(highScore),
-            previousHighScore: String(previousHighScoreRef.current),
-            isNewHighScore: String(isNewHighScore),
-            mode,
-            showRemoveAds: String(!removeAds && adShownThisSession),
-            showContinue: String(rewardedReady && !continuedThisGame),
-          },
-        })
+        navigateToGameOver()
       }
     }
 
@@ -261,25 +254,7 @@ export function GameScreen() {
     startGame()
   }
 
-  async function handleContinue() {
-    const shown = await showRewarded()
-    if (shown) {
-      analytics.trackAdRewardedWatched("continue")
-      continueGame()
-    }
-  }
-
-  function handleInitialSubmit(initials: string) {
-    const entry: HighScoreEntry = {
-      initials,
-      score,
-      level,
-      date: new Date().toISOString(),
-      mode,
-    }
-    addHighScore(entry)
-    setShowInitialEntry(false)
-    pendingGameOver.current = false
+  function navigateToGameOver() {
     router.push({
       pathname: "/game-over",
       params: {
@@ -295,12 +270,30 @@ export function GameScreen() {
     })
   }
 
-  // Handle action params from game-over screen
-  useEffect(() => {
-    if (action === "play_again") handleStartGame()
-    else if (action === "continue") handleContinue()
-  }, [action])
+  async function handleContinue() {
+    const shown = await showRewarded()
+    if (shown) {
+      analytics.trackAdRewardedWatched("continue")
+      continueGame()
+    } else {
+      // Ad not earned — return to game-over so user can try again or quit
+      navigateToGameOver()
+    }
+  }
 
+  function handleInitialSubmit(initials: string) {
+    const entry: HighScoreEntry = {
+      initials,
+      score,
+      level,
+      date: new Date().toISOString(),
+      mode,
+    }
+    addHighScore(entry)
+    setShowInitialEntry(false)
+    pendingGameOver.current = false
+    navigateToGameOver()
+  }
 
 
   const showTimerRing = mode === "timed" && timeRemaining !== null && gameState !== "idle"

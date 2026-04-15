@@ -15,7 +15,7 @@ import { PressableScale } from "@/components/PressableScale"
 import { ReviewPrompt } from "@/components/ReviewPrompt"
 import { ShareScoreCard } from "@/components/ShareScoreCard"
 import { ACHIEVEMENTS } from "@/config/achievements"
-import { DAILY_CURRENT_STREAK, STATS_GAMES_PLAYED } from "@/config/storageKeys"
+import { DAILY_CURRENT_STREAK, PENDING_GAME_ACTION, STATS_GAMES_PLAYED } from "@/config/storageKeys"
 import { useAchievements } from "@/hooks/useAchievements"
 import type { GameMode } from "@/hooks/useGameEngine"
 import { usePostPBPrompt } from "@/hooks/usePostPBPrompt"
@@ -24,7 +24,7 @@ import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { useAnalytics } from "@/utils/analytics"
-import { loadString } from "@/utils/storage"
+import { loadString, saveString } from "@/utils/storage"
 
 const NEAR_MISS_THRESHOLD = 5
 
@@ -136,15 +136,18 @@ export default function GameOverScreen() {
   }
 
   function handlePlayAgain() {
-    router.replace({ pathname: "/", params: { action: "play_again" } })
+    saveString(PENDING_GAME_ACTION, "play_again")
+    router.back()
   }
 
   function handleContinue() {
-    router.replace({ pathname: "/", params: { action: "continue" } })
+    saveString(PENDING_GAME_ACTION, "continue")
+    router.back()
   }
 
   function handleMainMenu() {
-    router.replace("/")
+    saveString(PENDING_GAME_ACTION, "")
+    router.back()
   }
 
   function handleReviewResponse(response: "love_it" | "not_really") {
