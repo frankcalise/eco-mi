@@ -247,33 +247,32 @@
 - [x] **Reconsider interstitial ad placement**
       Resolved by the full-screen game-over redesign below — ad fires on Play Again but the full-screen context makes the transition to a full-screen ad feel natural rather than jarring.
 
-- [ ] **Full-screen game-over experience (Duolingo-style)**
-      Replace the `GameOverOverlay` modal with a full-screen `/game-over` Expo Router route. This absorbs the post-game modal migration — once implemented, all major screens (game-over, leaderboard, settings, stats, achievements) are consistent dedicated routes. Only the mode selector remains as an overlay (quick contextual picker, not a destination).
-      Reference: Duolingo's "Perfect lesson!" end screen — big centered animation, title/subtitle, colored stat pills, share + CTA pinned to bottom.
+- [~] **Full-screen game-over experience (Duolingo-style)** — core shipped in feat/game-over-ux, remaining items below
+      Replaced `GameOverOverlay` modal with full-screen `/game-over` Expo Router route. All major screens (game-over, leaderboard, settings, stats, achievements) are now consistent dedicated routes. Only the mode selector remains as an overlay.
 
-  **Layout (top to bottom):**
-  - Lottie animation centered (game-over animation, or celebration for new high score)
-  - Title: "Game Over!" or "New High Score!" with subtitle
-  - 3 colored stat pill boxes in a row (reuse/adapt existing score box style): Score, Level, Time Played
-  - Stats/Achievements navigation links (subtle, secondary text)
-  - Bottom bar: platform-specific share icon (left) + "Play Again" primary CTA (full width)
-  - "Watch Ad to Continue" above the CTA (conditional, rewarded ad)
+  **Shipped:**
+  - [x] Create `/game-over` route as full-screen component (replaces GameOverOverlay modal)
+  - [x] Pass game state via Zustand `gameOverStore` (replaced string route params)
+  - [x] 3 stat pills — Score, Level, Best
+  - [x] Platform-specific share button (iOS share-outline, Android share-social-outline)
+  - [x] "Play Again" full-width primary CTA (accentColor)
+  - [x] "Watch Ad to Continue" conditional secondary button (outlined)
+  - [x] New high score variant — warningColor title + Lottie trophy + PB delta text under title
+  - [x] Theme-aware via GameThemeProvider (lifted to game-over screen)
+  - [x] Entry animation: staggered fade/translate (title → stats → links → CTAs)
+  - [x] Preserve existing game-over/high-score jingles and haptics
+  - [x] Remove GameOverOverlay component (deleted)
+  - [x] Update Maestro E2E flows for new game-over screen (game-over.yaml + game-over-home.yaml + new game-over-zero-score.yaml)
+  - [x] ReviewPrompt, PostPBPrompt, AchievementToast moved onto game-over screen
+  - [x] Race condition fix — InitialEntryModal renders before navigation when score qualifies
+  - [x] Skip game-over entirely on score 0 (bounce to idle)
 
-  **Implementation tasks:**
+  **Still TODO:**
   - [ ] Track session play time in useGameEngine (start on startGame, stop on gameover, expose as `sessionTime`)
-  - [ ] Create `/game-over` route as full-screen component (replaces GameOverOverlay modal)
-  - [ ] Pass game state (score, level, mode, isNewHighScore, etc.) via route params or shared context
-  - [ ] 3 stat pills with icons: Score, Level, Time — colored borders like Duo's XP/Amazing/Speedy
-  - [ ] Platform-specific share button: `Platform.select({ ios: "share-outline", android: "share-social" })` Ionicons
-  - [ ] "Play Again" as wide primary button (green, matches Start Game style)
-  - [ ] "Watch Ad to Continue" conditional secondary button
-  - [ ] New high score variant: different Lottie animation, gold accent, celebration title
-  - [ ] Theme-aware via GameThemeContext
-  - [ ] Entry animation: staggered reveal (bg → animation → title → pills cascade → buttons slide up)
-  - [ ] Preserve existing game-over/high-score jingles and haptics
-  - [ ] Browse LottieFiles for game-over and celebration animations
-  - [ ] Remove GameOverOverlay component and PostPBPrompt modal (absorbed into game-over screen)
-  - [ ] Update Maestro E2E flows for new game-over screen
+  - [ ] Add Time stat pill (replaces Best? or alongside) with colored borders like Duo's XP/Amazing/Speedy
+  - [ ] Browse LottieFiles for a premium game-over animation (current trophy is placeholder)
+  - [ ] Colored accent borders on stat pills (Duolingo-style)
+  - [ ] Inline initials entry on game-over screen (replace InitialEntryModal) — separate backlog entry below
 
 - [x] **Add time penalty for wrong input in timed mode**
       Wrong input replays the current sequence with no score or time penalty — effectively a free hint. Add a small time penalty (e.g., -3 seconds) so wrong inputs feel like a genuine setback rather than a free replay.
@@ -294,22 +293,11 @@
 - [x] **Add achievements/stats links to Game Over overlay**
       The game-over moment is the highest-engagement point for showing progress. Add a "View Stats" or "Achievements" link to the overlay so players who just beat their high score can see their overall progress.
 
-- [ ] **Migrate leaderboard from modal to dedicated screen**
-      The high scores leaderboard is currently a `<Modal>` in GameScreen while stats and achievements are full Expo Router screens — inconsistent pattern. Migrate to `/leaderboard` route for:
-  - Consistency with stats/achievements navigation pattern
-  - More real estate for the future global leaderboard (Supabase — tabs for Local/Global/Friends)
-  - Natural flow from initials entry → "here's where you landed" as one screen
-  - Deep linking and proper back-button behavior
-  - Maestro testability (RN Modal is invisible to accessibility tree on iOS)
-  Implementation: extract modal content into `src/app/leaderboard.tsx`, pass highlight index + mode as route params, swap trophy button to `router.push`, move `InitialEntryModal` into the leaderboard screen flow.
+- [x] **Migrate leaderboard from modal to dedicated screen**
+      Shipped `/leaderboard` route. Mode tabs redesigned to match idle-action button sizing with green-accent selected state. Empty state uses trophy-outline icon + title. Gesture swipe removed (bigger tap targets make it unnecessary). i18n `game:leaderboard` key added to fix lowercase title fallback.
 
-- [ ] **Migrate settings from modal to dedicated screen**
-      `GameSettingsModal` is a `<Modal>` that's already hitting its content ceiling. A `/settings` route provides room for current + planned preferences:
-  - **Existing**: sound toggle, sound pack, theme, remove ads, restore purchases
-  - **New — haptics toggle**: global on/off for all haptic feedback
-  - **New — notification preferences**: per-type toggles (daily reminders, streak alerts, win-back nudges) so users can opt out of specific notifications without disabling all
-  - **Future**: about/legal section (version, privacy policy link), language override, accessibility options
-  Implementation: extract `GameSettingsModal` content into `src/app/settings.tsx`, add new preference sections backed by MMKV storage keys, swap gear button to `router.push("/settings")`.
+- [x] **Migrate settings from modal to dedicated screen**
+      Shipped `/settings` route. Added haptics toggle, per-notification-type toggles (daily/streak/win-back), all persisted to MMKV. Sound state now persisted via new `SETTINGS_SOUND_ENABLED` key with `syncSoundState` on focus. Restore Purchases uses outlined hollow style consistent with Continue button. useNotifications respects per-type keys.
 
 ---
 
@@ -548,8 +536,8 @@
 - [x] **Add missing testIDs for Maestro flows**
       Added `testID="btn-settings"`, `testID="btn-mode-selector"`, `testID="btn-reset"`. Also added accessibility labels on back buttons (stats, achievements).
 
-- [ ] **Migrate modals to Expo Router modal routes**
-      React Native `<Modal>` is invisible to Maestro's accessibility tree on iOS. Settings, leaderboard, and mode selector should become Expo Router modal routes (`presentation: "modal"`) for proper E2E testability, native sheet presentation (drag to dismiss), and deep linking. This also gives a more premium native feel.
+- [~] **Migrate modals to Expo Router modal routes**
+      Shipped as standard routes (not modal presentation): `/settings`, `/leaderboard`, `/game-over`. Mode selector intentionally stays as a `<Modal>` (quick contextual picker, not a destination). Mode selector could still be migrated to `presentation: "modal"` for native sheet feel — defer until we need it.
 
 ### 1.6 Build & Submit
 
@@ -655,29 +643,29 @@ These compound: do them before the retention work so the Phase C additions slot 
 
 These are where v1.1 earns its keep. Ship on top of Phase B foundation.
 
-- [ ] **First-launch trainer sequence (minimal onboarding)**
-      One-time deterministic 1-color sequence on a fresh install, gated by `ecomi:onboarding:done` MMKV flag. User taps Play, watches a single green pulse, taps green, gets a satisfying chime + haptic, then level 2 ramps normally. A tiny tooltip appears only during their turn: *"Tap the button that lit up"* — auto-dismisses on first tap. **No modals, no Next buttons, no skip logic needed.** The game itself is the tutorial. Progressive disclosure for modes/streaks happens contextually later (after game 3, after first daily win). Targets D1 retention.
+- [x] **First-launch trainer sequence (minimal onboarding)**
+      Shipped: OnboardingTooltip component renders during first `waiting` state with `t("onboarding:tapHint")`, gated by `ONBOARDING_COMPLETED` MMKV key. Auto-dismisses after first input (correct or wrong — fixes timed-mode loop). Wrapped in fixed-height slot to prevent layout shift.
 
-- [ ] **Wrong-input juice: red flash overlay + warning haptic**
-      Currently wrong input only fires `Haptics.notificationAsync(Error)` from `useGameEngine.ts:590`. Add a 200ms red-tinted `EaseView` opacity flash in `GameScreen.tsx` and ensure the warning haptic also fires on timer expiry / end-game paths — not just wrong button. Cheap change, huge perceived-quality bump.
+- [x] **Wrong-input juice: red flash overlay + warning haptic**
+      Shipped: 300ms red EaseView opacity flash in GameScreen + error haptic on wrong input across all modes.
 
-- [ ] **Game-over emotional arc: stagger + PB delta + near-miss**
-      Three small additions in `GameOverOverlay.tsx` that compound: (1) stagger card children with `EaseView` delays (title 0ms → stats 150ms → actions 300ms) instead of all-at-once; (2) if `isNewHighScore`, show `+X over your previous best` below the trophy; (3) if `score >= highScore * 0.8 && !isNewHighScore`, show `So close — X from your best`. Source the title color from theme (`secondaryTextColor` for normal losses, `accentColor` for PB) instead of hardcoded red. Targets replay rate.
+- [x] **Game-over emotional arc: stagger + PB delta + near-miss**
+      Shipped on `/game-over` route — staggered fade/translate (title → stats → links → CTAs), PB delta under title on new PB, near-miss text below stats when within 5 points of high score, title uses warningColor for PB / destructiveColor for game over.
 
-- [ ] **Visual score card sharing via `react-native-view-shot`**
-      `handleShare` in `GameScreen.tsx:403` shares plain text today. Text shares get near-zero engagement on Instagram/TikTok/iMessage. Add a `<ScoreCard>` component (score + level + mode + app branding + themed background), capture with `captureRef`, share via `Share.share({ url })`. Single highest-leverage virality feature.
+- [x] **Visual score card sharing via `react-native-view-shot`**
+      Shipped: `<ShareScoreCard>` component captured via ViewShot, shared via `expo-sharing.shareAsync` (works on both iOS and Android — original `Share.share({ url })` was iOS-only).
 
-- [ ] **Local notifications via `expo-notifications`**
-      Three schedules, all 100% local (no backend, no APNs/FCM). (1) **Daily challenge reminder** — one per day at user-preferred time (default 7pm). (2) **Streak-save warning** — if user has ≥3-day daily streak and hasn't played by 8pm, fire one nudge. (3) **Lapsed-user nudge** — if no launch in 3 days, one "Your best score is waiting" message. Ask permission with a pre-prompt *after* game 3 or first streak built (not on first launch). Consider iOS provisional notifications for no-permission silent delivery. Add opt-in/out toggle in settings modal.
+- [x] **Local notifications via `expo-notifications`**
+      Shipped: 3 schedules (daily reminder 19:00, streak-save 10:00 next day, win-back 3 days out). Pre-prompt screen at `/notifications` explains value before OS dialog. Per-type opt-in toggles in settings screen. Reschedules on every game-over.
 
-- [ ] **Streak loss-aversion idle banner**
-      If user has an active daily streak and hasn't played today's daily, render a banner on the idle screen: `🔥 Day {n} streak — play Daily to keep it!` tinted with accent color for urgency. Complements the notification push. Optional stretch: rewarded-ad streak save on first open after missing a day (restores yesterday's daily) — monetization + retention combo.
+- [x] **Streak loss-aversion idle banner**
+      Shipped: `<StreakBanner>` renders on idle when `streak > 0 && !playedToday`, uses `game:streakAtRisk` translation with warning-color background.
 
-- [ ] **Empty states for stats and leaderboard**
-      When `stats.gamesPlayed === 0`, `src/app/stats.tsx` renders a wall of zeros with no guidance. When `scores.length === 0`, `HighScoreTable.tsx` renders one line of centered text. Replace both with illustrated empty states: icon + localized message + CTA back to Play. Turns dead-ends into re-engagement moments.
+- [x] **Empty states for stats and leaderboard**
+      Shipped: stats.tsx uses game-controller-outline icon + "No games yet" title/body + "Play Now" CTA. Leaderboard uses trophy-outline icon + "No scores yet" title + `game:emptyLeaderboard` body.
 
-- [ ] **Play button visual dominance on idle screen**
-      Today the Start button is a modest pill in a row with trophy/stats/achievements icons (`GameScreen.tsx:1441-1449`) — it competes with 4 peer buttons. For F2P, the Play button is the single most important conversion surface. Make it ~70% width, `paddingVertical: 16`, add subtle accent-colored shadow, optional idle pulse (scale 1.0→1.02 loop). Move secondary icons to a less-prominent row below with more spacing.
+- [x] **Play button visual dominance on idle screen**
+      Shipped: full-width primary Start button with accent background, pulse animation loop (scale 1.0→1.02), secondary action icons (leaderboard/stats/achievements) in separate row below.
 
 - [x] **Post-PB soft IAP prompt**
       Highest-converting IAP moment in casual games is right after a personal best, when emotional investment peaks. Today the game-over overlay shows only Play Again / Share there. Add a dismissible "Go ad-free to stay in the zone" row beneath the celebration Lottie in `GameOverOverlay.tsx`. Cap at once per 7 days per user. Independent of `adShownThisSession` guard (the current remove-ads CTA).

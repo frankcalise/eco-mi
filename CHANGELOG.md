@@ -6,14 +6,38 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 
 ## [Unreleased]
 
+### Refactor (v1.1.0 — Route Migrations & State Architecture)
+- **Leaderboard route** (`/leaderboard`) — extracted HighScoreTable from in-screen Modal into dedicated Expo Router screen. Mode tabs redesigned with idle-action-button sizing + green-accent selected state (matches mode selector / sound pack pattern). Swipe-between-modes gesture removed, GestureHandlerRootView wrapper dropped. Empty state uses trophy-outline icon + title (matches stats.tsx). Added missing `game:leaderboard` i18n key.
+- **Settings route** (`/settings`) — extracted GameSettingsModal into full screen. New sections: haptics toggle, per-notification-type toggles (daily / streak / win-back), all persisted to MMKV. Sound state now persisted via `SETTINGS_SOUND_ENABLED`, synced on GameScreen focus. `useNotifications` respects per-type keys before scheduling. Restore Purchases restyled as outlined hollow button. useAudioTones instance in settings for preview playback without disrupting gameplay audio.
+- **Game-over route** (`/game-over`) — Duolingo-style full-screen experience replacing the `<GameOverOverlay>` modal. Stat pills (Score/Level/Best), PB delta under title on new high score, trophy Lottie, navigation links aligned under each pill (Statistics/Achievements/Leaderboard), full-width Play Again CTA, platform-aware share icon (iOS share-outline / Android share-social-outline), outlined Watch Ad to Continue, Main Menu link. ReviewPrompt, PostPBPrompt, and AchievementToast relocated onto this screen (with `checkAchievements` call on mount). Score of 0 bypasses game-over entirely and bounces to idle.
+- **Zustand stores** — `pendingActionStore` (cross-screen signals: play_again / continue / main_menu) replaces string route params. `gameOverStore` replaces 8 stringly-typed route params with a typed object — GameScreen writes, game-over reads.
+- **`useStoreReview.triggerReviewCheck` now returns boolean** — game-over uses this to make Review and PostPB prompts mutually exclusive. If review schedules, PostPB is skipped for that session.
+- **Deleted**: `GameOverOverlay.tsx`, `GameSettingsModal.tsx`, 14 obsolete route-param parse lines.
+
+### Fix (v1.1.0)
+- **InitialEntryModal dismiss** now navigates to game-over screen instead of stranding the user with no UI (score isn't recorded on dismiss, but the overlay still shows).
+- **InitialEntryModal title color** uses theme.warningColor (amber) instead of red — matches the "New High Score!" title on /game-over.
+- **Navigation race condition** — high-score game-over no longer navigates to /game-over before InitialEntryModal renders on iOS. Gated by `pendingGameOver.current` instead of `leaderboardRecorded.current`.
+- **Navigation white flash** — root View wrapper + stack `contentStyle.backgroundColor` set to classic theme color. No more white corners during slide transitions (in production builds). Also renders a dark View instead of `null` during fonts/i18n load.
+- **Main Menu reset** — tapping Main Menu from game-over now triggers resetGame so GameScreen returns to idle (btn-start visible).
+- **Duplicate leaderboard entry on rewarded-ad continue** — added `leaderboardRecorded` ref guard.
+- **Android share** — replaced iOS-only `Share.share({ url })` with `expo-sharing` which handles FileProvider content URIs. Image now shares correctly on Android.
+- **Remove Ads centering on Android** — `alignSelf: "center"` on the row.
+- **Onboarding tooltip loop in timed mode** — dismisses after any first attempt (correct or wrong), not just correct input.
+- **Onboarding tooltip layout shift** — wrapped in fixed-height reserved slot so first-run content doesn't jump.
+- **Splash background alignment** — changed from `#191015` to `#1a1a2e` to match Classic theme and eliminate color flash on launch.
+
 ### Feat (v1.1.0)
-- **Timed mode wrong-input penalty** — escalating time deduction (1s first wrong, 2s second, etc.) + 2s bonus on correct sequence. Floating "+2s"/"-Ns" text with spring animation.
+- **Timed mode wrong-input penalty** — escalating time deduction (1s first wrong, 2s second, etc.) + 2s bonus on correct sequence. Status-line feedback: "Great job! +2s" / "Oops, try again! -Ns" with 2-second display + fade in/out. Stale clear timers cancel on new delta so consecutive inputs don't clear early.
 - **Timed countdown haptics** — light impact under 10s, medium under 5s, heavy under 3s. Fires once per second boundary.
 - **Level 12 achievement** — "Getting Serious" fills feedback gap between levels 10-15. Localized en/es/pt.
 - **Localized iOS permission strings** — custom config plugin creates es.lproj/pt.lproj InfoPlist.strings for ATT and microphone dialogs.
+- **Progress dot micro-animations** — spring fill-in when player taps correct input, new dot on level-up pops in (outer EaseView mount animation via stable keys). Last dot now animates on sequence complete (render gate widened to include advancing/replaying states).
+- **Mode selector pulse** — 3→2 pulses, snappier dismiss.
+- **npm-blocking PreToolUse hook** — `.claude/settings.json` denies any `npm *` bash commands with a reminder to use bun.
 
-### Fix (v1.1.0)
-- **Duplicate leaderboard entry on rewarded-ad continue** — added `leaderboardRecorded` ref guard. First game-over records to leaderboard; continue + second loss is skipped. Resets on new game.
+### Dependencies
+- **Added**: `zustand` (state management), `expo-sharing` (cross-platform share sheet)
 
 ### Feat (v1.1.0 Phase C — Retention & Polish)
 - **Notification permission pre-prompt** — full-screen route (`/notifications`) with bell icon, explains daily reminders and streak protection before OS dialog. Shown once on idle after 3+ games. Localized en/es/pt.
