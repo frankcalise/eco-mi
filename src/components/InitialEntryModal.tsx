@@ -145,6 +145,8 @@ export function InitialEntryModal({
                     autoCorrect={false}
                     textAlign="center"
                     selectionColor={accent}
+                    returnKeyType={i === 2 ? "done" : "next"}
+                    onSubmitEditing={i === 2 ? handleDone : undefined}
                   />
                   {!letters[i] && (
                     <Animated.View
