@@ -288,6 +288,15 @@
 - [x] **Add achievements/stats links to Game Over overlay**
       The game-over moment is the highest-engagement point for showing progress. Add a "View Stats" or "Achievements" link to the overlay so players who just beat their high score can see their overall progress.
 
+- [ ] **Migrate leaderboard from modal to dedicated screen**
+      The high scores leaderboard is currently a `<Modal>` in GameScreen while stats and achievements are full Expo Router screens — inconsistent pattern. Migrate to `/leaderboard` route for:
+  - Consistency with stats/achievements navigation pattern
+  - More real estate for the future global leaderboard (Supabase — tabs for Local/Global/Friends)
+  - Natural flow from initials entry → "here's where you landed" as one screen
+  - Deep linking and proper back-button behavior
+  - Maestro testability (RN Modal is invisible to accessibility tree on iOS)
+  Implementation: extract modal content into `src/app/leaderboard.tsx`, pass highlight index + mode as route params, swap trophy button to `router.push`, move `InitialEntryModal` into the leaderboard screen flow.
+
 ---
 
 ## Tech Debt
