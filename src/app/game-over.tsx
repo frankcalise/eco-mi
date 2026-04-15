@@ -146,7 +146,7 @@ export default function GameOverScreen() {
   }
 
   function handleMainMenu() {
-    saveString(PENDING_GAME_ACTION, "")
+    saveString(PENDING_GAME_ACTION, "main_menu")
     router.back()
   }
 

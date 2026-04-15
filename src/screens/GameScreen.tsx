@@ -109,6 +109,7 @@ export function GameScreen() {
       saveString(PENDING_GAME_ACTION, "")
       if (pending === "play_again") handleStartGame()
       else if (pending === "continue") handleContinue()
+      else if (pending === "main_menu") resetGame()
     }
   })
 
