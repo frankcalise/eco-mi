@@ -8,7 +8,8 @@ const PROMPT_DELAY_MS = 2500 // show 2.5s after game over
 
 type UseStoreReviewReturn = {
   showReviewPrompt: boolean
-  triggerReviewCheck: (trigger: string, adShownThisSession: boolean) => void
+  /** Returns true if the prompt will be shown (conditions met), false if skipped. */
+  triggerReviewCheck: (trigger: string, adShownThisSession: boolean) => boolean
   dismissReviewPrompt: () => void
   reviewTrigger: string
 }
@@ -24,13 +25,13 @@ export function useStoreReview(): UseStoreReviewReturn {
     return Date.now() - parseInt(lastPrompt, 10) < COOLDOWN_MS
   }
 
-  function triggerReviewCheck(trigger: string, adShownThisSession: boolean) {
-    if (adShownThisSession) return
+  function triggerReviewCheck(trigger: string, adShownThisSession: boolean): boolean {
+    if (adShownThisSession) return false
 
     const gamesPlayed = parseInt(loadString(STATS_GAMES_PLAYED) ?? "0", 10)
-    if (gamesPlayed < MIN_GAMES_FOR_REVIEW) return
+    if (gamesPlayed < MIN_GAMES_FOR_REVIEW) return false
 
-    if (isWithinCooldown()) return
+    if (isWithinCooldown()) return false
 
     // Delay so the game-over overlay is visible first
     if (delayTimeout.current) clearTimeout(delayTimeout.current)
@@ -39,6 +40,7 @@ export function useStoreReview(): UseStoreReviewReturn {
       setShowReviewPrompt(true)
       saveString(REVIEW_LAST_PROMPT_DATE, Date.now().toString())
     }, PROMPT_DELAY_MS)
+    return true
   }
 
   function dismissReviewPrompt() {

@@ -70,10 +70,11 @@ export default function GameOverScreen() {
       isDaily: mode === "daily",
     })
 
-    // Review + PostPB prompts on new high score
+    // Review + PostPB prompts on new high score — mutually exclusive.
+    // If review will show, skip PostPB so they don't stack on the same game-over.
     if (isNewHighScore) {
-      triggerReviewCheck("new_high_score", false)
-      if (!removeAds) {
+      const reviewScheduled = triggerReviewCheck("new_high_score", false)
+      if (!reviewScheduled && !removeAds) {
         triggerPostPBCheck()
       }
     }

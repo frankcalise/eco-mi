@@ -120,4 +120,30 @@ describe("useStoreReview", () => {
     expect(result.current.showReviewPrompt).toBe(false)
     expect(result.current.reviewTrigger).toBe("")
   })
+
+  it("triggerReviewCheck returns true when prompt will show", () => {
+    storage.set(STATS_GAMES_PLAYED, "10")
+
+    const { result } = renderHook(() => useStoreReview())
+
+    let scheduled: boolean | undefined
+    act(() => {
+      scheduled = result.current.triggerReviewCheck("new_high_score", false)
+    })
+
+    expect(scheduled).toBe(true)
+  })
+
+  it("triggerReviewCheck returns false when conditions not met", () => {
+    storage.set(STATS_GAMES_PLAYED, "3")
+
+    const { result } = renderHook(() => useStoreReview())
+
+    let scheduled: boolean | undefined
+    act(() => {
+      scheduled = result.current.triggerReviewCheck("new_high_score", false)
+    })
+
+    expect(scheduled).toBe(false)
+  })
 })

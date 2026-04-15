@@ -606,6 +606,9 @@ export function GameScreen() {
         onDismiss={() => {
           setShowInitialEntry(false)
           pendingGameOver.current = false
+          // User skipped initials — still route to the game-over screen
+          // (score isn't recorded to leaderboard, but the overlay should still show)
+          navigateToGameOver()
         }}
       />
 
