@@ -50,10 +50,15 @@ export function GameStatusBar({
         </Text>
       )}
       <View style={styles.progressRow}>
-        {(gameState === "showing" || gameState === "waiting") &&
+        {(gameState === "showing" ||
+          gameState === "waiting" ||
+          gameState === "advancing" ||
+          gameState === "replaying") &&
           (sequence.length <= 15 ? (
             sequence.map((_, i) => {
-              const isFilled = gameState === "waiting" && i < playerSequence.length
+              // Fill on any state where the player has inputted this index —
+              // includes "advancing" so the last dot animates before the next level starts.
+              const isFilled = i < playerSequence.length
               return (
                 <View
                   key={i}
