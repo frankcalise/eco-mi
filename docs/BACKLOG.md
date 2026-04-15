@@ -297,6 +297,14 @@
   - Maestro testability (RN Modal is invisible to accessibility tree on iOS)
   Implementation: extract modal content into `src/app/leaderboard.tsx`, pass highlight index + mode as route params, swap trophy button to `router.push`, move `InitialEntryModal` into the leaderboard screen flow.
 
+- [ ] **Migrate settings from modal to dedicated screen**
+      `GameSettingsModal` is a `<Modal>` that's already hitting its content ceiling. A `/settings` route provides room for current + planned preferences:
+  - **Existing**: sound toggle, sound pack, theme, remove ads, restore purchases
+  - **New — haptics toggle**: global on/off for all haptic feedback
+  - **New — notification preferences**: per-type toggles (daily reminders, streak alerts, win-back nudges) so users can opt out of specific notifications without disabling all
+  - **Future**: about/legal section (version, privacy policy link), language override, accessibility options
+  Implementation: extract `GameSettingsModal` content into `src/app/settings.tsx`, add new preference sections backed by MMKV storage keys, swap gear button to `router.push("/settings")`.
+
 ---
 
 ## Tech Debt
