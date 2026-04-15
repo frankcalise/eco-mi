@@ -21,7 +21,6 @@ const NEON_COLOR_ORDER = ["red", "blue", "green"] as const
 
 type GameHeaderProps = {
   mode: GameMode
-  gameState: string
   isIdle: boolean
   theme: GameTheme
   onModePress: () => void
@@ -30,7 +29,6 @@ type GameHeaderProps = {
 
 export function GameHeader({
   mode,
-  gameState,
   isIdle,
   theme,
   onModePress,

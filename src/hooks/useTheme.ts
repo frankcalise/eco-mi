@@ -1,7 +1,7 @@
 import { useState } from "react"
 
 import { SETTINGS_SELECTED_THEME } from "@/config/storageKeys"
-import { getThemeById, type GameTheme } from "@/config/themes"
+import { getThemeById } from "@/config/themes"
 import { loadString, saveString } from "@/utils/storage"
 
 export function useTheme() {

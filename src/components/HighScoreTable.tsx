@@ -3,7 +3,7 @@ import { Animated, Pressable, StyleSheet, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 
 import type { GameTheme } from "@/config/themes"
-import { useHighScores, type HighScoreEntry, type GameMode } from "@/hooks/useHighScores"
+import { useHighScores, type GameMode } from "@/hooks/useHighScores"
 import { translate } from "@/i18n/translate"
 
 const MODES: { id: GameMode; icon: keyof typeof Ionicons.glyphMap }[] = [

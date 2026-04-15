@@ -19,13 +19,9 @@ import { OnboardingTooltip } from "@/components/OnboardingTooltip"
 import { PressableScale } from "@/components/PressableScale"
 import { StreakBanner } from "@/components/StreakBanner"
 import { TimerRing } from "@/components/TimerRing"
-import {
-  DAILY_CURRENT_STREAK,
-  ONBOARDING_COMPLETED,
-  STATS_GAMES_PLAYED,
-} from "@/config/storageKeys"
+import { DAILY_CURRENT_STREAK, ONBOARDING_COMPLETED } from "@/config/storageKeys"
 import { useAds } from "@/hooks/useAds"
-import { useGameEngine, colors, type GameMode } from "@/hooks/useGameEngine"
+import { useGameEngine, type GameMode } from "@/hooks/useGameEngine"
 import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
 import { useNotifications, shouldShowNotificationPrompt } from "@/hooks/useNotifications"
 import { usePurchases } from "@/hooks/usePurchases"
@@ -67,7 +63,6 @@ export function GameScreen() {
     level,
     highScore,
     activeButton,
-    soundEnabled,
     isNewHighScore,
     continuedThisGame,
     sequence,
@@ -78,15 +73,12 @@ export function GameScreen() {
     continueGame,
     handleButtonTouch,
     handleButtonRelease,
-    toggleSound,
-    playPreview,
     playJingle,
     playGameOverJingle,
     playHighScoreJingle,
     setMode,
     mode,
     timeRemaining,
-    sequencesCompleted,
     buttonPositions,
     isShuffling,
     inputTimeRemaining,
@@ -338,7 +330,6 @@ export function GameScreen() {
 
         <GameHeader
           mode={mode}
-          gameState={gameState}
           isIdle={isIdle}
           theme={activeTheme}
           onModePress={() => setModeModalVisible(true)}
@@ -668,9 +659,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 30,
   },
-  gestureRoot: {
-    flex: 1,
-  },
   idleActionButton: {
     alignItems: "center",
     borderRadius: 8,
@@ -741,10 +729,6 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-Bold",
     fontSize: 24,
   },
-  showingText: {
-    color: "#fbbf24",
-    fontFamily: "Oxanium-Regular",
-  },
   startButton: {
     alignItems: "center",
     borderRadius: 12,
@@ -771,10 +755,6 @@ const styles = StyleSheet.create({
     left: 0,
     position: "absolute",
     top: 0,
-  },
-  waitingText: {
-    color: "#22c55e",
-    fontFamily: "Oxanium-Regular",
   },
   wrongFlashOverlay: {
     ...StyleSheet.absoluteFillObject,

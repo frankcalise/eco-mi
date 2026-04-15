@@ -69,7 +69,7 @@ export const gameEngineMachine = setup({
     },
   },
   actions: {
-    initContext: assign(({ context }) => ({
+    initContext: assign(() => ({
       sequence: [],
       playerSequence: [],
       level: 1,

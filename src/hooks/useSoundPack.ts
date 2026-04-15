@@ -1,7 +1,6 @@
 import { useState } from "react"
 
 import { DEFAULT_SOUND_PACK_ID, getSoundPackById } from "@/config/soundPacks"
-import type { SoundPack } from "@/config/soundPacks"
 import { SETTINGS_SELECTED_SOUND_PACK } from "@/config/storageKeys"
 import { loadString, saveString } from "@/utils/storage"
 

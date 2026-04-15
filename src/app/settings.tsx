@@ -4,7 +4,6 @@ import * as Haptics from "expo-haptics"
 import { useRouter } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
-import type { OscillatorType } from "react-native-audio-api"
 import { EaseView } from "react-native-ease"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 

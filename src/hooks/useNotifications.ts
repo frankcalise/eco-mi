@@ -11,7 +11,7 @@ import {
   SETTINGS_NOTIFY_WINBACK,
   STATS_GAMES_PLAYED,
 } from "@/config/storageKeys"
-import { loadString, saveString } from "@/utils/storage"
+import { loadString } from "@/utils/storage"
 
 const MIN_GAMES_BEFORE_ASK = 3
 
