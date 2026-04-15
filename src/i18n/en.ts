@@ -151,7 +151,7 @@ const en = {
     prePromptTitle: "Never Miss a Beat",
     prePromptBody: "Get daily challenge reminders, streak protection alerts, and gentle nudges to keep your memory sharp.",
     enableReminders: "Enable Reminders",
-    notNow: "Not Now",
+    maybeLater: "Maybe Later",
   },
   iap: {
     postPBTitle: "New Personal Best!",

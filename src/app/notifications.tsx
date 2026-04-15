@@ -49,7 +49,7 @@ export default function NotificationsScreen() {
           onPress={handleNotNow}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.skipBtnText}>{t("notifications:notNow")}</Text>
+          <Text style={styles.skipBtnText}>{t("notifications:maybeLater")}</Text>
         </PressableScale>
       </View>
     </View>
@@ -58,7 +58,6 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   buttons: {
-    alignItems: "center",
     gap: 12,
     paddingHorizontal: 32,
     width: "100%",
@@ -98,6 +97,8 @@ const styles = StyleSheet.create({
     width: 120,
   },
   skipBtn: {
+    alignSelf: "center",
+    marginBottom: 8,
     paddingVertical: 8,
   },
   skipBtnText: {

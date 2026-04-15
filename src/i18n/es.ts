@@ -151,7 +151,7 @@ const es = {
     prePromptTitle: "No te pierdas nada",
     prePromptBody: "Recibe recordatorios de desafíos diarios, alertas para proteger tu racha y motivación para mantener tu memoria en forma.",
     enableReminders: "Activar recordatorios",
-    notNow: "Ahora no",
+    maybeLater: "Quizás más tarde",
   },
   iap: {
     postPBTitle: "¡Nueva Mejor Marca!",

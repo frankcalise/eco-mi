@@ -150,7 +150,7 @@ const pt = {
     prePromptTitle: "Não perca nenhum momento",
     prePromptBody: "Receba lembretes de desafios diários, alertas para proteger sua sequência e incentivos para manter sua memória afiada.",
     enableReminders: "Ativar lembretes",
-    notNow: "Agora não",
+    maybeLater: "Talvez mais tarde",
   },
   iap: {
     postPBTitle: "Novo Recorde Pessoal!",
