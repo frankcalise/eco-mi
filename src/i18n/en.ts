@@ -30,6 +30,8 @@ const en = {
     restoreSuccess: "Purchases restored!",
     restoreFailed: "Nothing to restore",
     home: "Home",
+    mainMenu: "Main Menu",
+    leaderboard: "Leaderboard",
     shareMessage:
       "I reached Level {{level}} with a score of {{score}} in {{mode}} mode on Eco Mi! Can you beat me?",
     timeRemaining: "{{time}}s",
@@ -87,6 +89,9 @@ const en = {
     emptyTitle: "No games yet",
     emptyBody: "Play your first game to see your stats here",
     playNow: "Play Now",
+  },
+  leaderboard: {
+    emptyTitle: "No scores yet",
   },
   achievements: {
     title: "Achievements",

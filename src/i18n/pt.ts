@@ -30,6 +30,8 @@ const pt = {
     restoreSuccess: "Compras restauradas!",
     restoreFailed: "Nada para restaurar",
     home: "Início",
+    mainMenu: "Menu Principal",
+    leaderboard: "Classificação",
     shareMessage:
       "Cheguei ao Nível {{level}} com {{score}} pontos no modo {{mode}} no Eco Mi! Consegue me superar?",
     timeRemaining: "{{time}}s",
@@ -87,6 +89,9 @@ const pt = {
     emptyTitle: "Sem jogos ainda",
     emptyBody: "Jogue sua primeira partida para ver suas estatísticas aqui",
     playNow: "Jogar Agora",
+  },
+  leaderboard: {
+    emptyTitle: "Ainda sem pontuações",
   },
   achievements: {
     title: "Conquistas",

@@ -15,7 +15,6 @@ import { useTranslation } from "react-i18next"
 import { EaseView } from "react-native-ease"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { AchievementToast } from "@/components/AchievementToast"
 import { AnimatedCountdown } from "@/components/AnimatedCountdown"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
 import { GameButton } from "@/components/GameButton"
@@ -27,9 +26,7 @@ import { StreakBanner } from "@/components/StreakBanner"
 import { InitialEntryModal } from "@/components/InitialEntryModal"
 import { PressableScale } from "@/components/PressableScale"
 import { TimerRing } from "@/components/TimerRing"
-import { ACHIEVEMENTS } from "@/config/achievements"
 import { DAILY_CURRENT_STREAK, ONBOARDING_COMPLETED, STATS_GAMES_PLAYED } from "@/config/storageKeys"
-import { useAchievements } from "@/hooks/useAchievements"
 import { useAds } from "@/hooks/useAds"
 import { useGameEngine, colors, type GameMode } from "@/hooks/useGameEngine"
 import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
@@ -120,7 +117,6 @@ export function GameScreen() {
   } = useAds()
   const { removeAds } = usePurchases()
   const { isHighScore: checkIsHighScore, addHighScore } = useHighScores()
-  const { checkAchievements, newlyUnlocked, clearNewlyUnlocked } = useAchievements()
   const { rescheduleAfterGameOver } = useNotifications()
   const sessionCounted = useRef(false)
   const [modeModalVisible, setModeModalVisible] = useState(false)
@@ -131,11 +127,6 @@ export function GameScreen() {
   const [pulsingMode, setPulsingMode] = useState<GameMode | null>(null)
   const [pulsePhase, setPulsePhase] = useState<"bright" | "dim">("bright")
   const pulseTimers = useRef<ReturnType<typeof setTimeout>[]>([])
-  const [achievementToast, setAchievementToast] = useState<{
-    title: string
-    description: string
-    icon?: string
-  } | null>(null)
   const isIdle = gameState === "idle"
   const [onboardingDone, setOnboardingDone] = useState(() => loadString(ONBOARDING_COMPLETED) === "true")
   const showOnboardingTooltip = !onboardingDone && gameState === "waiting"
@@ -146,19 +137,6 @@ export function GameScreen() {
       setOnboardingDone(true)
     }
   }, [playerSequence.length, onboardingDone, wrongFlash])
-
-  useEffect(() => {
-    if (newlyUnlocked.length > 0) {
-      const id = newlyUnlocked[0]
-      const achievement = ACHIEVEMENTS.find((a) => a.id === id)
-      setAchievementToast({
-        title: t(`achievements:${id}`),
-        description: t(`achievements:${id}_desc`),
-        icon: achievement?.icon,
-      })
-      clearNewlyUnlocked()
-    }
-  }, [newlyUnlocked])
 
   function handleModeSelect(id: GameMode) {
     if (id === mode) return
@@ -233,18 +211,7 @@ export function GameScreen() {
         playGameOverJingle()
       }
 
-      // Check achievement unlock conditions
-      const gamesPlayed = parseInt(loadString(STATS_GAMES_PLAYED) ?? "0", 10)
-      const currentStreak = parseInt(loadString(DAILY_CURRENT_STREAK) ?? "0", 10)
-      checkAchievements({
-        score,
-        level,
-        gamesPlayed,
-        currentStreak,
-        isDaily: mode === "daily",
-      })
-
-      // Check if score qualifies for local top 10
+      // Check if score qualifies for local top 10 — show initials modal first if so
       if (checkIsHighScore(score, mode) && !leaderboardRecorded.current) {
         leaderboardRecorded.current = true
         pendingGameOver.current = true
@@ -253,8 +220,9 @@ export function GameScreen() {
 
       rescheduleAfterGameOver()
 
-      // Navigate to game-over screen (after initials if high score)
-      if (!checkIsHighScore(score, mode) || leaderboardRecorded.current) {
+      // Navigate to game-over screen only if initials modal isn't pending
+      // (if it is, handleInitialSubmit will navigate after submission)
+      if (!pendingGameOver.current) {
         router.push({
           pathname: "/game-over",
           params: {
@@ -639,13 +607,6 @@ export function GameScreen() {
         }}
       />
 
-      <AchievementToast
-        title={achievementToast?.title ?? ""}
-        description={achievementToast?.description ?? ""}
-        icon={achievementToast?.icon}
-        visible={achievementToast !== null}
-        onHide={() => setAchievementToast(null)}
-      />
       </View>
     </GameThemeProvider>
   )

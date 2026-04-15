@@ -156,7 +156,7 @@ export default function SettingsScreen() {
                   testID={`btn-sound-pack-${pack.id}`}
                   hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
                   onPress={() => {
-                    if (isOwned && pack.id === soundPack.id) return
+                    if (pack.id === soundPack.id) return
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
                     if (!soundEnabled) {
                       setSoundHint(true)
@@ -251,7 +251,7 @@ export default function SettingsScreen() {
                   testID={`btn-theme-${id}`}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   onPress={() => {
-                    if (isOwned && id === theme.id) return
+                    if (id === theme.id) return
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
                     setPoppingTheme(id)
                     setTimeout(() => setPoppingTheme(null), 150)
@@ -376,7 +376,7 @@ export default function SettingsScreen() {
         {/* Restore Purchases */}
         <View style={styles.section}>
           <PressableScale
-            style={styles.restoreBtn}
+            style={[styles.restoreBtn, { borderColor: activeTheme.borderColor }]}
             accessibilityLabel={t("a11y:restorePurchases")}
             accessibilityRole="button"
             onPress={async () => {
@@ -385,8 +385,8 @@ export default function SettingsScreen() {
               setTimeout(() => setRestoreMessage(null), 3000)
             }}
           >
-            <Ionicons name="refresh" size={16} color={activeTheme.secondaryTextColor} />
-            <Text style={[styles.restoreBtnText, { color: activeTheme.secondaryTextColor }]}>
+            <Ionicons name="refresh" size={18} color={activeTheme.textColor} />
+            <Text style={[styles.restoreBtnText, { color: activeTheme.textColor }]}>
               {t("game:restorePurchases")}
             </Text>
           </PressableScale>
@@ -448,13 +448,17 @@ const styles = StyleSheet.create({
   },
   restoreBtn: {
     alignItems: "center",
+    borderRadius: 10,
+    borderWidth: 1,
     flexDirection: "row",
-    gap: 6,
-    paddingVertical: 8,
+    gap: 8,
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
   restoreBtnText: {
-    fontFamily: "Oxanium-Regular",
-    fontSize: 13,
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 14,
   },
   row: {
     flexDirection: "row",

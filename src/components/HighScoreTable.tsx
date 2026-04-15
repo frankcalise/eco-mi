@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react"
-import { Animated, I18nManager, Pressable, StyleSheet, Text, View } from "react-native"
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { Gesture, GestureDetector, Directions } from "react-native-gesture-handler"
 
 import type { GameTheme } from "@/config/themes"
 import { useHighScores, type HighScoreEntry, type GameMode } from "@/hooks/useHighScores"
@@ -61,35 +60,6 @@ export function HighScoreTable({
   const highlight = theme.buttonColors.red.color
   const activeHighlight = selectedMode === highlightMode ? highlightIndex : undefined
 
-  // Fling gestures for swiping between mode tabs
-  // Directions are physical (not logical) — flip for RTL
-  const leftDir = I18nManager.isRTL ? Directions.RIGHT : Directions.LEFT
-  const rightDir = I18nManager.isRTL ? Directions.LEFT : Directions.RIGHT
-
-  const flingNext = Gesture.Fling()
-    .direction(leftDir)
-    .onEnd(() => {
-      setSelectedMode((prev) => {
-        const idx = MODES.findIndex((m) => m.id === prev)
-        if (idx >= MODES.length - 1) return prev
-        return MODES[idx + 1].id
-      })
-    })
-    .runOnJS(true)
-
-  const flingPrev = Gesture.Fling()
-    .direction(rightDir)
-    .onEnd(() => {
-      setSelectedMode((prev) => {
-        const idx = MODES.findIndex((m) => m.id === prev)
-        if (idx <= 0) return prev
-        return MODES[idx - 1].id
-      })
-    })
-    .runOnJS(true)
-
-  const swipeGesture = Gesture.Simultaneous(flingNext, flingPrev)
-
   const rows = Array.from({ length: 10 }, (_, i) => {
     const entry = scores[i]
     return {
@@ -102,15 +72,19 @@ export function HighScoreTable({
 
   return (
     <View testID="high-score-table" style={styles.container}>
-      <Text style={[styles.heading, { color: highlight }]}>{translate("game:highScores")}</Text>
-
       <View style={styles.modeTabs}>
         {MODES.map((m) => {
           const isActive = selectedMode === m.id
           return (
             <Pressable
               key={m.id}
-              style={[styles.modeTab, isActive && { backgroundColor: theme.surfaceColor }]}
+              style={[
+                styles.modeTab,
+                {
+                  borderColor: isActive ? theme.accentColor : theme.borderColor,
+                  backgroundColor: isActive ? `${theme.accentColor}1A` : "transparent",
+                },
+              ]}
               onPress={() => setSelectedMode(m.id)}
               hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
               accessibilityLabel={translate(`game:modes.${m.id}`)}
@@ -118,13 +92,13 @@ export function HighScoreTable({
             >
               <Ionicons
                 name={m.icon}
-                size={16}
-                color={isActive ? theme.textColor : theme.secondaryTextColor}
+                size={20}
+                color={isActive ? theme.accentColor : theme.secondaryTextColor}
               />
               <Text
                 style={[
                   styles.modeTabLabel,
-                  { color: isActive ? theme.textColor : theme.secondaryTextColor },
+                  { color: isActive ? theme.accentColor : theme.secondaryTextColor },
                 ]}
               >
                 {translate(`game:modes.${m.id}`)}
@@ -134,7 +108,17 @@ export function HighScoreTable({
         })}
       </View>
 
-      <GestureDetector gesture={swipeGesture}>
+      {scores.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Ionicons name="trophy-outline" size={48} color={theme.secondaryTextColor} />
+          <Text style={[styles.emptyTitle, { color: theme.textColor }]}>
+            {translate("leaderboard:emptyTitle")}
+          </Text>
+          <Text style={[styles.emptyBody, { color: theme.secondaryTextColor }]}>
+            {translate("game:emptyLeaderboard")}
+          </Text>
+        </View>
+      ) : (
         <View>
           <View style={[styles.headerRow, { borderBottomColor: theme.borderColor }]}>
             <Text style={[styles.headerCell, styles.rankCol, { color: theme.secondaryTextColor }]}>
@@ -151,80 +135,72 @@ export function HighScoreTable({
             </Text>
           </View>
 
-          {scores.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={[styles.emptyStateText, { color: theme.secondaryTextColor }]}>
-                {translate("game:emptyLeaderboard")}
-              </Text>
-            </View>
-          ) : (
-            rows.map((row, i) => {
-              const isHighlighted = activeHighlight === i
-              const rowContent = (
-                <View
-                  key={i}
+          {rows.map((row, i) => {
+            const isHighlighted = activeHighlight === i
+            const rowContent = (
+              <View
+                key={i}
+                style={[
+                  styles.row,
+                  i % 2 === 0 && { backgroundColor: theme.surfaceColor },
+                  isHighlighted && {
+                    backgroundColor: "rgba(251, 191, 36, 0.15)",
+                    borderColor: "rgba(251, 191, 36, 0.3)",
+                    borderWidth: 1,
+                    borderRadius: 4,
+                  },
+                ]}
+              >
+                <Text
                   style={[
-                    styles.row,
-                    i % 2 === 0 && { backgroundColor: theme.surfaceColor },
-                    isHighlighted && {
-                      backgroundColor: "rgba(251, 191, 36, 0.15)",
-                      borderColor: "rgba(251, 191, 36, 0.3)",
-                      borderWidth: 1,
-                      borderRadius: 4,
-                    },
+                    styles.cell,
+                    styles.rankCol,
+                    { color: cellColor },
+                    isHighlighted && { color: highlight },
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.cell,
-                      styles.rankCol,
-                      { color: cellColor },
-                      isHighlighted && { color: highlight },
-                    ]}
-                  >
-                    {String(row.rank).padStart(2, " ")}.
-                  </Text>
-                  <Text
-                    style={[
-                      styles.cell,
-                      styles.nameCol,
-                      { color: cellColor },
-                      isHighlighted && { color: highlight },
-                    ]}
-                  >
-                    {row.initials}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.cell,
-                      styles.scoreCol,
-                      { color: cellColor },
-                      isHighlighted && { color: highlight },
-                    ]}
-                  >
-                    {row.score}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.cell,
-                      styles.levelCol,
-                      { color: cellColor },
-                      isHighlighted && { color: highlight },
-                    ]}
-                  >
-                    {row.level}
-                  </Text>
-                </View>
-              )
+                  {String(row.rank).padStart(2, " ")}.
+                </Text>
+                <Text
+                  style={[
+                    styles.cell,
+                    styles.nameCol,
+                    { color: cellColor },
+                    isHighlighted && { color: highlight },
+                  ]}
+                >
+                  {row.initials}
+                </Text>
+                <Text
+                  style={[
+                    styles.cell,
+                    styles.scoreCol,
+                    { color: cellColor },
+                    isHighlighted && { color: highlight },
+                  ]}
+                >
+                  {row.score}
+                </Text>
+                <Text
+                  style={[
+                    styles.cell,
+                    styles.levelCol,
+                    { color: cellColor },
+                    isHighlighted && { color: highlight },
+                  ]}
+                >
+                  {row.level}
+                </Text>
+              </View>
+            )
 
-              if (isHighlighted) {
-                return <HighlightRow key={i}>{rowContent}</HighlightRow>
-              }
-              return rowContent
-            })
-          )}
+            if (isHighlighted) {
+              return <HighlightRow key={i}>{rowContent}</HighlightRow>
+            }
+            return rowContent
+          })}
         </View>
-      </GestureDetector>
+      )}
     </View>
   )
 }
@@ -237,15 +213,22 @@ const styles = StyleSheet.create({
   container: {
     paddingVertical: 8,
   },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 40,
-  },
-  emptyStateText: {
+  emptyBody: {
     fontFamily: "Oxanium-Regular",
     fontSize: 14,
+    marginTop: 8,
     textAlign: "center",
+  },
+  emptyState: {
+    alignItems: "center",
+    gap: 8,
+    justifyContent: "center",
+    paddingVertical: 60,
+  },
+  emptyTitle: {
+    fontFamily: "Oxanium-Bold",
+    fontSize: 20,
+    marginTop: 16,
   },
   headerCell: {
     fontFamily: "Oxanium-Regular",
@@ -259,34 +242,28 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
     paddingHorizontal: 8,
   },
-  heading: {
-    fontFamily: "Oxanium-Bold",
-    fontSize: 20,
-    letterSpacing: 2,
-    marginBottom: 8,
-    textAlign: "center",
-  },
   levelCol: {
     textAlign: "right",
     width: 36,
   },
   modeTab: {
     alignItems: "center",
-    borderRadius: 6,
-    gap: 2,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
   },
   modeTabLabel: {
-    fontFamily: "Oxanium-Regular",
-    fontSize: 9,
+    fontFamily: "Oxanium-Medium",
+    fontSize: 11,
     textTransform: "uppercase",
   },
   modeTabs: {
     flexDirection: "row",
-    gap: 4,
+    gap: 8,
     justifyContent: "center",
-    marginBottom: 12,
+    marginBottom: 16,
   },
   nameCol: {
     flex: 1,
