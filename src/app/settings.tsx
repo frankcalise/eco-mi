@@ -237,15 +237,16 @@ export default function SettingsScreen() {
                   >
                     <View style={styles.selectorButtonInner}>
                       <Text
-                        style={{
-                          color: isSelected
-                            ? activeTheme.accentColor
-                            : isPreviewing
-                              ? activeTheme.warningColor
-                              : activeTheme.secondaryTextColor,
-                          fontFamily: "Oxanium-Regular",
-                          fontSize: 12,
-                        }}
+                        style={[
+                          styles.soundPackName,
+                          {
+                            color: isSelected
+                              ? activeTheme.accentColor
+                              : isPreviewing
+                                ? activeTheme.warningColor
+                                : activeTheme.secondaryTextColor,
+                          },
+                        ]}
                       >
                         {pack.name}
                       </Text>
@@ -254,7 +255,7 @@ export default function SettingsScreen() {
                           name="lock-closed"
                           size={10}
                           color={activeTheme.secondaryTextColor}
-                          style={{ opacity: 0.6 }}
+                          style={styles.lockIconSmall}
                         />
                       )}
                     </View>
@@ -337,7 +338,7 @@ export default function SettingsScreen() {
                         name="lock-closed"
                         size={12}
                         color="rgba(255, 255, 255, 0.7)"
-                        style={{ opacity: 0.7 }}
+                        style={styles.lockIconMedium}
                       />
                     )}
                   </EaseView>
@@ -499,6 +500,12 @@ const styles = StyleSheet.create({
     marginTop: 6,
     textAlign: "center",
   },
+  lockIconMedium: {
+    opacity: 0.7,
+  },
+  lockIconSmall: {
+    opacity: 0.6,
+  },
   removeAdsBtn: {
     alignItems: "center",
     backgroundColor: "#8b5cf6",
@@ -558,6 +565,10 @@ const styles = StyleSheet.create({
   },
   selectorButtonPreviewing: {
     backgroundColor: "rgba(245, 158, 11, 0.1)",
+  },
+  soundPackName: {
+    fontFamily: "Oxanium-Regular",
+    fontSize: 12,
   },
   soundToggleBtn: {
     alignItems: "center",

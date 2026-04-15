@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { View } from "react-native"
+import { StyleSheet, View } from "react-native"
 import AppMetrics from "expo-eas-observe"
 import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
@@ -51,7 +51,7 @@ function Root() {
   if (!loaded) {
     return (
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-        <View style={{ flex: 1, backgroundColor: "#1a1a2e" }} />
+        <View style={styles.splashBg} />
       </SafeAreaProvider>
     )
   }
@@ -61,7 +61,7 @@ function Root() {
       screenOptions={{
         headerShown: false,
         animation: "ios_from_right",
-        contentStyle: { backgroundColor: "#1a1a2e" },
+        contentStyle: styles.stackContentBg,
       }}
     >
       <Stack.Screen name="index" />
@@ -90,11 +90,21 @@ function Root() {
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <View style={{ flex: 1, backgroundColor: "#1a1a2e" }}>
+      <View style={styles.splashBg}>
         <ThemeProvider>{inner}</ThemeProvider>
       </View>
     </SafeAreaProvider>
   )
 }
+
+const styles = StyleSheet.create({
+  splashBg: {
+    backgroundColor: "#1a1a2e",
+    flex: 1,
+  },
+  stackContentBg: {
+    backgroundColor: "#1a1a2e",
+  },
+})
 
 export default SENTRY_DSN ? Sentry.wrap(Root) : Root

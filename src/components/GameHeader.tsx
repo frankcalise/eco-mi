@@ -27,13 +27,7 @@ type GameHeaderProps = {
   onSettingsPress: () => void
 }
 
-export function GameHeader({
-  mode,
-  isIdle,
-  theme,
-  onModePress,
-  onSettingsPress,
-}: GameHeaderProps) {
+export function GameHeader({ mode, isIdle, theme, onModePress, onSettingsPress }: GameHeaderProps) {
   const { t } = useTranslation()
 
   const [neonColorIndex, setNeonColorIndex] = useState(0)
@@ -80,7 +74,7 @@ export function GameHeader({
           name="game-controller-outline"
           size={26}
           color={isIdle ? theme.textColor : theme.secondaryTextColor}
-          style={{ opacity: isIdle ? 1 : 0.4 }}
+          style={!isIdle && styles.iconDim}
         />
       </PressableScale>
       <EaseView
@@ -100,15 +94,7 @@ export function GameHeader({
                 style={i > 0 ? styles.titleLayerAbsolute : undefined}
               >
                 <Text
-                  style={[
-                    styles.title,
-                    {
-                      color,
-                      textShadowColor: color,
-                      textShadowOffset: { width: 0, height: 0 },
-                      textShadowRadius: 12,
-                    },
-                  ]}
+                  style={[styles.title, styles.titleNeon, { color, textShadowColor: color }]}
                 >
                   {t("game:title")}
                 </Text>
@@ -143,7 +129,7 @@ export function GameHeader({
           name="settings-outline"
           size={26}
           color={isIdle ? theme.textColor : theme.secondaryTextColor}
-          style={{ opacity: isIdle ? 1 : 0.4 }}
+          style={!isIdle && styles.iconDim}
         />
       </PressableScale>
     </View>
@@ -168,6 +154,9 @@ const styles = StyleSheet.create({
   headerCenter: {
     alignItems: "center",
   },
+  iconDim: {
+    opacity: 0.4,
+  },
   modeIndicator: {
     alignItems: "center",
     flexDirection: "row",
@@ -188,6 +177,10 @@ const styles = StyleSheet.create({
   },
   titleLayerAbsolute: {
     position: "absolute",
+  },
+  titleNeon: {
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 12,
   },
   titleStack: {
     alignItems: "center",
