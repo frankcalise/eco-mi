@@ -25,6 +25,7 @@ import { useTheme } from "@/hooks/useTheme"
 import { useGameOverStore } from "@/stores/gameOverStore"
 import { usePendingActionStore } from "@/stores/pendingActionStore"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
+import { UI_COLORS } from "@/theme/uiColors"
 import { useAnalytics } from "@/utils/analytics"
 import { formatDuration } from "@/utils/formatTime"
 import { loadString } from "@/utils/storage"
@@ -489,7 +490,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   playAgainText: {
-    color: "white",
+    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
   },

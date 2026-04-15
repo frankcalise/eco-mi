@@ -12,6 +12,7 @@
 `simon,pattern,recall,reflex,cognitive,mind,classic,retro,tap,repeat,focus,concentration,puzzle,skill`
 
 **Full Description:**
+
 ```
 Test your memory with Eco Mi — a modern take on the classic Simon game!
 
@@ -54,6 +55,7 @@ Free to play. No account required. Just tap and play!
 `patrón,memoria,reflejos,cognitivo,mente,clásico,retro,toque,repetir,enfoque,rompecabezas,secuencia`
 
 **Full Description:**
+
 ```
 ¡Pon a prueba tu memoria con Eco Mi — una versión moderna del clásico juego Simon!
 
@@ -96,6 +98,7 @@ Gratis. Sin cuenta necesaria. ¡Solo toca y juega!
 `padrão,memória,reflexo,cognitivo,mente,clássico,retro,toque,repetir,foco,concentração,jogo`
 
 **Full Description:**
+
 ```
 Teste sua memória com Eco Mi — uma versão moderna do clássico jogo Simon!
 
@@ -129,6 +132,7 @@ Grátis. Sem conta necessária. É só tocar e jogar!
 ## Release Notes
 
 ### v1.0 — EN
+
 ```
 Welcome to Eco Mi! A modern take on the classic memory game.
 
@@ -142,6 +146,7 @@ Welcome to Eco Mi! A modern take on the classic memory game.
 ```
 
 ### v1.0 — ES (es-419)
+
 ```
 Bienvenido a Eco Mi! Una version moderna del clasico juego de memoria.
 
@@ -155,6 +160,7 @@ Bienvenido a Eco Mi! Una version moderna del clasico juego de memoria.
 ```
 
 ### v1.0 — PT (pt-BR)
+
 ```
 Bem-vindo ao Eco Mi! Uma versao moderna do classico jogo de memoria.
 
@@ -171,11 +177,11 @@ Bem-vindo ao Eco Mi! Uma versao moderna do classico jogo de memoria.
 
 ## Screenshot Headlines
 
-| # | English | Spanish (es-419) | Portuguese (pt-BR) |
-|---|---|---|---|
-| 1 | PLAY / FIVE GAME MODES | JUEGA / CINCO MODOS DE JUEGO | JOGUE / CINCO MODOS DE JOGO |
-| 2 | CHALLENGE / YOUR MEMORY | DESAFÍA / TU MEMORIA | DESAFIE / SUA MEMÓRIA |
-| 3 | COMPETE / ON THE LEADERBOARD | COMPITE / EN LA TABLA DE LÍDERES | COMPITA / NO RANKING |
-| 4 | CUSTOMIZE / YOUR STYLE | PERSONALIZA / TU ESTILO | PERSONALIZE / SEU ESTILO |
-| 5 | TRACK / YOUR PROGRESS | SIGUE / TU PROGRESO | ACOMPANHE / SEU PROGRESSO |
-| 6 | UNLOCK / ACHIEVEMENTS | DESBLOQUEA / LOGROS | DESBLOQUEIE / CONQUISTAS |
+| #   | English                      | Spanish (es-419)                 | Portuguese (pt-BR)          |
+| --- | ---------------------------- | -------------------------------- | --------------------------- |
+| 1   | PLAY / FIVE GAME MODES       | JUEGA / CINCO MODOS DE JUEGO     | JOGUE / CINCO MODOS DE JOGO |
+| 2   | CHALLENGE / YOUR MEMORY      | DESAFÍA / TU MEMORIA             | DESAFIE / SUA MEMÓRIA       |
+| 3   | COMPETE / ON THE LEADERBOARD | COMPITE / EN LA TABLA DE LÍDERES | COMPITA / NO RANKING        |
+| 4   | CUSTOMIZE / YOUR STYLE       | PERSONALIZA / TU ESTILO          | PERSONALIZE / SEU ESTILO    |
+| 5   | TRACK / YOUR PROGRESS        | SIGUE / TU PROGRESO              | ACOMPANHE / SEU PROGRESSO   |
+| 6   | UNLOCK / ACHIEVEMENTS        | DESBLOQUEA / LOGROS              | DESBLOQUEIE / CONQUISTAS    |

@@ -8,6 +8,7 @@ import { PressableScale } from "@/components/PressableScale"
 import { ACHIEVEMENTS } from "@/config/achievements"
 import { useAchievements } from "@/hooks/useAchievements"
 import { useTheme } from "@/hooks/useTheme"
+import { UI_COLORS } from "@/theme/uiColors"
 
 export default function AchievementsScreen() {
   const { t } = useTranslation()
@@ -100,7 +101,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   badgeUnlocked: {
-    borderColor: "rgba(251, 191, 36, 0.3)",
+    borderColor: UI_COLORS.amberTint30,
   },
   container: {
     flex: 1,

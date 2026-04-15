@@ -7,27 +7,18 @@ import { EaseView } from "react-native-ease"
 
 import { PressableScale } from "@/components/PressableScale"
 import type { GameTheme } from "@/config/themes"
-import type { GameMode } from "@/hooks/useGameEngine"
-
-const GAME_MODES: { id: GameMode; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { id: "classic", icon: "game-controller" },
-  { id: "daily", icon: "calendar" },
-  { id: "timed", icon: "timer" },
-  { id: "reverse", icon: "swap-horizontal" },
-  { id: "chaos", icon: "shuffle" },
-]
+import { UI_COLORS } from "@/theme/uiColors"
 
 const NEON_COLOR_ORDER = ["red", "blue", "green"] as const
 
 type GameHeaderProps = {
-  mode: GameMode
   isIdle: boolean
   theme: GameTheme
   onModePress: () => void
   onSettingsPress: () => void
 }
 
-export function GameHeader({ mode, isIdle, theme, onModePress, onSettingsPress }: GameHeaderProps) {
+export function GameHeader({ isIdle, theme, onModePress, onSettingsPress }: GameHeaderProps) {
   const { t } = useTranslation()
 
   const [neonColorIndex, setNeonColorIndex] = useState(0)
@@ -54,7 +45,6 @@ export function GameHeader({ mode, isIdle, theme, onModePress, onSettingsPress }
   }, [isIdle])
 
   const neonColors = NEON_COLOR_ORDER.map((c) => theme.buttonColors[c].color)
-  const currentMode = GAME_MODES.find((m) => m.id === mode)
 
   return (
     <View style={styles.header}>
@@ -93,9 +83,7 @@ export function GameHeader({ mode, isIdle, theme, onModePress, onSettingsPress }
                 transition={{ default: { type: "timing", duration: 600, easing: "easeInOut" } }}
                 style={i > 0 ? styles.titleLayerAbsolute : undefined}
               >
-                <Text
-                  style={[styles.title, styles.titleNeon, { color, textShadowColor: color }]}
-                >
+                <Text style={[styles.title, styles.titleNeon, { color, textShadowColor: color }]}>
                   {t("game:title")}
                 </Text>
               </EaseView>
@@ -104,14 +92,6 @@ export function GameHeader({ mode, isIdle, theme, onModePress, onSettingsPress }
             <Text style={[styles.title, { color: theme.textColor }]}>{t("game:title")}</Text>
           )}
         </View>
-        {currentMode && (
-          <View style={styles.modeIndicator}>
-            <Ionicons name={currentMode.icon} size={12} color={theme.secondaryTextColor} />
-            <Text style={[styles.modeIndicatorText, { color: theme.secondaryTextColor }]}>
-              {t(`game:modes.${mode}`)}
-            </Text>
-          </View>
-        )}
       </EaseView>
       <PressableScale
         testID="btn-settings"
@@ -157,20 +137,8 @@ const styles = StyleSheet.create({
   iconDim: {
     opacity: 0.4,
   },
-  modeIndicator: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 4,
-    marginTop: 2,
-  },
-  modeIndicatorText: {
-    fontFamily: "Oxanium-Medium",
-    fontSize: 12,
-    letterSpacing: 2,
-    textTransform: "uppercase",
-  },
   title: {
-    color: "white",
+    color: UI_COLORS.white,
     fontFamily: "Oxanium-Bold",
     fontSize: 36,
     letterSpacing: 4,

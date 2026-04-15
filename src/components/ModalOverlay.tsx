@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, type ViewStyle } from "react-native"
 import { EaseView } from "react-native-ease"
 
 import type { GameTheme } from "@/config/themes"
+import { UI_COLORS } from "@/theme/uiColors"
 
 type ModalOverlayProps = PropsWithChildren<{
   visible: boolean
@@ -48,7 +49,7 @@ const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: UI_COLORS.backdropModal,
     justifyContent: "center",
     padding: 24,
     zIndex: 100,

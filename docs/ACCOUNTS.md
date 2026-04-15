@@ -21,14 +21,14 @@
 
 ## Overview
 
-| Service | Purpose | Cost | Required By |
-|---|---|---|---|
-| Apple Developer Program | iOS App Store distribution, IAP hosting | $99/year | Phase 2 (monetization) |
-| Google Play Console | Android distribution, IAP hosting | $25 one-time | Phase 2 (monetization) |
-| EAS (Expo) | Cloud builds, OTA updates, submission | Free tier available | Already configured |
-| RevenueCat | IAP management, receipt validation, entitlements | Free up to $2.5k MTR | Phase 2 (monetization) |
-| Google AdMob | Ad serving (banner, interstitial, rewarded) | Free (revenue share) | Phase 1 (monetization) |
-| PostHog | Product analytics (events, funnels, retention) | Free up to 1M events/month | Phase 1 (analytics) |
+| Service                 | Purpose                                          | Cost                       | Required By            |
+| ----------------------- | ------------------------------------------------ | -------------------------- | ---------------------- |
+| Apple Developer Program | iOS App Store distribution, IAP hosting          | $99/year                   | Phase 2 (monetization) |
+| Google Play Console     | Android distribution, IAP hosting                | $25 one-time               | Phase 2 (monetization) |
+| EAS (Expo)              | Cloud builds, OTA updates, submission            | Free tier available        | Already configured     |
+| RevenueCat              | IAP management, receipt validation, entitlements | Free up to $2.5k MTR       | Phase 2 (monetization) |
+| Google AdMob            | Ad serving (banner, interstitial, rewarded)      | Free (revenue share)       | Phase 1 (monetization) |
+| PostHog                 | Product analytics (events, funnels, retention)   | Free up to 1M events/month | Phase 1 (analytics)    |
 
 **App identifiers (already set):**
 
@@ -61,17 +61,18 @@
 
 Create IAP products under **My Apps → Eco Mi → In-App Purchases**:
 
-| Reference Name | Product ID | Type |
-|---|---|---|
-| Remove Ads | `ecomi_remove_ads` | Non-Consumable |
-| Theme: Neon | `ecomi_theme_neon` | Non-Consumable |
-| Theme: Retro | `ecomi_theme_retro` | Non-Consumable |
-| Theme: Pastel | `ecomi_theme_pastel` | Non-Consumable |
-| Sound: Square Wave | `ecomi_sound_square` | Non-Consumable |
+| Reference Name       | Product ID             | Type           |
+| -------------------- | ---------------------- | -------------- |
+| Remove Ads           | `ecomi_remove_ads`     | Non-Consumable |
+| Theme: Neon          | `ecomi_theme_neon`     | Non-Consumable |
+| Theme: Retro         | `ecomi_theme_retro`    | Non-Consumable |
+| Theme: Pastel        | `ecomi_theme_pastel`   | Non-Consumable |
+| Sound: Square Wave   | `ecomi_sound_square`   | Non-Consumable |
 | Sound: Sawtooth Wave | `ecomi_sound_sawtooth` | Non-Consumable |
 | Sound: Triangle Wave | `ecomi_sound_triangle` | Non-Consumable |
 
 For each product:
+
 - Set the price tier ($2.99 for Remove Ads, $0.99–1.99 for packs)
 - Add a display name and description (shown to users on the purchase sheet)
 - Add a screenshot of the purchase context (required for review)
@@ -79,9 +80,9 @@ For each product:
 
 ### Keys Produced
 
-| Key | Where It's Used | How to Get It |
-|---|---|---|
-| Apple Team ID | EAS builds, signing | Certificates, Identifiers & Profiles → Membership |
+| Key                       | Where It's Used                   | How to Get It                                           |
+| ------------------------- | --------------------------------- | ------------------------------------------------------- |
+| Apple Team ID             | EAS builds, signing               | Certificates, Identifiers & Profiles → Membership       |
 | App Store Connect API Key | EAS Submit (automated submission) | Users and Access → Integrations → App Store Connect API |
 
 ---
@@ -108,24 +109,24 @@ For each product:
 
 Go to **Monetize → In-app products → Create product**:
 
-| Product ID | Type | Price |
-|---|---|---|
-| `ecomi_remove_ads` | One-time (non-consumable) | $2.99 |
-| `ecomi_theme_neon` | One-time | $0.99–1.99 |
-| `ecomi_theme_retro` | One-time | $0.99–1.99 |
-| `ecomi_theme_pastel` | One-time | $0.99–1.99 |
-| `ecomi_sound_square` | One-time | $0.99 |
-| `ecomi_sound_sawtooth` | One-time | $0.99 |
-| `ecomi_sound_triangle` | One-time | $0.99 |
+| Product ID             | Type                      | Price      |
+| ---------------------- | ------------------------- | ---------- |
+| `ecomi_remove_ads`     | One-time (non-consumable) | $2.99      |
+| `ecomi_theme_neon`     | One-time                  | $0.99–1.99 |
+| `ecomi_theme_retro`    | One-time                  | $0.99–1.99 |
+| `ecomi_theme_pastel`   | One-time                  | $0.99–1.99 |
+| `ecomi_sound_square`   | One-time                  | $0.99      |
+| `ecomi_sound_sawtooth` | One-time                  | $0.99      |
+| `ecomi_sound_triangle` | One-time                  | $0.99      |
 
 Product IDs must match exactly across App Store Connect and Google Play — RevenueCat maps them by ID.
 
 ### Keys Produced
 
-| Key | Where It's Used | How to Get It |
-|---|---|---|
-| Service Account JSON | RevenueCat server-to-server validation | Play Console → Setup → API access → Create service account |
-| Upload Key / Keystore | EAS builds (Android signing) | Generated during first `eas build` or via `keytool` |
+| Key                   | Where It's Used                        | How to Get It                                              |
+| --------------------- | -------------------------------------- | ---------------------------------------------------------- |
+| Service Account JSON  | RevenueCat server-to-server validation | Play Console → Setup → API access → Create service account |
+| Upload Key / Keystore | EAS builds (Android signing)           | Generated during first `eas build` or via `keytool`        |
 
 ---
 
@@ -143,10 +144,10 @@ Already configured. EAS project ID `a7ae3db1-a5a2-4deb-ba44-ffa09d58aead` is in 
 
 ### Keys Produced
 
-| Key | Where It's Used | How to Get It |
-|---|---|---|
-| EAS Project ID | Builds, updates, submission | Already set: `a7ae3db1-a5a2-4deb-ba44-ffa09d58aead` |
-| Expo Access Token | CI/CD builds | [expo.dev/accounts/settings](https://expo.dev/accounts/settings) → Access Tokens |
+| Key               | Where It's Used             | How to Get It                                                                    |
+| ----------------- | --------------------------- | -------------------------------------------------------------------------------- |
+| EAS Project ID    | Builds, updates, submission | Already set: `a7ae3db1-a5a2-4deb-ba44-ffa09d58aead`                              |
+| Expo Access Token | CI/CD builds                | [expo.dev/accounts/settings](https://expo.dev/accounts/settings) → Access Tokens |
 
 ---
 
@@ -183,13 +184,13 @@ Already configured. EAS project ID `a7ae3db1-a5a2-4deb-ba44-ffa09d58aead` is in 
 
 **Step 2 — Entitlements**: Create entitlements that map to product groups:
 
-| Entitlement ID | Grants Access To | Products |
-|---|---|---|
-| `remove_ads` | Ad-free experience | `ecomi_remove_ads` |
-| `theme_neon` | Neon theme | `ecomi_theme_neon` |
-| `theme_retro` | Retro theme | `ecomi_theme_retro` |
-| `theme_pastel` | Pastel theme | `ecomi_theme_pastel` |
-| `sound_square` | Square wave sounds | `ecomi_sound_square` |
+| Entitlement ID   | Grants Access To     | Products               |
+| ---------------- | -------------------- | ---------------------- |
+| `remove_ads`     | Ad-free experience   | `ecomi_remove_ads`     |
+| `theme_neon`     | Neon theme           | `ecomi_theme_neon`     |
+| `theme_retro`    | Retro theme          | `ecomi_theme_retro`    |
+| `theme_pastel`   | Pastel theme         | `ecomi_theme_pastel`   |
+| `sound_square`   | Square wave sounds   | `ecomi_sound_square`   |
 | `sound_sawtooth` | Sawtooth wave sounds | `ecomi_sound_sawtooth` |
 | `sound_triangle` | Triangle wave sounds | `ecomi_sound_triangle` |
 
@@ -220,9 +221,9 @@ Add the Expo config plugin to `app.json`:
 
 ### Keys Produced
 
-| Key | Where It's Used | How to Get It |
-|---|---|---|
-| iOS Public API Key | App init (`Purchases.configure`) | RevenueCat Dashboard → Project → iOS App → API Keys |
+| Key                    | Where It's Used                  | How to Get It                                           |
+| ---------------------- | -------------------------------- | ------------------------------------------------------- |
+| iOS Public API Key     | App init (`Purchases.configure`) | RevenueCat Dashboard → Project → iOS App → API Keys     |
 | Android Public API Key | App init (`Purchases.configure`) | RevenueCat Dashboard → Project → Android App → API Keys |
 
 These are **public** keys — safe to include in the app binary. RevenueCat's server-side validation uses the shared secret / service account you configured in the dashboard.
@@ -251,11 +252,11 @@ Create two app entries — one per platform:
 
 For each platform, go to **Apps → Eco Mi → Ad Units → Add Ad Unit**:
 
-| Ad Unit Name | Type | Notes |
-|---|---|---|
-| `ecomi_banner` | Banner | Standard, bottom of screen |
-| `ecomi_interstitial` | Interstitial | Full-screen between games |
-| `ecomi_rewarded` | Rewarded | "Watch to continue" video |
+| Ad Unit Name         | Type         | Notes                      |
+| -------------------- | ------------ | -------------------------- |
+| `ecomi_banner`       | Banner       | Standard, bottom of screen |
+| `ecomi_interstitial` | Interstitial | Full-screen between games  |
+| `ecomi_rewarded`     | Rewarded     | "Watch to continue" video  |
 
 Each ad unit generates an **Ad Unit ID** (format: `ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY`).
 
@@ -263,11 +264,11 @@ Each ad unit generates an **Ad Unit ID** (format: `ca-app-pub-XXXXXXXXXXXXXXXX/Y
 
 **Development:** Always use Google's test Ad Unit IDs during development. Using real ad units in dev risks account suspension.
 
-| Type | iOS Test ID | Android Test ID |
-|---|---|---|
-| Banner | `ca-app-pub-3940256099942544/2934735716` | `ca-app-pub-3940256099942544/6300978111` |
+| Type         | iOS Test ID                              | Android Test ID                          |
+| ------------ | ---------------------------------------- | ---------------------------------------- |
+| Banner       | `ca-app-pub-3940256099942544/2934735716` | `ca-app-pub-3940256099942544/6300978111` |
 | Interstitial | `ca-app-pub-3940256099942544/4411468910` | `ca-app-pub-3940256099942544/1033173712` |
-| Rewarded | `ca-app-pub-3940256099942544/1712485313` | `ca-app-pub-3940256099942544/5224354917` |
+| Rewarded     | `ca-app-pub-3940256099942544/1712485313` | `ca-app-pub-3940256099942544/5224354917` |
 
 **Production:** Use the real Ad Unit IDs from the step above. Switch based on environment:
 
@@ -339,14 +340,14 @@ Find your publisher ID at **AdMob Dashboard → Account → Settings**.
 
 ### Keys Produced
 
-| Key | Where It's Used | How to Get It |
-|---|---|---|
-| iOS App ID | `app.json` plugin config | AdMob Dashboard → Apps → Eco Mi (iOS) → App settings |
-| Android App ID | `app.json` plugin config | AdMob Dashboard → Apps → Eco Mi (Android) → App settings |
-| Banner Ad Unit ID (per platform) | Ad request code | AdMob Dashboard → Ad Units |
-| Interstitial Ad Unit ID (per platform) | Ad request code | AdMob Dashboard → Ad Units |
-| Rewarded Ad Unit ID (per platform) | Ad request code | AdMob Dashboard → Ad Units |
-| Publisher ID | `app-ads.txt` | AdMob Dashboard → Account → Settings |
+| Key                                    | Where It's Used          | How to Get It                                            |
+| -------------------------------------- | ------------------------ | -------------------------------------------------------- |
+| iOS App ID                             | `app.json` plugin config | AdMob Dashboard → Apps → Eco Mi (iOS) → App settings     |
+| Android App ID                         | `app.json` plugin config | AdMob Dashboard → Apps → Eco Mi (Android) → App settings |
+| Banner Ad Unit ID (per platform)       | Ad request code          | AdMob Dashboard → Ad Units                               |
+| Interstitial Ad Unit ID (per platform) | Ad request code          | AdMob Dashboard → Ad Units                               |
+| Rewarded Ad Unit ID (per platform)     | Ad request code          | AdMob Dashboard → Ad Units                               |
+| Publisher ID                           | `app-ads.txt`            | AdMob Dashboard → Account → Settings                     |
 
 ---
 
@@ -386,8 +387,8 @@ import { PostHogProvider } from "posthog-react-native"
 
 ### Keys Produced
 
-| Key | Where It's Used | How to Get It |
-|---|---|---|
+| Key                         | Where It's Used                                         | How to Get It                                          |
+| --------------------------- | ------------------------------------------------------- | ------------------------------------------------------ |
 | Project API Key (`phc_...`) | `EXPO_PUBLIC_POSTHOG_KEY` env var, PostHogProvider init | PostHog Dashboard → Project Settings → Project API Key |
 
 Note: The key prefix `EXPO_PUBLIC_` makes it available in the JS bundle at runtime. This is intentional — PostHog project keys are public (write-only, cannot read data). It's the same security model as Google Analytics measurement IDs.
@@ -428,16 +429,16 @@ Once all accounts are set up, the `app.json` plugins array should look like:
 
 ### What's Protected
 
-| Secret | Risk if Exposed | Storage Location |
-|---|---|---|
-| RevenueCat API Keys | Attacker could query purchase data | `.env` (gitignored) + EAS Secrets |
-| AdMob App IDs | Low risk (required at build time), but avoids ad fraud targeting | `.env` (gitignored) for prod IDs |
-| PostHog Project API Key | Low risk (write-only, public by design) | `.env` via `EXPO_PUBLIC_` prefix (available in bundle, same as GA measurement IDs) |
-| AdMob Ad Unit IDs (production) | Could be used to generate fraudulent impressions | `.env` (gitignored) + EAS Secrets |
-| App Store Connect API Key (.p8) | Full App Store Connect access — submit builds, manage metadata | EAS Secrets only |
-| Google Play Service Account JSON | Full Play Console API access — publish builds, manage IAP | EAS Secrets only |
-| Android Keystore (.jks) | Could sign malicious APKs as your app | EAS managed or offline secure storage |
-| App-Specific Shared Secret (Apple) | Receipt validation bypass | RevenueCat dashboard only (never in code) |
+| Secret                             | Risk if Exposed                                                  | Storage Location                                                                   |
+| ---------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| RevenueCat API Keys                | Attacker could query purchase data                               | `.env` (gitignored) + EAS Secrets                                                  |
+| AdMob App IDs                      | Low risk (required at build time), but avoids ad fraud targeting | `.env` (gitignored) for prod IDs                                                   |
+| PostHog Project API Key            | Low risk (write-only, public by design)                          | `.env` via `EXPO_PUBLIC_` prefix (available in bundle, same as GA measurement IDs) |
+| AdMob Ad Unit IDs (production)     | Could be used to generate fraudulent impressions                 | `.env` (gitignored) + EAS Secrets                                                  |
+| App Store Connect API Key (.p8)    | Full App Store Connect access — submit builds, manage metadata   | EAS Secrets only                                                                   |
+| Google Play Service Account JSON   | Full Play Console API access — publish builds, manage IAP        | EAS Secrets only                                                                   |
+| Android Keystore (.jks)            | Could sign malicious APKs as your app                            | EAS managed or offline secure storage                                              |
+| App-Specific Shared Secret (Apple) | Receipt validation bypass                                        | RevenueCat dashboard only (never in code)                                          |
 
 ### Gitignore Rules
 
@@ -464,10 +465,12 @@ The `.gitignore` already covers:
 ### For the Maintainer
 
 **Local development:**
+
 - Create `.env` with your real keys (gitignored).
 - The app reads these via `expo-constants` or a config helper at runtime.
 
 **CI/CD (EAS Build):**
+
 - Store all secrets in [EAS Secrets](https://docs.expo.dev/build-reference/variables/) (`eas secret:create`).
 - EAS injects these as environment variables during cloud builds.
 - Secrets are encrypted at rest and never appear in build logs.
@@ -528,18 +531,21 @@ Use this to track account setup progress:
 ### Phase 2 (monetization)
 
 **Apple:**
+
 - [ ] Apple Developer Program enrollment active
 - [ ] App Store Connect app created (Bundle ID: `com.frankcalise.ecomi`)
 - [ ] IAP products created (7 products)
 - [ ] App-Specific Shared Secret generated (for RevenueCat)
 
 **Google:**
+
 - [ ] Google Play Console registration complete
 - [ ] App created (Package: `com.frankcalise.ecomi`)
 - [ ] IAP products created (7 products, IDs match iOS)
 - [ ] Service Account JSON created (for RevenueCat)
 
 **RevenueCat:**
+
 - [ ] Account created, project "Eco Mi" set up
 - [ ] iOS app configured with shared secret
 - [ ] Android app configured with service account JSON
@@ -550,6 +556,7 @@ Use this to track account setup progress:
 - [ ] Android Public API Key noted
 
 **AdMob:**
+
 - [ ] AdMob account created and verified
 - [ ] iOS app registered, App ID noted
 - [ ] Android app registered, App ID noted
@@ -559,11 +566,13 @@ Use this to track account setup progress:
 - [ ] `app-ads.txt` hosted at developer website
 
 **PostHog:**
+
 - [ ] Account created, project "Eco Mi" set up
 - [ ] Data residency selected (US or EU)
 - [ ] Project API Key noted
 
 **App Config:**
+
 - [ ] `react-native-purchases` plugin added to `app.json`
 - [ ] `react-native-google-mobile-ads` plugin added with App IDs
 - [ ] `expo-tracking-transparency` plugin added

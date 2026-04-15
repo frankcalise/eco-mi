@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { PressableScale } from "@/components/PressableScale"
 import { NOTIFICATIONS_PERMISSION_ASKED } from "@/config/storageKeys"
+import { UI_COLORS } from "@/theme/uiColors"
 import { saveString } from "@/utils/storage"
 
 function markAsked() {
@@ -33,7 +34,7 @@ export default function NotificationsScreen() {
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <View style={styles.content}>
         <View style={styles.iconCircle}>
-          <Ionicons name="notifications-outline" size={64} color="#fbbf24" />
+          <Ionicons name="notifications-outline" size={64} color={UI_COLORS.amber400} />
         </View>
 
         <Text style={styles.title}>{t("notifications:prePromptTitle")}</Text>
@@ -64,7 +65,7 @@ const styles = StyleSheet.create({
   },
   container: {
     alignItems: "center",
-    backgroundColor: "#1a1a2e",
+    backgroundColor: UI_COLORS.classicBackground,
     flex: 1,
     justifyContent: "space-between",
     paddingBottom: 48,
@@ -77,19 +78,19 @@ const styles = StyleSheet.create({
   },
   enableBtn: {
     alignItems: "center",
-    backgroundColor: "#fbbf24",
+    backgroundColor: UI_COLORS.amber400,
     borderRadius: 12,
     paddingVertical: 16,
     width: "100%",
   },
   enableBtnText: {
-    color: "#1a1a2e",
+    color: UI_COLORS.classicBackground,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
   },
   iconCircle: {
     alignItems: "center",
-    backgroundColor: "rgba(251, 191, 36, 0.1)",
+    backgroundColor: UI_COLORS.amberTint10,
     borderRadius: 60,
     height: 120,
     justifyContent: "center",
@@ -102,19 +103,19 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   skipBtnText: {
-    color: "rgba(255, 255, 255, 0.6)",
+    color: UI_COLORS.whiteMuted,
     fontFamily: "Oxanium-Regular",
     fontSize: 14,
   },
   subtitle: {
-    color: "rgba(255, 255, 255, 0.6)",
+    color: UI_COLORS.whiteMuted,
     fontFamily: "Oxanium-Regular",
     fontSize: 15,
     lineHeight: 22,
     textAlign: "center",
   },
   title: {
-    color: "white",
+    color: UI_COLORS.white,
     fontFamily: "Oxanium-Bold",
     fontSize: 24,
     marginBottom: 12,

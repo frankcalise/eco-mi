@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { ModalOverlay } from "@/components/ModalOverlay"
 import { PressableScale } from "@/components/PressableScale"
 import type { GameTheme } from "@/config/themes"
+import { UI_COLORS } from "@/theme/uiColors"
 
 type ReviewPromptProps = {
   visible: boolean
@@ -84,7 +85,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   loveItText: {
-    color: "white",
+    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
   },
@@ -97,13 +98,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   notReallyButton: {
-    backgroundColor: "rgba(128, 128, 128, 0.3)",
+    backgroundColor: UI_COLORS.neutralTint30,
     borderRadius: 8,
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
   notReallyText: {
-    color: "white",
+    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
   },

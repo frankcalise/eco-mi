@@ -21,6 +21,7 @@ import { useAudioTones, type ColorMap } from "@/hooks/useAudioTones"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useSoundPack } from "@/hooks/useSoundPack"
 import { useTheme } from "@/hooks/useTheme"
+import { UI_COLORS } from "@/theme/uiColors"
 import { useAnalytics } from "@/utils/analytics"
 import { loadString, saveString } from "@/utils/storage"
 
@@ -508,7 +509,7 @@ const styles = StyleSheet.create({
   },
   removeAdsBtn: {
     alignItems: "center",
-    backgroundColor: "#8b5cf6",
+    backgroundColor: UI_COLORS.brandPurple,
     borderRadius: 8,
     flexDirection: "row",
     gap: 8,
@@ -517,7 +518,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   removeAdsBtnText: {
-    color: "white",
+    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 14,
   },
@@ -556,7 +557,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   selectorButtonActive: {
-    backgroundColor: "rgba(34, 197, 94, 0.1)",
+    backgroundColor: UI_COLORS.greenTint10,
   },
   selectorButtonInner: {
     alignItems: "center",
@@ -564,7 +565,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   selectorButtonPreviewing: {
-    backgroundColor: "rgba(245, 158, 11, 0.1)",
+    backgroundColor: UI_COLORS.orangeTint10,
   },
   soundPackName: {
     fontFamily: "Oxanium-Regular",
@@ -572,7 +573,7 @@ const styles = StyleSheet.create({
   },
   soundToggleBtn: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: UI_COLORS.whiteFaint,
     borderRadius: 8,
     flexDirection: "row",
     gap: 8,
@@ -581,10 +582,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   soundToggleBtnActive: {
-    backgroundColor: "rgba(34, 197, 94, 0.2)",
+    backgroundColor: UI_COLORS.greenTint20,
   },
   soundToggleText: {
-    color: "white",
+    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 14,
   },
@@ -606,11 +607,11 @@ const styles = StyleSheet.create({
     width: 40,
   },
   themeCirclePreviewing: {
-    borderColor: "#f59e0b",
+    borderColor: UI_COLORS.amber500,
     borderWidth: 2,
   },
   themeCircleSelected: {
-    borderColor: "#22c55e",
+    borderColor: UI_COLORS.green500,
     borderWidth: 2,
   },
   title: {
@@ -619,7 +620,7 @@ const styles = StyleSheet.create({
   },
   unlockBtn: {
     alignItems: "center",
-    backgroundColor: "#8b5cf6",
+    backgroundColor: UI_COLORS.brandPurple,
     borderRadius: 8,
     flexDirection: "row",
     gap: 8,
@@ -628,7 +629,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   unlockBtnText: {
-    color: "white",
+    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 14,
   },

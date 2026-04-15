@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { PressableScale } from "@/components/PressableScale"
 import type { GameTheme } from "@/config/themes"
 import { translate } from "@/i18n/translate"
+import { UI_COLORS } from "@/theme/uiColors"
 
 interface InitialEntryModalProps {
   visible: boolean
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    backgroundColor: UI_COLORS.backdropStrong,
     flex: 1,
     justifyContent: "center",
   },

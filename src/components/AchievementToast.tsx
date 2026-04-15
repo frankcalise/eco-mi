@@ -5,6 +5,7 @@ import { EaseView } from "react-native-ease"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { useGameTheme } from "@/theme/GameThemeContext"
+import { UI_COLORS } from "@/theme/uiColors"
 
 type AchievementToastProps = {
   title: string
@@ -83,7 +84,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    color: "#fbbf24",
+    color: UI_COLORS.amber400,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 14,
   },

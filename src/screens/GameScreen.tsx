@@ -30,6 +30,7 @@ import { useTheme } from "@/hooks/useTheme"
 import { useGameOverStore } from "@/stores/gameOverStore"
 import { usePendingActionStore } from "@/stores/pendingActionStore"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
+import { UI_COLORS } from "@/theme/uiColors"
 import { useAnalytics } from "@/utils/analytics"
 import { loadString, saveString } from "@/utils/storage"
 
@@ -329,7 +330,6 @@ export function GameScreen() {
         />
 
         <GameHeader
-          mode={mode}
           isIdle={isIdle}
           theme={activeTheme}
           onModePress={() => setModeModalVisible(true)}
@@ -441,8 +441,8 @@ export function GameScreen() {
                     style={styles.centerTimer}
                   />
                 ) : (
-                  <Text style={[styles.centerText, { color: activeTheme.textColor }]}>
-                    {t("game:title")}
+                  <Text style={[styles.centerText, { color: activeTheme.secondaryTextColor }]}>
+                    {t(`game:modes.${mode}`)}
                   </Text>
                 )}
               </View>
@@ -601,7 +601,7 @@ export function GameScreen() {
 
 const styles = StyleSheet.create({
   buttonText: {
-    color: "white",
+    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
     fontWeight: "600",
@@ -631,9 +631,11 @@ const styles = StyleSheet.create({
     width: 80,
   },
   centerText: {
-    color: "white",
-    fontFamily: "Oxanium-Regular",
-    fontSize: 10,
+    color: UI_COLORS.white,
+    fontFamily: "Oxanium-Medium",
+    fontSize: 11,
+    letterSpacing: 2,
+    textTransform: "uppercase",
   },
   centerTimer: {
     fontFamily: "Oxanium-Bold",
@@ -641,7 +643,7 @@ const styles = StyleSheet.create({
   },
   container: {
     alignItems: "center",
-    backgroundColor: "#1a1a2e",
+    backgroundColor: UI_COLORS.classicBackground,
     flex: 1,
     justifyContent: "center",
     paddingVertical: 20,
@@ -674,7 +676,7 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: UI_COLORS.backdropModal,
     flex: 1,
     justifyContent: "center",
     padding: 24,
@@ -698,7 +700,7 @@ const styles = StyleSheet.create({
   },
   resetButton: {
     alignItems: "center",
-    backgroundColor: "#ef4444",
+    backgroundColor: UI_COLORS.red500,
     borderRadius: 8,
     flexDirection: "row",
     gap: 8,
@@ -719,13 +721,13 @@ const styles = StyleSheet.create({
     width: "80%",
   },
   scoreLabel: {
-    color: "#a0a0a0",
+    color: UI_COLORS.classicSurfaceDim,
     fontFamily: "Oxanium-Regular",
     fontSize: 12,
     marginBottom: 5,
   },
   scoreValue: {
-    color: "white",
+    color: UI_COLORS.white,
     fontFamily: "Oxanium-Bold",
     fontSize: 24,
   },
@@ -738,13 +740,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 28,
     paddingVertical: 16,
-    shadowColor: "#000",
+    shadowColor: UI_COLORS.shadowBlack,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
   },
   startButtonText: {
-    color: "white",
+    color: UI_COLORS.white,
     fontFamily: "Oxanium-Bold",
     fontSize: 18,
   },
@@ -758,7 +760,7 @@ const styles = StyleSheet.create({
   },
   wrongFlashOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#ef4444",
+    backgroundColor: UI_COLORS.red500,
     borderRadius: 999,
     zIndex: 10,
   },

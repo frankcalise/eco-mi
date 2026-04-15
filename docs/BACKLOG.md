@@ -126,13 +126,13 @@
   - Dark background compatibility (transparent or dark-themed)
   - Smooth looping or a clean one-shot with a satisfying ending
   - Compact file size (< 100KB JSON)
-  Replace the existing animation in `assets/animations/` and verify it renders well across the different game themes (Classic dark, Neon dark, Retro dark, Pastel light).
+    Replace the existing animation in `assets/animations/` and verify it renders well across the different game themes (Classic dark, Neon dark, Retro dark, Pastel light).
 
 - [x] **Escalating haptic feedback for timed mode countdown**
       Under 10s: light tick each second. Under 5s: medium. Under 3s: heavy double-pulse (heartbeat). Current `expo-haptics` is limited to basic impact/notification styles. Evaluate richer haptic libraries for finer control:
   - **[Pulsar](https://github.com/software-mansion/pulsar)** (Software Mansion) — cross-platform haptic SDK with pattern composer, realtime composer, and Reanimated worklet support. Built-in presets (earthquake, success, fail, tap) plus custom amplitude/frequency envelopes. Best option for game feel.
   - **react-native-nitro-haptics** — lighter alternative with more granularity than expo-haptics
-  Ensure countdown haptics don't conflict with existing button tap and sequence playback haptics — may need to suppress timer haptics during active input.
+    Ensure countdown haptics don't conflict with existing button tap and sequence playback haptics — may need to suppress timer haptics during active input.
 
 - [ ] **Haptics overhaul: migrate from expo-haptics to Pulsar**
       Replace `expo-haptics` across the app with [Pulsar](https://github.com/software-mansion/pulsar) for richer, more nuanced haptic feedback. Pulsar's pattern composer enables custom haptic sequences per game event (button press, round complete, game over, high score) and its realtime composer could drive gesture-driven feedback. Evaluate:
@@ -248,7 +248,7 @@
       Resolved by the full-screen game-over redesign below — ad fires on Play Again but the full-screen context makes the transition to a full-screen ad feel natural rather than jarring.
 
 - [~] **Full-screen game-over experience (Duolingo-style)** — core shipped in feat/game-over-ux, remaining items below
-      Replaced `GameOverOverlay` modal with full-screen `/game-over` Expo Router route. All major screens (game-over, leaderboard, settings, stats, achievements) are now consistent dedicated routes. Only the mode selector remains as an overlay.
+  Replaced `GameOverOverlay` modal with full-screen `/game-over` Expo Router route. All major screens (game-over, leaderboard, settings, stats, achievements) are now consistent dedicated routes. Only the mode selector remains as an overlay.
 
   **Shipped:**
   - [x] Create `/game-over` route as full-screen component (replaces GameOverOverlay modal)
@@ -537,7 +537,7 @@
       Added `testID="btn-settings"`, `testID="btn-mode-selector"`, `testID="btn-reset"`. Also added accessibility labels on back buttons (stats, achievements).
 
 - [~] **Migrate modals to Expo Router modal routes**
-      Shipped as standard routes (not modal presentation): `/settings`, `/leaderboard`, `/game-over`. Mode selector intentionally stays as a `<Modal>` (quick contextual picker, not a destination). Mode selector could still be migrated to `presentation: "modal"` for native sheet feel — defer until we need it.
+  Shipped as standard routes (not modal presentation): `/settings`, `/leaderboard`, `/game-over`. Mode selector intentionally stays as a `<Modal>` (quick contextual picker, not a destination). Mode selector could still be migrated to `presentation: "modal"` for native sheet feel — defer until we need it.
 
 ### 1.6 Build & Submit
 
@@ -613,6 +613,7 @@ Informed by the 1.0.0 crash + ATT review cycle and a deep-trace code/UX audit. S
 #### Phase A — Signal & Telemetry (this week)
 
 Unblock learning from the 1.0.1 launch. All three items live in **Tech Debt** above — link, don't duplicate:
+
 - **Enrich PostHog events with device + app context** (already in Tech Debt)
 - **Add PostHog identify() + person properties** (already in Tech Debt)
 - **Install expo-insights for update + adoption telemetry** (already in Tech Debt)
@@ -807,7 +808,7 @@ These are where v1.1 earns its keep. Ship on top of Phase B foundation.
 Ideas worth tracking but not committed to any phase. Revisit after 6+ months of iPhone app signal.
 
 - [ ] **Apple Watch companion app via `expo-apple-targets`**
-      The 4-button Simon grid maps naturally to the Watch form factor and the Taptic Engine is uniquely suited to a haptic-first game. Halo/differentiator play, not a revenue driver — Watch users overlap heavily with iPhone users, Watch IAP conversion is lower, no AdMob on watchOS. **Approach:** Use [EvanBacon/expo-apple-targets](https://github.com/EvanBacon/expo-apple-targets) to add a watchOS target inside this Expo project (no separate repo, no ejecting). React Native still doesn't run on watchOS, so the Watch app is SwiftUI — but prebuild generates the target, EAS handles the build, and the code lives alongside the RN app. Share high scores, streaks, and theme selection with the iPhone app via App Groups (MMKV on RN side ↔ UserDefaults on Swift side). Scope: core classic mode only for v1, no modes/achievements/IAP on Watch. Rough effort: ~2 weeks of SwiftUI work for a solo dev new to it, most of which is learning SwiftUI + watchOS idioms, not plugin setup. **Key angle:** Eco Mi's haptics-first design is a genuine strength on Watch, not just a port — the Taptic Engine can deliver richer per-button haptics than iPhone, and escalating intensity at higher levels could make a watchOS version feel *better* than the phone app. That's the press/launch story ("the Simon game built for Apple Watch") if we invest. Revisit when iPhone retention data justifies the investment, or sooner if a "first Simon on Watch" launch moment is strategically attractive.
+      The 4-button Simon grid maps naturally to the Watch form factor and the Taptic Engine is uniquely suited to a haptic-first game. Halo/differentiator play, not a revenue driver — Watch users overlap heavily with iPhone users, Watch IAP conversion is lower, no AdMob on watchOS. **Approach:** Use [EvanBacon/expo-apple-targets](https://github.com/EvanBacon/expo-apple-targets) to add a watchOS target inside this Expo project (no separate repo, no ejecting). React Native still doesn't run on watchOS, so the Watch app is SwiftUI — but prebuild generates the target, EAS handles the build, and the code lives alongside the RN app. Share high scores, streaks, and theme selection with the iPhone app via App Groups (MMKV on RN side ↔ UserDefaults on Swift side). Scope: core classic mode only for v1, no modes/achievements/IAP on Watch. Rough effort: ~2 weeks of SwiftUI work for a solo dev new to it, most of which is learning SwiftUI + watchOS idioms, not plugin setup. **Key angle:** Eco Mi's haptics-first design is a genuine strength on Watch, not just a port — the Taptic Engine can deliver richer per-button haptics than iPhone, and escalating intensity at higher levels could make a watchOS version feel _better_ than the phone app. That's the press/launch story ("the Simon game built for Apple Watch") if we invest. Revisit when iPhone retention data justifies the investment, or sooner if a "first Simon on Watch" launch moment is strategically attractive.
 
 - [ ] **Multiplayer — "Eco Mi Duel" (1v1 competitive modes)**
       Explore adding Tetris Attack–style competitive play where completing sequences "attacks" the opponent (time drain, sequence extensions, phantom pads, speed bursts, color swaps). Modes under consideration: **Time War** (shared timer, completions drain opponent's clock), **Breakthrough** (foreign sequences injected into opponent's flow with a reflect/counter mechanic), **Chaos Duel** (shared sequence with opponent-inflicted corruptions). Platform strategy: same-device split screen (iPad/tablet in landscape) as the zero-infrastructure starting point, then online 1v1 via Firebase Realtime DB / Supabase with ghost replays for async play. Foldable phones (Fold/Pixel Fold) as a natural divided-screen form factor. BLE / Multipeer Connectivity for offline local play (airplane mode scenarios). NFC not viable as a transport. Full design doc: `docs/MULTIPLAYER_VISION.md`. Revisit after v1.x retention signal justifies the investment.

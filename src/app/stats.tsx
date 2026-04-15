@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { PressableScale } from "@/components/PressableScale"
 import { useStats } from "@/hooks/useStats"
 import { useTheme } from "@/hooks/useTheme"
+import { UI_COLORS } from "@/theme/uiColors"
 
 export default function StatsScreen() {
   const { t } = useTranslation()
@@ -139,7 +140,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   playNowText: {
-    color: "white",
+    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
   },

@@ -2,6 +2,7 @@ import { Pressable, StyleSheet } from "react-native"
 import { EaseView } from "react-native-ease"
 
 import { colorMap, type Color } from "@/hooks/useGameEngine"
+import { UI_COLORS } from "@/theme/uiColors"
 
 type Position = "topLeft" | "topRight" | "bottomLeft" | "bottomRight"
 
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     elevation: 8,
     flex: 1,
-    shadowColor: "#000",
+    shadowColor: UI_COLORS.shadowBlack,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4.65,

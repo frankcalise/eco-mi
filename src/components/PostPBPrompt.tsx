@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { ModalOverlay } from "@/components/ModalOverlay"
 import { PressableScale } from "@/components/PressableScale"
 import type { GameTheme } from "@/config/themes"
+import { UI_COLORS } from "@/theme/uiColors"
 
 type PostPBPromptProps = {
   visible: boolean
@@ -78,7 +79,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   removeAdsText: {
-    color: "white",
+    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
   },

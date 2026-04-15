@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { PressableScale } from "@/components/PressableScale"
 import { TRACKING_ASKED } from "@/config/storageKeys"
+import { UI_COLORS } from "@/theme/uiColors"
 import { saveString } from "@/utils/storage"
 
 function markAsked() {
@@ -30,7 +31,7 @@ export default function TrackingScreen() {
         {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
         <Image source={require("../../assets/images/app-icon-ios.png")} style={styles.appIcon} />
         <View style={styles.iconCircle}>
-          <Ionicons name="shield-checkmark-outline" size={64} color="#22c55e" />
+          <Ionicons name="shield-checkmark-outline" size={64} color={UI_COLORS.green500} />
         </View>
 
         <Text style={styles.title}>{t("tracking:title")}</Text>
@@ -60,7 +61,7 @@ const styles = StyleSheet.create({
   },
   container: {
     alignItems: "center",
-    backgroundColor: "#1a1a2e",
+    backgroundColor: UI_COLORS.classicBackground,
     flex: 1,
     justifyContent: "space-between",
     paddingBottom: 48,
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
   },
   iconCircle: {
     alignItems: "center",
-    backgroundColor: "rgba(34, 197, 94, 0.1)",
+    backgroundColor: UI_COLORS.greenTint10,
     borderRadius: 60,
     height: 120,
     justifyContent: "center",
@@ -82,24 +83,24 @@ const styles = StyleSheet.create({
   },
   shareBtn: {
     alignItems: "center",
-    backgroundColor: "#22c55e",
+    backgroundColor: UI_COLORS.green500,
     borderRadius: 12,
     paddingVertical: 16,
   },
   shareBtnText: {
-    color: "white",
+    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
   },
   subtitle: {
-    color: "rgba(255, 255, 255, 0.6)",
+    color: UI_COLORS.whiteMuted,
     fontFamily: "Oxanium-Regular",
     fontSize: 15,
     lineHeight: 22,
     textAlign: "center",
   },
   title: {
-    color: "white",
+    color: UI_COLORS.white,
     fontFamily: "Oxanium-Bold",
     fontSize: 24,
     marginBottom: 12,

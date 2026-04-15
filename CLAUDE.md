@@ -60,6 +60,7 @@ When asked to work through the backlog autonomously:
 9. Move to the next task
 
 Stop and leave a note in `CHANGELOG.md` if:
+
 - A task requires external action (account setup, secrets, asset creation)
 - A verification command fails and you can't resolve it in 2 attempts
 - You hit a task marked **Blocked by** an incomplete dependency

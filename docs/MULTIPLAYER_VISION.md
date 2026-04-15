@@ -16,13 +16,13 @@ Attacks are the multiplayer core — the "garbage blocks" of Simon. Instead of c
 
 ### Attack Types
 
-| Attack | Trigger | Effect on Opponent |
-|--------|---------|-------------------|
-| **Sequence Extension** | Complete a level cleanly | +2 random steps appended to their current sequence |
-| **Speed Burst** | Complete 2 levels in a row | Next sequence playback runs at 2x speed (harder to memorize) |
-| **Phantom Pad** | Complete 3+ levels in a row (chain) | One pad flashes a wrong color during playback — a "lie" they must detect |
-| **Color Swap** | Perfect round (zero hesitation) | Two pad colors swap positions after the sequence is shown |
-| **Blackout** | Charged power-up from streaks | One pad goes dark during next playback |
+| Attack                 | Trigger                             | Effect on Opponent                                                       |
+| ---------------------- | ----------------------------------- | ------------------------------------------------------------------------ |
+| **Sequence Extension** | Complete a level cleanly            | +2 random steps appended to their current sequence                       |
+| **Speed Burst**        | Complete 2 levels in a row          | Next sequence playback runs at 2x speed (harder to memorize)             |
+| **Phantom Pad**        | Complete 3+ levels in a row (chain) | One pad flashes a wrong color during playback — a "lie" they must detect |
+| **Color Swap**         | Perfect round (zero hesitation)     | Two pad colors swap positions after the sequence is shown                |
+| **Blackout**           | Charged power-up from streaks       | One pad goes dark during next playback                                   |
 
 ### Chain Mechanic
 
@@ -47,6 +47,7 @@ When an attack lands, you can **reflect** it back by completing your current seq
 The simplest competitive mode. Build this first.
 
 **Rules:**
+
 - Both players start with 60 seconds
 - Same starting sequence (shared seed)
 - Completing a sequence: +3s to yours, -2s from opponent
@@ -66,6 +67,7 @@ The simplest competitive mode. Build this first.
 The "garbage block clearing" mode — foreign sequences injected into your flow.
 
 **Rules:**
+
 - Both players play normal classic mode independently
 - Completing a level charges an attack meter
 - When the meter fills, a **Breakthrough Sequence** (3-4 random steps, distinct color scheme) is injected into the opponent's game
@@ -80,8 +82,9 @@ The "garbage block clearing" mode — foreign sequences injected into your flow.
 The hardcore mode for advanced players.
 
 **Rules:**
+
 - Both players receive the SAME sequence
-- Attacks from the table above corrupt how the opponent *perceives* the sequence
+- Attacks from the table above corrupt how the opponent _perceives_ the sequence
 - Speed Bursts, Phantom Pads, Color Swaps, and Blackouts alter the playback
 - You must memorize the "true" sequence while filtering out the lies your opponent inflicts
 
@@ -128,19 +131,23 @@ Not viable as a game transport — NFC is designed for single-moment tap-and-go 
 ## Progression & Meta Game
 
 ### Ranked Play
+
 - ELO-based rating with visual tiers (Bronze / Silver / Gold / Diamond pads)
 - Seasonal resets to keep the ladder fresh
 
 ### Daily Duel Challenge
+
 - Everyone plays the same seeded sequence
 - Attack ghosts of top players from the leaderboard
 - No real-time connection needed — async competitive
 
 ### Revenge Replays
+
 - When someone beats your ghost, push notification to reclaim your spot
 - Creates a back-and-forth rivalry loop without requiring simultaneous play
 
 ### Cosmetic Stakes
+
 - Winner "steals" one of the loser's pad themes for 24 hours
 - Low-stakes but emotionally engaging — you want your theme back
 
@@ -148,13 +155,13 @@ Not viable as a game transport — NFC is designed for single-moment tap-and-go 
 
 ## Implementation Phases
 
-| Phase | Scope | Infrastructure |
-|-------|-------|---------------|
-| **0** | Daily Challenge leaderboard (shared seed, global scores) | Firebase/Supabase, no real-time |
-| **1** | Same-device split screen Time War | No networking, works on any iPad/tablet |
-| **2** | Online Time War with ghost replays | Firebase Realtime DB |
-| **3** | Breakthrough mode + full attack system | Extends Phase 2 transport |
-| **4** | Ranked matchmaking, ELO, cosmetic rewards | Lightweight backend additions |
+| Phase | Scope                                                    | Infrastructure                          |
+| ----- | -------------------------------------------------------- | --------------------------------------- |
+| **0** | Daily Challenge leaderboard (shared seed, global scores) | Firebase/Supabase, no real-time         |
+| **1** | Same-device split screen Time War                        | No networking, works on any iPad/tablet |
+| **2** | Online Time War with ghost replays                       | Firebase Realtime DB                    |
+| **3** | Breakthrough mode + full attack system                   | Extends Phase 2 transport               |
+| **4** | Ranked matchmaking, ELO, cosmetic rewards                | Lightweight backend additions           |
 
 Each phase is independently shippable and valuable. Phase 0 and 1 require no backend and could land without deviating from the current "no backend for v1" decision.
 

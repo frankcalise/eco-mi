@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import { EaseView } from "react-native-ease"
 
 import type { GameTheme } from "@/config/themes"
+import { UI_COLORS } from "@/theme/uiColors"
 
 type OnboardingTooltipProps = {
   visible: boolean
@@ -34,7 +35,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   text: {
-    color: "white",
+    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 15,
     textAlign: "center",

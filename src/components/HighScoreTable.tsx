@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons"
 import type { GameTheme } from "@/config/themes"
 import { useHighScores, type GameMode } from "@/hooks/useHighScores"
 import { translate } from "@/i18n/translate"
+import { UI_COLORS } from "@/theme/uiColors"
 
 const MODES: { id: GameMode; icon: keyof typeof Ionicons.glyphMap }[] = [
   { id: "classic", icon: "game-controller" },
@@ -80,6 +81,7 @@ export function HighScoreTable({
               key={m.id}
               style={[
                 styles.modeTab,
+                // eslint-disable-next-line react-native/no-inline-styles, react-native/no-color-literals
                 {
                   borderColor: isActive ? theme.accentColor : theme.borderColor,
                   backgroundColor: isActive ? `${theme.accentColor}1A` : "transparent",
@@ -143,12 +145,7 @@ export function HighScoreTable({
                 style={[
                   styles.row,
                   i % 2 === 0 && { backgroundColor: theme.surfaceColor },
-                  isHighlighted && {
-                    backgroundColor: "rgba(251, 191, 36, 0.15)",
-                    borderColor: "rgba(251, 191, 36, 0.3)",
-                    borderWidth: 1,
-                    borderRadius: 4,
-                  },
+                  isHighlighted && styles.rowHighlighted,
                 ]}
               >
                 <Text
@@ -276,6 +273,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 8,
     paddingVertical: 6,
+  },
+  rowHighlighted: {
+    backgroundColor: UI_COLORS.amberTint15,
+    borderColor: UI_COLORS.amberTint30,
+    borderRadius: 4,
+    borderWidth: 1,
   },
   scoreCol: {
     textAlign: "right",

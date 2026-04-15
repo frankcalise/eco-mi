@@ -41,11 +41,11 @@ The product succeeds if players open it daily for short sessions, share scores w
 
 ## Target Audience
 
-| Segment | Description |
-|---|---|
-| **Primary** | Casual mobile gamers (ages 12–45) who play in short bursts — commutes, waiting rooms, before bed. |
+| Segment       | Description                                                                                          |
+| ------------- | ---------------------------------------------------------------------------------------------------- |
+| **Primary**   | Casual mobile gamers (ages 12–45) who play in short bursts — commutes, waiting rooms, before bed.    |
 | **Secondary** | Parents looking for screen-time-friendly games for kids; the Simon format is simple and non-violent. |
-| **Tertiary** | Retro/nostalgia gamers who grew up with the original Simon hardware toy. |
+| **Tertiary**  | Retro/nostalgia gamers who grew up with the original Simon hardware toy.                             |
 
 Key traits: low patience for onboarding, high sensitivity to intrusive ads, willingness to pay $2–5 to remove annoyances.
 
@@ -92,59 +92,59 @@ Features that drive retention and expand IAP surface. Informed by real analytics
 
 Critical polish + monetization. The minimum bar for a store-worthy game that generates revenue.
 
-| # | Feature | Notes |
-|---|---|---|
-| 1 | Extract `useGameEngine()` hook | Move all game state and logic out of `GameScreen.tsx`. Fix timer bugs (orphaned `setTimeout` refs, stale closures). |
-| 2 | Wire up Oxanium font | Already bundled in `assets/fonts/`. Apply to all game text for a cohesive sci-fi/gaming identity. |
-| 3 | Speed ramp | `interval = max(300, 800 - level * 30)`. Sequences play faster as level increases. |
-| 4 | Game-over overlay | Modal with score summary, high score badge, Play Again and Share buttons. Primary monetization touchpoint. |
-| 5 | RevenueCat integration | `react-native-purchases` with Expo config plugin. Configure offerings in RevenueCat dashboard. |
-| 6 | Google Mobile Ads | `react-native-google-mobile-ads` with `expo-tracking-transparency` for ATT compliance. |
-| 7 | Remove Ads IAP | Non-consumable, ~$2.99. Gates all banner and interstitial ads. |
-| 8 | Frequency-capped interstitials | Show after game over. Skip if game lasted < 3 rounds. Max once per 2–3 games. See [Ad Placement Rules](#ad-placement-rules). |
-| 9 | PostHog analytics | Core event tracking from launch. See [Analytics](#analytics). |
+| #   | Feature                        | Notes                                                                                                                        |
+| --- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Extract `useGameEngine()` hook | Move all game state and logic out of `GameScreen.tsx`. Fix timer bugs (orphaned `setTimeout` refs, stale closures).          |
+| 2   | Wire up Oxanium font           | Already bundled in `assets/fonts/`. Apply to all game text for a cohesive sci-fi/gaming identity.                            |
+| 3   | Speed ramp                     | `interval = max(300, 800 - level * 30)`. Sequences play faster as level increases.                                           |
+| 4   | Game-over overlay              | Modal with score summary, high score badge, Play Again and Share buttons. Primary monetization touchpoint.                   |
+| 5   | RevenueCat integration         | `react-native-purchases` with Expo config plugin. Configure offerings in RevenueCat dashboard.                               |
+| 6   | Google Mobile Ads              | `react-native-google-mobile-ads` with `expo-tracking-transparency` for ATT compliance.                                       |
+| 7   | Remove Ads IAP                 | Non-consumable, ~$2.99. Gates all banner and interstitial ads.                                                               |
+| 8   | Frequency-capped interstitials | Show after game over. Skip if game lasted < 3 rounds. Max once per 2–3 games. See [Ad Placement Rules](#ad-placement-rules). |
+| 9   | PostHog analytics              | Core event tracking from launch. See [Analytics](#analytics).                                                                |
 
 ### Phase 2 — Visual Polish (v1.1)
 
 Fast follow — ship within 1–2 weeks of v1.0. Makes the game feel premium.
 
-| # | Feature | Notes |
-|---|---|---|
-| 1 | Button animations via `react-native-ease` | Glow, scale, and pulse effects on the four game buttons. Replaces the current static `transform: [{ scale: 1.05 }]`. |
-| 2 | New high score celebration | Lottie animation (trophy/confetti from [LottieFiles](https://lottiefiles.com)) triggered when the player beats their high score. |
-| 3 | `expo-haptics` integration | Replace `Vibration.vibrate()` with `expo-haptics` for distinct impact styles per color and richer game-over feedback. |
-| 4 | Progress indicator | Show how many steps the player has completed in the current sequence (e.g., dot indicators or a progress bar). |
-| 5 | Rewarded video "Continue" | After game over, offer one continue per game via rewarded ad. Player retries the failed sequence. |
-| 6 | Store review prompts | `expo-store-review` with pre-prompt sentiment filter. See [Review Prompt Rules](#review-prompt-rules). |
+| #   | Feature                                   | Notes                                                                                                                            |
+| --- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Button animations via `react-native-ease` | Glow, scale, and pulse effects on the four game buttons. Replaces the current static `transform: [{ scale: 1.05 }]`.             |
+| 2   | New high score celebration                | Lottie animation (trophy/confetti from [LottieFiles](https://lottiefiles.com)) triggered when the player beats their high score. |
+| 3   | `expo-haptics` integration                | Replace `Vibration.vibrate()` with `expo-haptics` for distinct impact styles per color and richer game-over feedback.            |
+| 4   | Progress indicator                        | Show how many steps the player has completed in the current sequence (e.g., dot indicators or a progress bar).                   |
+| 5   | Rewarded video "Continue"                 | After game over, offer one continue per game via rewarded ad. Player retries the failed sequence.                                |
+| 6   | Store review prompts                      | `expo-store-review` with pre-prompt sentiment filter. See [Review Prompt Rules](#review-prompt-rules).                           |
 
 ### Phase 3 — Engagement (v1.2)
 
-| # | Feature | Notes |
-|---|---|---|
-| 1 | Daily challenges | Date-seeded deterministic RNG. Same sequence for all players on a given day. Streak tracking. |
-| 2 | Stats dashboard | Games played, best score, average level, current/longest streak. New screen via Expo Router. |
-| 3 | Achievement system | Local achievements stored in MMKV (e.g., "Reach level 10", "7-day streak", "Score 1000+"). |
-| 4 | Score sharing | `expo-sharing` generates a branded score card. Zero-cost organic acquisition. |
-| 5 | Additional game modes | **Timed** (max sequences in 60s), **Reverse** (repeat backwards), **Chaos** (buttons shuffle positions). |
-| 6 | Localization | Translate all UI strings into priority languages. Infrastructure already exists (`i18next` + `expo-localization` + RTL support). See [Localization](#localization). |
+| #   | Feature               | Notes                                                                                                                                                               |
+| --- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Daily challenges      | Date-seeded deterministic RNG. Same sequence for all players on a given day. Streak tracking.                                                                       |
+| 2   | Stats dashboard       | Games played, best score, average level, current/longest streak. New screen via Expo Router.                                                                        |
+| 3   | Achievement system    | Local achievements stored in MMKV (e.g., "Reach level 10", "7-day streak", "Score 1000+").                                                                          |
+| 4   | Score sharing         | `expo-sharing` generates a branded score card. Zero-cost organic acquisition.                                                                                       |
+| 5   | Additional game modes | **Timed** (max sequences in 60s), **Reverse** (repeat backwards), **Chaos** (buttons shuffle positions).                                                            |
+| 6   | Localization          | Translate all UI strings into priority languages. Infrastructure already exists (`i18next` + `expo-localization` + RTL support). See [Localization](#localization). |
 
 ### Phase 4 — Cosmetics & IAP Expansion (v1.3)
 
-| # | Feature | Notes |
-|---|---|---|
-| 1 | Theme system | Wire up existing Ignite `ThemeProvider` infrastructure. Add game-specific color tokens. |
-| 2 | Theme packs (IAP) | Neon, Retro, Pastel — non-consumable purchases via RevenueCat. |
-| 3 | Sound packs (IAP) | Square wave, Sawtooth, Triangle oscillator types — non-consumable. |
-| 4 | XP / progression | Earn XP per game. Level-up unlocks free cosmetics. Ranks: Beginner → Apprentice → Adept → Master → Grandmaster. |
+| #   | Feature           | Notes                                                                                                           |
+| --- | ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| 1   | Theme system      | Wire up existing Ignite `ThemeProvider` infrastructure. Add game-specific color tokens.                         |
+| 2   | Theme packs (IAP) | Neon, Retro, Pastel — non-consumable purchases via RevenueCat.                                                  |
+| 3   | Sound packs (IAP) | Square wave, Sawtooth, Triangle oscillator types — non-consumable.                                              |
+| 4   | XP / progression  | Earn XP per game. Level-up unlocks free cosmetics. Ranks: Beginner → Apprentice → Adept → Master → Grandmaster. |
 
 ### Phase 5 — Backend Features (Future, deferred)
 
-| # | Feature | Notes |
-|---|---|---|
-| 1 | Anonymous auth | Supabase Auth. Anonymous-first with optional Apple/Google sign-in upgrade. |
-| 2 | Global leaderboards | Daily and all-time. Server-validated scores to prevent cheating. |
-| 3 | Cross-device sync | Stats, achievements, and settings. RevenueCat already handles purchase restoration. |
-| 4 | Friend challenges | Deep links to challenge a friend to beat your daily score. |
+| #   | Feature             | Notes                                                                               |
+| --- | ------------------- | ----------------------------------------------------------------------------------- |
+| 1   | Anonymous auth      | Supabase Auth. Anonymous-first with optional Apple/Google sign-in upgrade.          |
+| 2   | Global leaderboards | Daily and all-time. Server-validated scores to prevent cheating.                    |
+| 3   | Cross-device sync   | Stats, achievements, and settings. RevenueCat already handles purchase restoration. |
+| 4   | Friend challenges   | Deep links to challenge a friend to beat your daily score.                          |
 
 ---
 
@@ -152,26 +152,26 @@ Fast follow — ship within 1–2 weeks of v1.0. Makes the game feel premium.
 
 ### Revenue Streams
 
-| Stream | Type | Price | Priority |
-|---|---|---|---|
-| Remove Ads | Non-consumable IAP | ~$2.99 | Primary |
-| Theme Packs | Non-consumable IAP | $0.99–1.99 each | Secondary |
-| Sound Packs | Non-consumable IAP | $0.99 each | Secondary |
-| Interstitial Ads | AdMob interstitial | — | Baseline |
-| Rewarded Ads | AdMob rewarded video | — | Baseline |
-| Banner Ads | AdMob banner | — | Supplementary |
+| Stream           | Type                 | Price           | Priority      |
+| ---------------- | -------------------- | --------------- | ------------- |
+| Remove Ads       | Non-consumable IAP   | ~$2.99          | Primary       |
+| Theme Packs      | Non-consumable IAP   | $0.99–1.99 each | Secondary     |
+| Sound Packs      | Non-consumable IAP   | $0.99 each      | Secondary     |
+| Interstitial Ads | AdMob interstitial   | —               | Baseline      |
+| Rewarded Ads     | AdMob rewarded video | —               | Baseline      |
+| Banner Ads       | AdMob banner         | —               | Supplementary |
 
 ### IAP Product Catalog (RevenueCat)
 
-| Product ID | Type | Description |
-|---|---|---|
-| `ecomi_remove_ads` | Non-consumable | Permanently removes all banner and interstitial ads. Rewarded ads remain available (opt-in). |
-| `ecomi_theme_neon` | Non-consumable | Neon color theme (cyan/magenta/lime on black). |
-| `ecomi_theme_retro` | Non-consumable | Retro 80s color theme. |
-| `ecomi_theme_pastel` | Non-consumable | Soft pastel color theme. |
-| `ecomi_sound_square` | Non-consumable | Square wave oscillator sound pack. |
-| `ecomi_sound_sawtooth` | Non-consumable | Sawtooth wave oscillator sound pack. |
-| `ecomi_sound_triangle` | Non-consumable | Triangle wave oscillator sound pack. |
+| Product ID             | Type           | Description                                                                                  |
+| ---------------------- | -------------- | -------------------------------------------------------------------------------------------- |
+| `ecomi_remove_ads`     | Non-consumable | Permanently removes all banner and interstitial ads. Rewarded ads remain available (opt-in). |
+| `ecomi_theme_neon`     | Non-consumable | Neon color theme (cyan/magenta/lime on black).                                               |
+| `ecomi_theme_retro`    | Non-consumable | Retro 80s color theme.                                                                       |
+| `ecomi_theme_pastel`   | Non-consumable | Soft pastel color theme.                                                                     |
+| `ecomi_sound_square`   | Non-consumable | Square wave oscillator sound pack.                                                           |
+| `ecomi_sound_sawtooth` | Non-consumable | Sawtooth wave oscillator sound pack.                                                         |
+| `ecomi_sound_triangle` | Non-consumable | Triangle wave oscillator sound pack.                                                         |
 
 All IAP is managed through RevenueCat. The app never validates receipts directly — RevenueCat handles server-side receipt validation. Entitlement checks use `customerInfo.entitlements.active`.
 
@@ -197,25 +197,25 @@ All IAP is managed through RevenueCat. The app never validates receipts directly
 
 ### Review Prompt Rules
 
-`expo-store-review` uses the native `SKStoreReviewController` (iOS) and in-app review API (Android). The OS controls the actual display — calling `requestReview()` is a *request*, not a guarantee. Apple and Google both rate-limit to ~3 prompts per year per user, so every trigger must count.
+`expo-store-review` uses the native `SKStoreReviewController` (iOS) and in-app review API (Android). The OS controls the actual display — calling `requestReview()` is a _request_, not a guarantee. Apple and Google both rate-limit to ~3 prompts per year per user, so every trigger must count.
 
 **Trigger moments (positive emotional peaks only):**
 
-| Trigger | When | Why It Works |
-|---|---|---|
-| First game completion | Player finishes their very first game (win or lose, they completed a full round) | The "I get it!" moment — highest engagement point for new users |
-| New high score | Player beats their previous best | Peak positive emotion — they just achieved something |
-| Achievement unlocked | Any achievement is earned for the first time | Dopamine hit from the unlock pairs well with a review ask |
-| Streak milestone | Player hits a 3-day or 7-day daily challenge streak | Invested users who play daily are most likely to leave a positive review |
-| Level milestone | Player reaches level 10, 15, or 20 for the first time | Sense of accomplishment at a personal milestone |
+| Trigger               | When                                                                             | Why It Works                                                             |
+| --------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| First game completion | Player finishes their very first game (win or lose, they completed a full round) | The "I get it!" moment — highest engagement point for new users          |
+| New high score        | Player beats their previous best                                                 | Peak positive emotion — they just achieved something                     |
+| Achievement unlocked  | Any achievement is earned for the first time                                     | Dopamine hit from the unlock pairs well with a review ask                |
+| Streak milestone      | Player hits a 3-day or 7-day daily challenge streak                              | Invested users who play daily are most likely to leave a positive review |
+| Level milestone       | Player reaches level 10, 15, or 20 for the first time                            | Sense of accomplishment at a personal milestone                          |
 
 **How the OS and our code split responsibility:**
 
 The native APIs (`SKStoreReviewController` on iOS, In-App Review API on Android) are the ultimate gatekeepers — they silently no-op the request if they've shown the prompt too recently (~3 times per year per user). We can't force the prompt and Apple doesn't publish exact throttling rules.
 
-Our job is **moment selection**, not rate limiting. We control *when* we ask, the OS controls *whether* it actually shows. This means:
+Our job is **moment selection**, not rate limiting. We control _when_ we ask, the OS controls _whether_ it actually shows. This means:
 
-- Call `requestReview()` only at positive emotional peaks so that when the OS *does* show it, the user is happy
+- Call `requestReview()` only at positive emotional peaks so that when the OS _does_ show it, the user is happy
 - Don't waste silent requests at bad moments — the OS may count them against future prompts even when suppressed
 - Don't stack with ads — if we just showed an interstitial, skip the review request
 
@@ -228,6 +228,7 @@ Our job is **moment selection**, not rate limiting. We control *when* we ask, th
 ```
 
 **Never request a review:**
+
 - After a game over where the player didn't beat their high score
 - Immediately after an ad
 - During active gameplay
@@ -282,11 +283,11 @@ Custom Modal (our UI)                         Native API
 
 For v1, no backend is needed for the feedback path:
 
-| Option | Setup | Notes |
-|---|---|---|
-| **Email link** | `Linking.openURL("mailto:feedback@ecomi.app?subject=Eco Mi Feedback")` | Simplest. Opens the user's mail app. |
-| **Google Form** | Link to a Google Form via `Linking.openURL()` | Free. Responses collect in a spreadsheet. |
-| **GitHub Discussions** | Link to the repo's Discussions tab | Community-friendly since the project is open source. |
+| Option                 | Setup                                                                  | Notes                                                |
+| ---------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------- |
+| **Email link**         | `Linking.openURL("mailto:feedback@ecomi.app?subject=Eco Mi Feedback")` | Simplest. Opens the user's mail app.                 |
+| **Google Form**        | Link to a Google Form via `Linking.openURL()`                          | Free. Responses collect in a spreadsheet.            |
+| **GitHub Discussions** | Link to the repo's Discussions tab                                     | Community-friendly since the project is open source. |
 
 Start with email or a Google Form. Upgrade to an in-app form (Typeform, Tally, or Formspree webhook) later if volume justifies it.
 
@@ -379,28 +380,28 @@ EXPO_PUBLIC_POSTHOG_KEY=phc_XXXXXXXXXXXXXXXXXXXXXXXX
 
 Track the minimum set of events that answer "is the game working and are people engaged":
 
-| Event | Properties | When |
-|---|---|---|
-| `game_started` | `{ mode }` | Player taps Start Game |
-| `game_completed` | `{ score, level, isHighScore, mode }` | Round ends (win or lose) |
-| `game_over` | `{ score, level, reason }` | Player fails a sequence |
-| `ad_shown` | `{ type, placement }` | Interstitial or banner displayed |
-| `ad_rewarded_watched` | `{ placement }` | Player completes a rewarded video |
-| `iap_initiated` | `{ productId }` | Player taps a purchase button |
-| `iap_completed` | `{ productId, revenue }` | Purchase succeeds (RevenueCat also tracks this) |
-| `share_tapped` | `{ score, level }` | Player taps Share on game-over overlay |
-| `review_prompt_shown` | `{ trigger }` | Pre-prompt modal displayed |
-| `review_prompt_response` | `{ response }` | "Love it!" or "Not really" |
+| Event                    | Properties                            | When                                            |
+| ------------------------ | ------------------------------------- | ----------------------------------------------- |
+| `game_started`           | `{ mode }`                            | Player taps Start Game                          |
+| `game_completed`         | `{ score, level, isHighScore, mode }` | Round ends (win or lose)                        |
+| `game_over`              | `{ score, level, reason }`            | Player fails a sequence                         |
+| `ad_shown`               | `{ type, placement }`                 | Interstitial or banner displayed                |
+| `ad_rewarded_watched`    | `{ placement }`                       | Player completes a rewarded video               |
+| `iap_initiated`          | `{ productId }`                       | Player taps a purchase button                   |
+| `iap_completed`          | `{ productId, revenue }`              | Purchase succeeds (RevenueCat also tracks this) |
+| `share_tapped`           | `{ score, level }`                    | Player taps Share on game-over overlay          |
+| `review_prompt_shown`    | `{ trigger }`                         | Pre-prompt modal displayed                      |
+| `review_prompt_response` | `{ response }`                        | "Love it!" or "Not really"                      |
 
 ### Events Added in Later Phases
 
-| Event | Phase | Notes |
-|---|---|---|
-| `mode_selected` | 3 | Which game mode (timed, reverse, chaos) |
-| `daily_challenge_completed` | 3 | Daily challenge score and streak |
-| `achievement_unlocked` | 3 | Which achievement |
-| `theme_applied` | 4 | Which theme |
-| `sound_pack_applied` | 4 | Which sound pack |
+| Event                       | Phase | Notes                                   |
+| --------------------------- | ----- | --------------------------------------- |
+| `mode_selected`             | 3     | Which game mode (timed, reverse, chaos) |
+| `daily_challenge_completed` | 3     | Daily challenge score and streak        |
+| `achievement_unlocked`      | 3     | Which achievement                       |
+| `theme_applied`             | 4     | Which theme                             |
+| `sound_pack_applied`        | 4     | Which sound pack                        |
 
 ### Key Dashboards to Build in PostHog
 
@@ -424,20 +425,20 @@ Track the minimum set of events that answer "is the game working and are people 
 
 Single-screen Expo Router app scaffolded from Ignite v11.1.3. All game logic lives in `GameScreen.tsx` (~600 lines) with local `useState`, imperative timer refs, and inline styling.
 
-| Layer | Current | Target |
-|---|---|---|
-| Framework | Expo SDK 53, RN 0.79, New Architecture, Hermes | Expo SDK 55, RN 0.84, React 19.2 |
-| Navigation | Expo Router (file-based, `src/app/`) | Solid |
-| Storage | `react-native-mmkv` via `src/utils/storage.ts` | Solid |
-| Audio | `react-native-audio-api` (Web Audio oscillators) via `src/hooks/useAudioTones.tsx` | Good, needs sound pack extension |
-| Theme | Ignite theme system (`src/theme/`) — full light/dark infrastructure | Exists but unused by game |
-| Fonts | SpaceGrotesk loaded at runtime. Oxanium bundled but not wired up. | Needs swap |
-| Haptics | `Vibration` API (basic patterns) | Replace with `expo-haptics` |
-| Animations | `react-native-reanimated` installed but unused | Replace with `react-native-ease` |
-| Compiler | N/A | React Compiler via `babel-preset-expo@55` — auto-memoization, no manual `useMemo`/`useCallback` |
-| i18n | `i18next` scaffolded, English only | Low priority |
-| Native | CNG — `ios/` and `android/` gitignored, generated via `npx expo prebuild` | Solid |
-| Builds | EAS configured (dev, preview, production profiles) | Solid |
+| Layer      | Current                                                                            | Target                                                                                          |
+| ---------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Framework  | Expo SDK 53, RN 0.79, New Architecture, Hermes                                     | Expo SDK 55, RN 0.84, React 19.2                                                                |
+| Navigation | Expo Router (file-based, `src/app/`)                                               | Solid                                                                                           |
+| Storage    | `react-native-mmkv` via `src/utils/storage.ts`                                     | Solid                                                                                           |
+| Audio      | `react-native-audio-api` (Web Audio oscillators) via `src/hooks/useAudioTones.tsx` | Good, needs sound pack extension                                                                |
+| Theme      | Ignite theme system (`src/theme/`) — full light/dark infrastructure                | Exists but unused by game                                                                       |
+| Fonts      | SpaceGrotesk loaded at runtime. Oxanium bundled but not wired up.                  | Needs swap                                                                                      |
+| Haptics    | `Vibration` API (basic patterns)                                                   | Replace with `expo-haptics`                                                                     |
+| Animations | `react-native-reanimated` installed but unused                                     | Replace with `react-native-ease`                                                                |
+| Compiler   | N/A                                                                                | React Compiler via `babel-preset-expo@55` — auto-memoization, no manual `useMemo`/`useCallback` |
+| i18n       | `i18next` scaffolded, English only                                                 | Low priority                                                                                    |
+| Native     | CNG — `ios/` and `android/` gitignored, generated via `npx expo prebuild`          | Solid                                                                                           |
+| Builds     | EAS configured (dev, preview, production profiles)                                 | Solid                                                                                           |
 
 ### Target Architecture (Post-Phase 2)
 
@@ -483,17 +484,17 @@ Single-screen Expo Router app scaffolded from Ignite v11.1.3. All game logic liv
 
 ### Key Libraries
 
-| Library | Purpose | Phase |
-|---|---|---|
-| `react-native-ease` | Button animations (glow, scale, pulse) | 2 |
-| `lottie-react-native` | Celebration animations (trophy, confetti) on new high scores | 2 |
-| `expo-haptics` | Rich haptic feedback per color/event | 2 |
-| `posthog-react-native` | Product analytics (events, funnels, retention) | 1 |
-| `react-native-purchases` | RevenueCat IAP (Remove Ads, themes, sounds) | 1 |
-| `react-native-google-mobile-ads` | AdMob banners, interstitials, rewarded | 1 |
-| `expo-tracking-transparency` | ATT consent (required before ad init on iOS) | 1 |
-| `expo-store-review` | Native store review prompt at positive moments | 2 |
-| `expo-sharing` | Score card sharing | 3 |
+| Library                          | Purpose                                                      | Phase |
+| -------------------------------- | ------------------------------------------------------------ | ----- |
+| `react-native-ease`              | Button animations (glow, scale, pulse)                       | 2     |
+| `lottie-react-native`            | Celebration animations (trophy, confetti) on new high scores | 2     |
+| `expo-haptics`                   | Rich haptic feedback per color/event                         | 2     |
+| `posthog-react-native`           | Product analytics (events, funnels, retention)               | 1     |
+| `react-native-purchases`         | RevenueCat IAP (Remove Ads, themes, sounds)                  | 1     |
+| `react-native-google-mobile-ads` | AdMob banners, interstitials, rewarded                       | 1     |
+| `expo-tracking-transparency`     | ATT consent (required before ad init on iOS)                 | 1     |
+| `expo-store-review`              | Native store review prompt at positive moments               | 2     |
+| `expo-sharing`                   | Score card sharing                                           | 3     |
 
 ### Why `react-native-ease` Over Reanimated
 
@@ -521,12 +522,12 @@ Keep game-specific logic (Simon state machine, audio frequencies, color maps) se
 
 ### Testing Layers
 
-| Layer | Tool | What It Covers | CI Cost |
-|---|---|---|---|
-| **Unit** | Jest + `jest-expo` | `useGameEngine()` hook — state transitions, scoring, speed ramp, sequence validation, timer cleanup | Fast, no device |
-| **Component** | Jest + React Testing Library | Screen rendering, button props, overlay visibility, testID presence | Fast, no device |
-| **E2E (native)** | Maestro | Full game flows on simulator — tap interactions, audio/haptic triggers, real touch targets | macOS runner or Maestro Cloud |
-| **E2E (web)** | Playwright | Fast logic flow coverage — can inspect DOM state directly, cheaper CI than simulators | Any CI runner |
+| Layer            | Tool                         | What It Covers                                                                                      | CI Cost                       |
+| ---------------- | ---------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------- |
+| **Unit**         | Jest + `jest-expo`           | `useGameEngine()` hook — state transitions, scoring, speed ramp, sequence validation, timer cleanup | Fast, no device               |
+| **Component**    | Jest + React Testing Library | Screen rendering, button props, overlay visibility, testID presence                                 | Fast, no device               |
+| **E2E (native)** | Maestro                      | Full game flows on simulator — tap interactions, audio/haptic triggers, real touch targets          | macOS runner or Maestro Cloud |
+| **E2E (web)**    | Playwright                   | Fast logic flow coverage — can inspect DOM state directly, cheaper CI than simulators               | Any CI runner                 |
 
 Maestro is the primary confidence layer for a game. Playwright on the Expo web build supplements it for faster iteration on game logic without spinning up simulators.
 
@@ -554,19 +555,19 @@ Maestro is a black-box tool — it cannot detect visual state changes (color, op
 
 Standard testID patterns:
 
-| Element | testID | Active State |
-|---|---|---|
-| Red button | `btn-red` | `btn-red-active` |
-| Blue button | `btn-blue` | `btn-blue-active` |
-| Green button | `btn-green` | `btn-green-active` |
-| Yellow button | `btn-yellow` | `btn-yellow-active` |
-| Start button | `btn-start` | — |
-| Play Again button | `btn-play-again` | — |
-| Score display | `text-score` | — |
-| Level display | `text-level` | — |
-| High score display | `text-high-score` | — |
-| Game over overlay | `overlay-game-over` | — |
-| Sound toggle | `btn-sound-toggle` | — |
+| Element            | testID              | Active State        |
+| ------------------ | ------------------- | ------------------- |
+| Red button         | `btn-red`           | `btn-red-active`    |
+| Blue button        | `btn-blue`          | `btn-blue-active`   |
+| Green button       | `btn-green`         | `btn-green-active`  |
+| Yellow button      | `btn-yellow`        | `btn-yellow-active` |
+| Start button       | `btn-start`         | —                   |
+| Play Again button  | `btn-play-again`    | —                   |
+| Score display      | `text-score`        | —                   |
+| Level display      | `text-level`        | —                   |
+| High score display | `text-high-score`   | —                   |
+| Game over overlay  | `overlay-game-over` | —                   |
+| Sound toggle       | `btn-sound-toggle`  | —                   |
 
 ### Maestro Flows
 
@@ -574,13 +575,13 @@ Existing scaffold: `.maestro/shared/_OnFlowStart.yaml` handles app launch and Ex
 
 Flows to implement in `.maestro/flows/`:
 
-| Flow | Description | Seed |
-|---|---|---|
-| `happy-path.yaml` | Start → play 3 correct rounds → verify score increments each round | Fixed seed where round 1 = red, round 2 = red-blue, round 3 = red-blue-green |
-| `game-over.yaml` | Start → tap wrong button → verify game over overlay → tap Play Again → verify reset to idle | Any fixed seed |
-| `high-score.yaml` | Play past stored high score → verify celebration animation triggers | Fixed seed, pre-set low high score in MMKV |
-| `sound-toggle.yaml` | Toggle sound off → play a round → verify no crash, game completes | Any fixed seed |
-| `ads-flow.yaml` (Phase 2) | Play 3+ games → verify interstitial appears → verify rewarded "Continue" offer | Any fixed seed |
+| Flow                      | Description                                                                                 | Seed                                                                         |
+| ------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `happy-path.yaml`         | Start → play 3 correct rounds → verify score increments each round                          | Fixed seed where round 1 = red, round 2 = red-blue, round 3 = red-blue-green |
+| `game-over.yaml`          | Start → tap wrong button → verify game over overlay → tap Play Again → verify reset to idle | Any fixed seed                                                               |
+| `high-score.yaml`         | Play past stored high score → verify celebration animation triggers                         | Fixed seed, pre-set low high score in MMKV                                   |
+| `sound-toggle.yaml`       | Toggle sound off → play a round → verify no crash, game completes                           | Any fixed seed                                                               |
+| `ads-flow.yaml` (Phase 2) | Play 3+ games → verify interstitial appears → verify rewarded "Continue" offer              | Any fixed seed                                                               |
 
 Example Maestro flow:
 
@@ -650,26 +651,31 @@ npx playwright test
 ```
 
 Advantages over Maestro for certain scenarios:
+
 - Direct DOM access — can read component state, check CSS properties, verify audio context
 - No simulator boot time — tests start in seconds
 - Cheaper CI — runs on any Linux runner
 
 Limitations:
+
 - Tests the web renderer, not native — won't catch iOS/Android-specific touch, audio, or haptic issues
 - Not a replacement for Maestro, but covers game logic flows faster
 
 ### CI Integration
 
 **Maestro:**
+
 - GitHub Actions with `mobile-dev-inc/action-maestro-cloud@v1` for Maestro Cloud (managed simulators)
 - Or self-hosted macOS runner with `maestro test` against a local simulator
 - Build the dev client with `eas build --profile development`, download artifact, run Maestro against it
 
 **Playwright:**
+
 - Any GitHub Actions runner (ubuntu-latest)
 - `expo start --web` in background, then `npx playwright test`
 
 **Jest:**
+
 - Runs on any CI runner, no device needed
 - Already configured: `bun run test`
 
@@ -746,18 +752,18 @@ const en = {
 
 A Simon game has minimal text, which makes translation cheap. Target the top mobile gaming markets first:
 
-| Priority | Language | Code | Notes |
-|---|---|---|---|
-| 1 | English | `en` | Default, already done |
-| 2 | Spanish | `es` | ~550M speakers, huge mobile gaming market (Latin America + Spain) |
-| 3 | Portuguese | `pt` | ~260M speakers, Brazil is a top mobile gaming market |
-| 4 | French | `fr` | ~280M speakers, strong in West Africa + Europe |
-| 5 | German | `de` | High App Store spend per capita |
-| 6 | Japanese | `ja` | Top mobile gaming market by revenue |
-| 7 | Korean | `ko` | High mobile gaming engagement |
-| 8 | Chinese (Simplified) | `zh` | Largest mobile market (if distributing outside Play/App Store) |
-| 9 | Arabic | `ar` | RTL — infrastructure already supports it |
-| 10 | Hindi | `hi` | Massive growing mobile market (India) |
+| Priority | Language             | Code | Notes                                                             |
+| -------- | -------------------- | ---- | ----------------------------------------------------------------- |
+| 1        | English              | `en` | Default, already done                                             |
+| 2        | Spanish              | `es` | ~550M speakers, huge mobile gaming market (Latin America + Spain) |
+| 3        | Portuguese           | `pt` | ~260M speakers, Brazil is a top mobile gaming market              |
+| 4        | French               | `fr` | ~280M speakers, strong in West Africa + Europe                    |
+| 5        | German               | `de` | High App Store spend per capita                                   |
+| 6        | Japanese             | `ja` | Top mobile gaming market by revenue                               |
+| 7        | Korean               | `ko` | High mobile gaming engagement                                     |
+| 8        | Chinese (Simplified) | `zh` | Largest mobile market (if distributing outside Play/App Store)    |
+| 9        | Arabic               | `ar` | RTL — infrastructure already supports it                          |
+| 10       | Hindi                | `hi` | Massive growing mobile market (India)                             |
 
 The game has roughly **~30 translatable strings**. This is a small enough set that AI-assisted translation with native speaker review is practical and cost-effective.
 
@@ -818,30 +824,32 @@ ASO is how the app gets discovered organically. For a casual game, store listing
 
 ### App Store Assets Required
 
-| Asset | iOS (App Store Connect) | Android (Google Play Console) |
-|---|---|---|
-| **App Icon** | 1024x1024 PNG (already in `assets/images/`) | 512x512 PNG (already in `assets/images/`) |
-| **Screenshots** | 6.7" (1290x2796), 6.5" (1284x2778), 5.5" (1242x2208). Min 3, max 10. | Phone (16:9 or 9:16). Min 2, max 8. |
-| **iPad Screenshots** | 12.9" (2048x2732). Required if `supportsTablet: true`. | Tablet (16:9). Optional but recommended. |
-| **Preview Video** | Up to 30s, same resolution as screenshots. Optional but high-impact. | Up to 30s. Optional. |
-| **Feature Graphic** | N/A | 1024x500 PNG. Required. Shown at top of listing. |
-| **Short Description** | Subtitle, max 30 chars | Max 80 chars |
-| **Full Description** | Max 4000 chars | Max 4000 chars |
-| **Keywords** | Max 100 chars, comma-separated (iOS only) | Extracted from description (Google indexes the full text) |
-| **Category** | Games → Puzzle (or Board) | Games → Puzzle |
-| **Content Rating** | Via App Store questionnaire | Via Google Play questionnaire |
-| **Privacy Policy URL** | Required | Required |
+| Asset                  | iOS (App Store Connect)                                              | Android (Google Play Console)                             |
+| ---------------------- | -------------------------------------------------------------------- | --------------------------------------------------------- |
+| **App Icon**           | 1024x1024 PNG (already in `assets/images/`)                          | 512x512 PNG (already in `assets/images/`)                 |
+| **Screenshots**        | 6.7" (1290x2796), 6.5" (1284x2778), 5.5" (1242x2208). Min 3, max 10. | Phone (16:9 or 9:16). Min 2, max 8.                       |
+| **iPad Screenshots**   | 12.9" (2048x2732). Required if `supportsTablet: true`.               | Tablet (16:9). Optional but recommended.                  |
+| **Preview Video**      | Up to 30s, same resolution as screenshots. Optional but high-impact. | Up to 30s. Optional.                                      |
+| **Feature Graphic**    | N/A                                                                  | 1024x500 PNG. Required. Shown at top of listing.          |
+| **Short Description**  | Subtitle, max 30 chars                                               | Max 80 chars                                              |
+| **Full Description**   | Max 4000 chars                                                       | Max 4000 chars                                            |
+| **Keywords**           | Max 100 chars, comma-separated (iOS only)                            | Extracted from description (Google indexes the full text) |
+| **Category**           | Games → Puzzle (or Board)                                            | Games → Puzzle                                            |
+| **Content Rating**     | Via App Store questionnaire                                          | Via Google Play questionnaire                             |
+| **Privacy Policy URL** | Required                                                             | Required                                                  |
 
 ### Keyword Strategy
 
 Target keywords that players actually search for. Focus on intent + low competition:
 
 **Primary keywords** (high intent, include in title/subtitle):
+
 - "simon game"
 - "memory game"
 - "pattern game"
 
 **Secondary keywords** (include in description/keyword field):
+
 - "brain training"
 - "memory test"
 - "color sequence"
@@ -867,6 +875,7 @@ Screenshots are the highest-impact ASO asset after the icon. For a game, they sh
 6. **Theme variety** (Phase 4) — side-by-side of Neon, Retro, Pastel themes. Overlay text: "Make it yours."
 
 **Screenshot design guidelines:**
+
 - Use device frames (iPhone 15 Pro / Pixel 8 style)
 - Large, readable overlay text (not just raw screenshots)
 - Consistent color scheme matching the app's branding
@@ -890,6 +899,7 @@ Record from a real device using Xcode's screen recording (iOS) or `adb screenrec
 **Title**: "Eco Mi — Simon Memory Game" (30 chars, includes primary keyword)
 
 **Subtitle (iOS)** / **Short description (Android)**:
+
 - EN: "Classic pattern memory challenge" (31 chars)
 - ES: "Desafío de memoria de patrones" (30 chars)
 
@@ -921,6 +931,7 @@ Free to play. No account required. Just tap and play!
 ### ASO Iteration
 
 After launch, monitor:
+
 - **Keyword rankings** — tools like AppFollow, Sensor Tower, or AppTweak
 - **Conversion rate** — impressions → installs (available in App Store Connect / Play Console analytics)
 - **A/B testing** — Google Play supports native A/B tests for listings. Test different screenshots, descriptions, and feature graphics.
@@ -997,13 +1008,13 @@ Purchase state uses a **cache-locally, verify-remotely** pattern. MMKV stores en
 
 V1 ships with **zero backend dependencies**.
 
-| Concern | V1 Solution | Why It Works |
-|---|---|---|
-| Purchases | RevenueCat (hosted) | Receipt validation, entitlement management, cross-device restore — all handled. |
-| Daily challenges | Date-seeded RNG | `seed = parseInt(format(new Date(), 'yyyyMMdd'))` produces the same sequence for all players. No coordination needed. |
-| High scores | MMKV (local) | Personal bests are local-only. Good enough until global leaderboards are requested. |
-| Stats & achievements | MMKV (local) | All tracking is per-device. |
-| Score sharing | `expo-sharing` | Generates a local image/text. No server needed. |
+| Concern              | V1 Solution         | Why It Works                                                                                                          |
+| -------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Purchases            | RevenueCat (hosted) | Receipt validation, entitlement management, cross-device restore — all handled.                                       |
+| Daily challenges     | Date-seeded RNG     | `seed = parseInt(format(new Date(), 'yyyyMMdd'))` produces the same sequence for all players. No coordination needed. |
+| High scores          | MMKV (local)        | Personal bests are local-only. Good enough until global leaderboards are requested.                                   |
+| Stats & achievements | MMKV (local)        | All tracking is per-device.                                                                                           |
+| Score sharing        | `expo-sharing`      | Generates a local image/text. No server needed.                                                                       |
 
 **When to add a backend** (any of these become true):
 

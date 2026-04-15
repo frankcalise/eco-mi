@@ -12,6 +12,7 @@ import { RouteTracker } from "@/components/RouteTracker"
 import { useWebFonts } from "@/hooks/useWebFonts"
 import { initI18n } from "@/i18n"
 import { ThemeProvider } from "@/theme/context"
+import { UI_COLORS } from "@/theme/uiColors"
 
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? ""
 
@@ -99,11 +100,11 @@ function Root() {
 
 const styles = StyleSheet.create({
   splashBg: {
-    backgroundColor: "#1a1a2e",
+    backgroundColor: UI_COLORS.classicBackground,
     flex: 1,
   },
   stackContentBg: {
-    backgroundColor: "#1a1a2e",
+    backgroundColor: UI_COLORS.classicBackground,
   },
 })
 

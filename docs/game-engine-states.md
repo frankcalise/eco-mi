@@ -53,29 +53,29 @@ stateDiagram-v2
 
 ## State → Public API Mapping
 
-| Internal State | Public `gameState` | Description |
-|---|---|---|
-| `idle` | `"idle"` | Home screen, waiting to start |
-| `starting` | `"showing"` | 500ms delay before sequence begins |
-| `showing` | `"showing"` | Computer playing the sequence |
-| `waiting` | `"waiting"` | Player's turn to repeat |
-| `advancing` | `"showing"` | Brief pause between rounds |
-| `gameover` | `"gameover"` | Game ended, score displayed |
+| Internal State | Public `gameState` | Description                        |
+| -------------- | ------------------ | ---------------------------------- |
+| `idle`         | `"idle"`           | Home screen, waiting to start      |
+| `starting`     | `"showing"`        | 500ms delay before sequence begins |
+| `showing`      | `"showing"`        | Computer playing the sequence      |
+| `waiting`      | `"waiting"`        | Player's turn to repeat            |
+| `advancing`    | `"showing"`        | Brief pause between rounds         |
+| `gameover`     | `"gameover"`       | Game ended, score displayed        |
 
 ## Events
 
-| Event | From | To | Description |
-|---|---|---|---|
-| `START` | idle, gameover | starting | Begin a new game |
-| `SEQUENCE_DONE` | showing | waiting | Computer finished playing sequence |
-| `CORRECT_INPUT` | waiting | waiting/advancing | Player tapped correct color |
-| `WRONG_INPUT` | waiting | gameover/showing | Player tapped wrong color |
-| `INPUT_TIMEOUT` | waiting | gameover | Player idled too long |
-| `TIMER_EXPIRED` | waiting | gameover | Timed mode 60s clock hit zero |
-| `END_GAME` | showing, waiting | gameover | Player tapped End Game |
-| `CONTINUE` | gameover | starting | Rewarded ad continue |
-| `ADVANCE_COMPLETE` | advancing | showing | Next round sequence ready |
-| `RESET` | any | idle | Return to home screen |
+| Event              | From             | To                | Description                        |
+| ------------------ | ---------------- | ----------------- | ---------------------------------- |
+| `START`            | idle, gameover   | starting          | Begin a new game                   |
+| `SEQUENCE_DONE`    | showing          | waiting           | Computer finished playing sequence |
+| `CORRECT_INPUT`    | waiting          | waiting/advancing | Player tapped correct color        |
+| `WRONG_INPUT`      | waiting          | gameover/showing  | Player tapped wrong color          |
+| `INPUT_TIMEOUT`    | waiting          | gameover          | Player idled too long              |
+| `TIMER_EXPIRED`    | waiting          | gameover          | Timed mode 60s clock hit zero      |
+| `END_GAME`         | showing, waiting | gameover          | Player tapped End Game             |
+| `CONTINUE`         | gameover         | starting          | Rewarded ad continue               |
+| `ADVANCE_COMPLETE` | advancing        | showing           | Next round sequence ready          |
+| `RESET`            | any              | idle              | Return to home screen              |
 
 ## Bug Prevention
 
