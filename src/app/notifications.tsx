@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from "react-native"
-import { useRouter } from "expo-router"
 import * as ExpoNotifications from "expo-notifications"
+import { useRouter } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
 import { useSafeAreaInsets } from "react-native-safe-area-context"

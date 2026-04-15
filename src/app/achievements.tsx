@@ -18,7 +18,10 @@ export default function AchievementsScreen() {
 
   return (
     <View
-      style={[styles.container, { paddingTop: insets.top, backgroundColor: activeTheme.backgroundColor }]}
+      style={[
+        styles.container,
+        { paddingTop: insets.top, backgroundColor: activeTheme.backgroundColor },
+      ]}
     >
       <View style={styles.header}>
         <PressableScale

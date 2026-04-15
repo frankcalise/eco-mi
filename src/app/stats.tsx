@@ -34,7 +34,10 @@ export default function StatsScreen() {
 
   return (
     <View
-      style={[styles.container, { paddingTop: insets.top, backgroundColor: activeTheme.backgroundColor }]}
+      style={[
+        styles.container,
+        { paddingTop: insets.top, backgroundColor: activeTheme.backgroundColor },
+      ]}
     >
       <View style={styles.header}>
         <PressableScale
@@ -50,7 +53,11 @@ export default function StatsScreen() {
 
       {stats.gamesPlayed === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="game-controller-outline" size={48} color={activeTheme.secondaryTextColor} />
+          <Ionicons
+            name="game-controller-outline"
+            size={48}
+            color={activeTheme.secondaryTextColor}
+          />
           <Text style={[styles.emptyTitle, { color: activeTheme.textColor }]}>
             {t("stats:emptyTitle")}
           </Text>
@@ -122,6 +129,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
   },
+  playNowButton: {
+    alignItems: "center",
+    borderRadius: 10,
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+  playNowText: {
+    color: "white",
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 16,
+  },
   statCard: {
     alignItems: "center",
     borderRadius: 12,
@@ -138,20 +159,6 @@ const styles = StyleSheet.create({
   statValue: {
     fontFamily: "Oxanium-Bold",
     fontSize: 28,
-  },
-  playNowButton: {
-    alignItems: "center",
-    borderRadius: 10,
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  playNowText: {
-    color: "white",
-    fontFamily: "Oxanium-SemiBold",
-    fontSize: 16,
   },
   title: {
     fontFamily: "Oxanium-Bold",

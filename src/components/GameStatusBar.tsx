@@ -70,9 +70,7 @@ export function GameStatusBar({
                     default: { type: "spring", stiffness: 300, damping: 20 },
                   }}
                 >
-                  <View
-                    style={[styles.progressDot, { backgroundColor: theme.borderColor }]}
-                  >
+                  <View style={[styles.progressDot, { backgroundColor: theme.borderColor }]}>
                     <EaseView
                       style={[styles.progressDotFill, { backgroundColor: theme.accentColor }]}
                       initialAnimate={{ opacity: 0, scale: 0.5 }}

@@ -2,6 +2,7 @@ import { useRef, useState } from "react"
 
 import { REVIEW_LAST_PROMPT_DATE, STATS_GAMES_PLAYED } from "@/config/storageKeys"
 import { loadString, saveString } from "@/utils/storage"
+
 const MIN_GAMES_FOR_REVIEW = 5
 const COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
 const PROMPT_DELAY_MS = 2500 // show 2.5s after game over

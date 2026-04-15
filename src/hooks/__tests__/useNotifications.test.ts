@@ -1,5 +1,5 @@
-import { renderHook, act } from "@testing-library/react-native"
 import * as Notifications from "expo-notifications"
+import { renderHook, act } from "@testing-library/react-native"
 
 import {
   DAILY_CURRENT_STREAK,
@@ -107,7 +107,8 @@ describe("useNotifications", () => {
     await act(async () => {})
 
     const dailyCall = mockSchedule.mock.calls.find(
-      (call: unknown[]) => (call[0] as { content: { body: string } }).content.body === "notifications:dailyReminder",
+      (call: unknown[]) =>
+        (call[0] as { content: { body: string } }).content.body === "notifications:dailyReminder",
     )
     expect(dailyCall).toBeDefined()
 
@@ -124,7 +125,8 @@ describe("useNotifications", () => {
     await act(async () => {})
 
     const dailyCall = mockSchedule.mock.calls.find(
-      (call: unknown[]) => (call[0] as { content: { body: string } }).content.body === "notifications:dailyReminder",
+      (call: unknown[]) =>
+        (call[0] as { content: { body: string } }).content.body === "notifications:dailyReminder",
     )
     expect(dailyCall).toBeUndefined()
   })
@@ -137,7 +139,8 @@ describe("useNotifications", () => {
     await act(async () => {})
 
     const dailyCall = mockSchedule.mock.calls.find(
-      (call: unknown[]) => (call[0] as { content: { body: string } }).content.body === "notifications:dailyReminder",
+      (call: unknown[]) =>
+        (call[0] as { content: { body: string } }).content.body === "notifications:dailyReminder",
     )
     expect(dailyCall).toBeUndefined()
   })
@@ -150,9 +153,10 @@ describe("useNotifications", () => {
     renderHook(() => useNotifications())
     await act(async () => {})
 
-    const streakCall = mockSchedule.mock.calls.find(
-      (call: unknown[]) =>
-        ((call[0] as { content: { body: string } }).content.body as string).startsWith("notifications:streakAtRisk"),
+    const streakCall = mockSchedule.mock.calls.find((call: unknown[]) =>
+      ((call[0] as { content: { body: string } }).content.body as string).startsWith(
+        "notifications:streakAtRisk",
+      ),
     )
     expect(streakCall).toBeDefined()
 
@@ -168,9 +172,10 @@ describe("useNotifications", () => {
     renderHook(() => useNotifications())
     await act(async () => {})
 
-    const streakCall = mockSchedule.mock.calls.find(
-      (call: unknown[]) =>
-        ((call[0] as { content: { body: string } }).content.body as string).startsWith("notifications:streakAtRisk"),
+    const streakCall = mockSchedule.mock.calls.find((call: unknown[]) =>
+      ((call[0] as { content: { body: string } }).content.body as string).startsWith(
+        "notifications:streakAtRisk",
+      ),
     )
     expect(streakCall).toBeUndefined()
   })
@@ -182,7 +187,8 @@ describe("useNotifications", () => {
     await act(async () => {})
 
     const winBackCall = mockSchedule.mock.calls.find(
-      (call: unknown[]) => (call[0] as { content: { body: string } }).content.body === "notifications:winBack",
+      (call: unknown[]) =>
+        (call[0] as { content: { body: string } }).content.body === "notifications:winBack",
     )
     expect(winBackCall).toBeDefined()
 

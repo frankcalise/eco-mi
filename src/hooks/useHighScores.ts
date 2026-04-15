@@ -1,5 +1,6 @@
 import { HIGH_SCORES_PREFIX } from "@/config/storageKeys"
 import { load, save } from "@/utils/storage"
+
 const MAX_ENTRIES = 10
 
 export type GameMode = "classic" | "daily" | "timed" | "reverse" | "chaos"

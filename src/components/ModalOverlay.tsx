@@ -11,7 +11,13 @@ type ModalOverlayProps = PropsWithChildren<{
   cardStyle?: ViewStyle
 }>
 
-export function ModalOverlay({ visible, theme, onDismiss, cardStyle, children }: ModalOverlayProps) {
+export function ModalOverlay({
+  visible,
+  theme,
+  onDismiss,
+  cardStyle,
+  children,
+}: ModalOverlayProps) {
   if (!visible) return null
 
   return (

@@ -87,9 +87,7 @@ export const gameEngineMachine = setup({
       score: context.score + context.sequence.length * 10,
       level: context.level + 1,
       sequencesCompleted:
-        context.mode === "timed"
-          ? context.sequencesCompleted + 1
-          : context.sequencesCompleted,
+        context.mode === "timed" ? context.sequencesCompleted + 1 : context.sequencesCompleted,
     })),
     setAdvancedSequence: assign(({ event }) => {
       if (event.type !== "ADVANCE_COMPLETE") return {}

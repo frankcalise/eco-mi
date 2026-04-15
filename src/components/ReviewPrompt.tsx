@@ -32,12 +32,7 @@ export function ReviewPrompt({ visible, theme, onDismiss, onResponse }: ReviewPr
   }
 
   return (
-    <ModalOverlay
-      visible={visible}
-      theme={theme}
-      onDismiss={onDismiss}
-      cardStyle={styles.card}
-    >
+    <ModalOverlay visible={visible} theme={theme} onDismiss={onDismiss} cardStyle={styles.card}>
       <Text style={[styles.title, { color: theme.textColor }]}>{t("review:title")}</Text>
       <Text style={[styles.subtitle, { color: theme.secondaryTextColor }]}>
         {t("review:subtitle")}

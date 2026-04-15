@@ -15,55 +15,56 @@ type ShareScoreCardProps = {
   theme: GameTheme
 }
 
-export const ShareScoreCard = forwardRef<ViewShot, ShareScoreCardProps>(
-  function ShareScoreCard({ score, level, mode, isNewHighScore, theme }, ref) {
-    const { t } = useTranslation()
+export const ShareScoreCard = forwardRef<ViewShot, ShareScoreCardProps>(function ShareScoreCard(
+  { score, level, mode, isNewHighScore, theme },
+  ref,
+) {
+  const { t } = useTranslation()
 
-    return (
-      <ViewShot ref={ref} options={{ format: "png", quality: 1.0 }} style={styles.offscreen}>
-        <View style={[styles.card, { backgroundColor: theme.backgroundColor }]}>
-          <Text style={[styles.appName, { color: theme.secondaryTextColor }]}>Eco Mi</Text>
+  return (
+    <ViewShot ref={ref} options={{ format: "png", quality: 1.0 }} style={styles.offscreen}>
+      <View style={[styles.card, { backgroundColor: theme.backgroundColor }]}>
+        <Text style={[styles.appName, { color: theme.secondaryTextColor }]}>Eco Mi</Text>
 
-          {isNewHighScore && (
-            <View style={styles.badge}>
-              <Ionicons name="trophy" size={16} color={theme.warningColor} />
-              <Text style={[styles.badgeText, { color: theme.warningColor }]}>
-                {t("game:newHighScore")}
-              </Text>
-            </View>
-          )}
-
-          <Text style={[styles.scoreValue, { color: theme.textColor }]}>{score}</Text>
-          <Text style={[styles.scoreLabel, { color: theme.secondaryTextColor }]}>
-            {t("game:score")}
-          </Text>
-
-          <View style={styles.detailRow}>
-            <View style={styles.detail}>
-              <Text style={[styles.detailValue, { color: theme.textColor }]}>{level}</Text>
-              <Text style={[styles.detailLabel, { color: theme.secondaryTextColor }]}>
-                {t("game:level")}
-              </Text>
-            </View>
-            <View style={[styles.divider, { backgroundColor: theme.borderColor }]} />
-            <View style={styles.detail}>
-              <Text style={[styles.detailValue, { color: theme.textColor }]}>
-                {t(`game:modes.${mode}`)}
-              </Text>
-              <Text style={[styles.detailLabel, { color: theme.secondaryTextColor }]}>
-                {t("game:mode")}
-              </Text>
-            </View>
+        {isNewHighScore && (
+          <View style={styles.badge}>
+            <Ionicons name="trophy" size={16} color={theme.warningColor} />
+            <Text style={[styles.badgeText, { color: theme.warningColor }]}>
+              {t("game:newHighScore")}
+            </Text>
           </View>
+        )}
 
-          <Text style={[styles.watermark, { color: theme.secondaryTextColor }]}>
-            {t("game:shareCardWatermark")}
-          </Text>
+        <Text style={[styles.scoreValue, { color: theme.textColor }]}>{score}</Text>
+        <Text style={[styles.scoreLabel, { color: theme.secondaryTextColor }]}>
+          {t("game:score")}
+        </Text>
+
+        <View style={styles.detailRow}>
+          <View style={styles.detail}>
+            <Text style={[styles.detailValue, { color: theme.textColor }]}>{level}</Text>
+            <Text style={[styles.detailLabel, { color: theme.secondaryTextColor }]}>
+              {t("game:level")}
+            </Text>
+          </View>
+          <View style={[styles.divider, { backgroundColor: theme.borderColor }]} />
+          <View style={styles.detail}>
+            <Text style={[styles.detailValue, { color: theme.textColor }]}>
+              {t(`game:modes.${mode}`)}
+            </Text>
+            <Text style={[styles.detailLabel, { color: theme.secondaryTextColor }]}>
+              {t("game:mode")}
+            </Text>
+          </View>
         </View>
-      </ViewShot>
-    )
-  },
-)
+
+        <Text style={[styles.watermark, { color: theme.secondaryTextColor }]}>
+          {t("game:shareCardWatermark")}
+        </Text>
+      </View>
+    </ViewShot>
+  )
+})
 
 const styles = StyleSheet.create({
   appName: {

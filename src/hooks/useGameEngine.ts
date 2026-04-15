@@ -1,14 +1,10 @@
 import { useState, useEffect, useRef } from "react"
 import * as Haptics from "expo-haptics"
-import type { OscillatorType } from "react-native-audio-api"
 import { useMachine } from "@xstate/react"
+import type { OscillatorType } from "react-native-audio-api"
 
 import { getToneDuration, getSequenceInterval, getInputTimeout } from "@/config/difficulty"
 import { pickShuffleSequence, getShuffleStepDelay } from "@/config/shuffleAnimations"
-import { type GameTheme, gameThemes } from "@/config/themes"
-import { useAudioTones } from "@/hooks/useAudioTones"
-import { recordGameResult } from "@/hooks/useStats"
-import { saveString, loadString } from "@/utils/storage"
 import {
   DAILY_CURRENT_STREAK,
   DAILY_LAST_PLAYED,
@@ -17,6 +13,10 @@ import {
   SETTINGS_SOUND_ENABLED,
   STATS_LONGEST_STREAK,
 } from "@/config/storageKeys"
+import { type GameTheme, gameThemes } from "@/config/themes"
+import { useAudioTones } from "@/hooks/useAudioTones"
+import { recordGameResult } from "@/hooks/useStats"
+import { saveString, loadString } from "@/utils/storage"
 
 import {
   gameEngineMachine,
@@ -46,10 +46,30 @@ const buttonPositionMap: Record<Color, "topLeft" | "topRight" | "bottomLeft" | "
 
 export function getColorMapForTheme(theme: GameTheme) {
   return {
-    red: { color: theme.buttonColors.red.color, activeColor: theme.buttonColors.red.activeColor, sound: soundFrequencies.red, position: buttonPositionMap.red },
-    blue: { color: theme.buttonColors.blue.color, activeColor: theme.buttonColors.blue.activeColor, sound: soundFrequencies.blue, position: buttonPositionMap.blue },
-    green: { color: theme.buttonColors.green.color, activeColor: theme.buttonColors.green.activeColor, sound: soundFrequencies.green, position: buttonPositionMap.green },
-    yellow: { color: theme.buttonColors.yellow.color, activeColor: theme.buttonColors.yellow.activeColor, sound: soundFrequencies.yellow, position: buttonPositionMap.yellow },
+    red: {
+      color: theme.buttonColors.red.color,
+      activeColor: theme.buttonColors.red.activeColor,
+      sound: soundFrequencies.red,
+      position: buttonPositionMap.red,
+    },
+    blue: {
+      color: theme.buttonColors.blue.color,
+      activeColor: theme.buttonColors.blue.activeColor,
+      sound: soundFrequencies.blue,
+      position: buttonPositionMap.blue,
+    },
+    green: {
+      color: theme.buttonColors.green.color,
+      activeColor: theme.buttonColors.green.activeColor,
+      sound: soundFrequencies.green,
+      position: buttonPositionMap.green,
+    },
+    yellow: {
+      color: theme.buttonColors.yellow.color,
+      activeColor: theme.buttonColors.yellow.activeColor,
+      sound: soundFrequencies.yellow,
+      position: buttonPositionMap.yellow,
+    },
   }
 }
 
@@ -104,7 +124,10 @@ function highScoreKey(mode: string): string {
 
 function getDailySeed(): number {
   const now = new Date()
-  return parseInt(`${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`, 10)
+  return parseInt(
+    `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`,
+    10,
+  )
 }
 
 function getTodayKey(): string {
@@ -132,7 +155,9 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
   // Local UI state
   const [activeButton, setActiveButton] = useState<Color | null>(null)
-  const [soundEnabled, setSoundEnabled] = useState(() => loadString(SETTINGS_SOUND_ENABLED) !== "false")
+  const [soundEnabled, setSoundEnabled] = useState(
+    () => loadString(SETTINGS_SOUND_ENABLED) !== "false",
+  )
   const [wrongFlash, setWrongFlash] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [inputTimeRemaining, setInputTimeRemaining] = useState<number | null>(null)
@@ -168,21 +193,38 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const activeColorMap = options?.theme ? getColorMapForTheme(options.theme) : colorMap
 
   const {
-    initialize, cleanup, playSound, playPreview, playJingle,
-    playGameOverJingle, playHighScoreJingle, startContinuousSound, stopContinuousSoundWithFade,
-  } = useAudioTones(activeColorMap, soundEnabled, options?.oscillatorType, options?.onAudioContextRecycle)
+    initialize,
+    cleanup,
+    playSound,
+    playPreview,
+    playJingle,
+    playGameOverJingle,
+    playHighScoreJingle,
+    startContinuousSound,
+    stopContinuousSoundWithFade,
+  } = useAudioTones(
+    activeColorMap,
+    soundEnabled,
+    options?.oscillatorType,
+    options?.onAudioContextRecycle,
+  )
 
   const ctx = state.context
   const gameState = toPublicState(state.value as string)
   const mode = ctx.mode
 
   // Keep scoreRef in sync for timer callbacks
-  useEffect(() => { scoreRef.current = ctx.score }, [ctx.score])
+  useEffect(() => {
+    scoreRef.current = ctx.score
+  }, [ctx.score])
 
   // --- Timeout management ---
 
   function addTimeout(fn: () => void, ms: number) {
-    const id = setTimeout(() => { timeoutsRef.current.delete(id); fn() }, ms)
+    const id = setTimeout(() => {
+      timeoutsRef.current.delete(id)
+      fn()
+    }, ms)
     timeoutsRef.current.add(id)
     return id
   }
@@ -190,12 +232,17 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   function clearAllTimeouts() {
     for (const id of timeoutsRef.current) clearTimeout(id)
     timeoutsRef.current.clear()
-    if (inputCountdownRef.current) { clearInterval(inputCountdownRef.current); inputCountdownRef.current = null }
+    if (inputCountdownRef.current) {
+      clearInterval(inputCountdownRef.current)
+      inputCountdownRef.current = null
+    }
     setInputTimeRemaining(null)
   }
 
   function getNextColorIndex(): number {
-    return seededRng.current ? Math.floor(seededRng.current() * colors.length) : Math.floor(Math.random() * colors.length)
+    return seededRng.current
+      ? Math.floor(seededRng.current() * colors.length)
+      : Math.floor(Math.random() * colors.length)
   }
 
   // --- Persistence ---
@@ -205,7 +252,9 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     send({ type: "SET_HIGH_SCORE", highScore: saved ? parseInt(saved, 10) : 0 })
   }
 
-  function saveHighScore(s: number) { saveString(highScoreKey(mode), s.toString()) }
+  function saveHighScore(s: number) {
+    saveString(highScoreKey(mode), s.toString())
+  }
 
   function saveDailyResult(finalScore: number) {
     const todayKey = getTodayKey()
@@ -214,7 +263,8 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     if (finalScore > currentBest) saveString(bestKey, finalScore.toString())
 
     const lastPlayed = loadString(DAILY_LAST_PLAYED) ?? ""
-    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1)
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
     const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`
 
     if (lastPlayed === yesterdayKey) {
@@ -234,7 +284,10 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   // --- Timers ---
 
   function stopTimer() {
-    if (timerIntervalRef.current) { clearInterval(timerIntervalRef.current); timerIntervalRef.current = null }
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current)
+      timerIntervalRef.current = null
+    }
     setTimeRemaining(null)
   }
 
@@ -245,7 +298,8 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     timerIntervalRef.current = setInterval(() => {
       const remaining = durationSec + timerBonusRef.current - (Date.now() - startTime) / 1000
       if (remaining <= 0) {
-        stopTimer(); clearAllTimeouts()
+        stopTimer()
+        clearAllTimeouts()
         send({ type: "TIMER_EXPIRED" })
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
         handleGameOverSideEffects()
@@ -284,28 +338,34 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     const flashDuration = Math.min(toneDuration, interval - 80)
 
     seq.forEach((color, index) => {
-      addTimeout(() => {
-        flashButton(color, flashDuration)
-        if (index === seq.length - 1) {
-          addTimeout(() => {
-            send({ type: "SEQUENCE_DONE" })
-            if (mode !== "timed") {
-              const totalMs = getInputTimeout(seq.length)
-              const startTime = Date.now()
-              setInputTimeRemaining(null)
-              inputCountdownRef.current = setInterval(() => {
-                const elapsed = Date.now() - startTime
-                const remaining = Math.ceil((totalMs - elapsed) / 1000)
-                if (remaining <= 5 && remaining > 0) setInputTimeRemaining(remaining)
-                else if (remaining <= 0) {
-                  if (inputCountdownRef.current) { clearInterval(inputCountdownRef.current); inputCountdownRef.current = null }
-                  setInputTimeRemaining(null)
-                }
-              }, 200)
-            }
-          }, flashDuration + 100)
-        }
-      }, (index + 1) * interval)
+      addTimeout(
+        () => {
+          flashButton(color, flashDuration)
+          if (index === seq.length - 1) {
+            addTimeout(() => {
+              send({ type: "SEQUENCE_DONE" })
+              if (mode !== "timed") {
+                const totalMs = getInputTimeout(seq.length)
+                const startTime = Date.now()
+                setInputTimeRemaining(null)
+                inputCountdownRef.current = setInterval(() => {
+                  const elapsed = Date.now() - startTime
+                  const remaining = Math.ceil((totalMs - elapsed) / 1000)
+                  if (remaining <= 5 && remaining > 0) setInputTimeRemaining(remaining)
+                  else if (remaining <= 0) {
+                    if (inputCountdownRef.current) {
+                      clearInterval(inputCountdownRef.current)
+                      inputCountdownRef.current = null
+                    }
+                    setInputTimeRemaining(null)
+                  }
+                }, 200)
+              }
+            }, flashDuration + 100)
+          }
+        },
+        (index + 1) * interval,
+      )
     })
   }
 
@@ -327,10 +387,16 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   useEffect(() => {
     initialize()
     loadHighScore()
-    return () => { clearAllTimeouts(); stopTimer(); cleanup() }
+    return () => {
+      clearAllTimeouts()
+      stopTimer()
+      cleanup()
+    }
   }, [])
 
-  useEffect(() => { loadHighScore() }, [mode])
+  useEffect(() => {
+    loadHighScore()
+  }, [mode])
 
   // Clean up countdown interval when machine exits waiting (e.g., INPUT_TIMEOUT fires autonomously)
   useEffect(() => {
@@ -357,7 +423,8 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   // --- Public actions ---
 
   function startGame() {
-    clearAllTimeouts(); stopTimer()
+    clearAllTimeouts()
+    stopTimer()
     inputLocked.current = false
     timerBonusRef.current = 0
     wrongCountRef.current = 0
@@ -367,7 +434,9 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     setTimerDelta(null)
     sessionStartTimeRef.current = Date.now()
     setSessionTime(0)
-    setActiveButton(null); setButtonPositions([...colors]); setIsShuffling(false)
+    setActiveButton(null)
+    setButtonPositions([...colors])
+    setIsShuffling(false)
 
     // Seed RNG
     if (mode === "daily") seededRng.current = mulberry32(getDailySeed())
@@ -386,16 +455,20 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   }
 
   function resetGame() {
-    clearAllTimeouts(); stopTimer()
+    clearAllTimeouts()
+    stopTimer()
     inputLocked.current = false
-    setActiveButton(null); setButtonPositions([...colors]); setIsShuffling(false)
+    setActiveButton(null)
+    setButtonPositions([...colors])
+    setIsShuffling(false)
     send({ type: "RESET" })
   }
 
   function endGame() {
     const sv = state.value as string
     if (sv !== "showing" && sv !== "waiting") return
-    clearAllTimeouts(); stopTimer()
+    clearAllTimeouts()
+    stopTimer()
     inputLocked.current = false
     setActiveButton(null)
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
@@ -432,7 +505,9 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   function handleButtonRelease(color: Color) {
     if (state.value !== "waiting") return
     const toneDuration = getToneDuration(ctx.level)
-    const pressDuration = buttonPressStartTime.current ? Date.now() - buttonPressStartTime.current : 0
+    const pressDuration = buttonPressStartTime.current
+      ? Date.now() - buttonPressStartTime.current
+      : 0
 
     if (pressDuration < toneDuration) {
       stopContinuousSoundWithFade(color, 100)
@@ -443,12 +518,16 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     }
 
     // Clear input countdown
-    if (inputCountdownRef.current) { clearInterval(inputCountdownRef.current); inputCountdownRef.current = null }
+    if (inputCountdownRef.current) {
+      clearInterval(inputCountdownRef.current)
+      inputCountdownRef.current = null
+    }
     setInputTimeRemaining(null)
 
     // Check correctness
     const newPlayerLen = ctx.playerSequence.length + 1
-    const expectedIndex = mode === "reverse" ? ctx.sequence.length - 1 - (newPlayerLen - 1) : newPlayerLen - 1
+    const expectedIndex =
+      mode === "reverse" ? ctx.sequence.length - 1 - (newPlayerLen - 1) : newPlayerLen - 1
     const expectedColor = ctx.sequence[expectedIndex]
 
     if (color !== expectedColor) {

@@ -1,12 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  useWindowDimensions,
-  Modal,
-} from "react-native"
+import { View, Text, Pressable, StyleSheet, useWindowDimensions, Modal } from "react-native"
 import * as Haptics from "expo-haptics"
 import { useRouter, useFocusEffect } from "expo-router"
 import { StatusBar } from "expo-status-bar"
@@ -20,19 +13,23 @@ import { AnimatedNumber } from "@/components/AnimatedNumber"
 import { GameButton } from "@/components/GameButton"
 import { GameHeader } from "@/components/GameHeader"
 import { GameStatusBar } from "@/components/GameStatusBar"
+import { InitialEntryModal } from "@/components/InitialEntryModal"
 import { ModeItem } from "@/components/ModeItem"
 import { OnboardingTooltip } from "@/components/OnboardingTooltip"
-import { StreakBanner } from "@/components/StreakBanner"
-import { InitialEntryModal } from "@/components/InitialEntryModal"
 import { PressableScale } from "@/components/PressableScale"
+import { StreakBanner } from "@/components/StreakBanner"
 import { TimerRing } from "@/components/TimerRing"
-import { DAILY_CURRENT_STREAK, ONBOARDING_COMPLETED, STATS_GAMES_PLAYED } from "@/config/storageKeys"
+import {
+  DAILY_CURRENT_STREAK,
+  ONBOARDING_COMPLETED,
+  STATS_GAMES_PLAYED,
+} from "@/config/storageKeys"
 import { useAds } from "@/hooks/useAds"
 import { useGameEngine, colors, type GameMode } from "@/hooks/useGameEngine"
 import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
+import { useNotifications, shouldShowNotificationPrompt } from "@/hooks/useNotifications"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useSoundPack } from "@/hooks/useSoundPack"
-import { useNotifications, shouldShowNotificationPrompt } from "@/hooks/useNotifications"
 import { useTheme } from "@/hooks/useTheme"
 import { useGameOverStore } from "@/stores/gameOverStore"
 import { usePendingActionStore } from "@/stores/pendingActionStore"
@@ -141,7 +138,9 @@ export function GameScreen() {
   const [pulsePhase, setPulsePhase] = useState<"bright" | "dim">("bright")
   const pulseTimers = useRef<ReturnType<typeof setTimeout>[]>([])
   const isIdle = gameState === "idle"
-  const [onboardingDone, setOnboardingDone] = useState(() => loadString(ONBOARDING_COMPLETED) === "true")
+  const [onboardingDone, setOnboardingDone] = useState(
+    () => loadString(ONBOARDING_COMPLETED) === "true",
+  )
   const showOnboardingTooltip = !onboardingDone && gameState === "waiting"
 
   useEffect(() => {
@@ -308,7 +307,6 @@ export function GameScreen() {
     navigateToGameOver()
   }
 
-
   const showTimerRing = mode === "timed" && timeRemaining !== null && gameState !== "idle"
 
   const gameContainerStyle = {
@@ -333,276 +331,278 @@ export function GameScreen() {
           },
         ]}
       >
-        <StatusBar style={activeTheme.statusBarStyle} backgroundColor={activeTheme.backgroundColor} />
+        <StatusBar
+          style={activeTheme.statusBarStyle}
+          backgroundColor={activeTheme.backgroundColor}
+        />
 
-      <GameHeader
-        mode={mode}
-        gameState={gameState}
-        isIdle={isIdle}
-        theme={activeTheme}
-        onModePress={() => setModeModalVisible(true)}
-        onSettingsPress={() => router.push("/settings")}
-      />
+        <GameHeader
+          mode={mode}
+          gameState={gameState}
+          isIdle={isIdle}
+          theme={activeTheme}
+          onModePress={() => setModeModalVisible(true)}
+          onSettingsPress={() => router.push("/settings")}
+        />
 
-      {/* Score Display */}
-      <View style={styles.scoreContainer}>
-        <View style={[styles.scoreBox, { backgroundColor: activeTheme.surfaceColor }]}>
-          <Text style={[styles.scoreLabel, { color: activeTheme.secondaryTextColor }]}>
-            {t("game:level")}
-          </Text>
-          <AnimatedNumber
-            testID="text-level"
-            accessibilityLabel={t("game:level")}
-            value={level}
-            style={[styles.scoreValue, { color: activeTheme.textColor }]}
-          />
-        </View>
-        <View style={[styles.scoreBox, { backgroundColor: activeTheme.surfaceColor }]}>
-          <Text style={[styles.scoreLabel, { color: activeTheme.secondaryTextColor }]}>
-            {t("game:score")}
-          </Text>
-          <AnimatedNumber
-            testID="text-score"
-            accessibilityLabel={t("game:score")}
-            value={score}
-            style={[styles.scoreValue, { color: activeTheme.textColor }]}
-          />
-        </View>
-        <View style={[styles.scoreBox, { backgroundColor: activeTheme.surfaceColor }]}>
-          <Text style={[styles.scoreLabel, { color: activeTheme.secondaryTextColor }]}>
-            {t("game:best")}
-          </Text>
-          <AnimatedNumber
-            testID="text-high-score"
-            accessibilityLabel={t("game:best")}
-            value={highScore}
-            style={[styles.scoreValue, { color: activeTheme.textColor }]}
-          />
-        </View>
-      </View>
-
-      {/* Reserved space prevents layout shift when tooltip appears on first run */}
-      <View style={styles.onboardingSlot}>
-        <OnboardingTooltip visible={showOnboardingTooltip} theme={activeTheme} />
-      </View>
-
-      {/* Game Board */}
-      <View style={styles.gameBoard}>
-        {wrongFlash && (
-          <EaseView
-            style={styles.wrongFlashOverlay}
-            initialAnimate={{ opacity: 0 }}
-            animate={{ opacity: 0.25 }}
-            transition={{ default: { type: "timing", duration: 100 } }}
-          />
-        )}
-        <View style={gameContainerStyle}>
-          {buttonPositions.map((color, index) => (
-            <GameButton
-              key={color}
-              color={color}
-              index={index}
-              isActive={activeButton === color}
-              disabled={gameState !== "waiting" || isShuffling}
-              buttonSize={buttonSize}
-              gameSize={gameSize}
-              isShuffling={isShuffling}
-              onPressIn={() => handleButtonTouch(color)}
-              onPressOut={() => handleButtonRelease(color)}
-              themeColor={activeTheme.buttonColors[color].color}
-              themeActiveColor={activeTheme.buttonColors[color].activeColor}
+        {/* Score Display */}
+        <View style={styles.scoreContainer}>
+          <View style={[styles.scoreBox, { backgroundColor: activeTheme.surfaceColor }]}>
+            <Text style={[styles.scoreLabel, { color: activeTheme.secondaryTextColor }]}>
+              {t("game:level")}
+            </Text>
+            <AnimatedNumber
+              testID="text-level"
+              accessibilityLabel={t("game:level")}
+              value={level}
+              style={[styles.scoreValue, { color: activeTheme.textColor }]}
             />
-          ))}
+          </View>
+          <View style={[styles.scoreBox, { backgroundColor: activeTheme.surfaceColor }]}>
+            <Text style={[styles.scoreLabel, { color: activeTheme.secondaryTextColor }]}>
+              {t("game:score")}
+            </Text>
+            <AnimatedNumber
+              testID="text-score"
+              accessibilityLabel={t("game:score")}
+              value={score}
+              style={[styles.scoreValue, { color: activeTheme.textColor }]}
+            />
+          </View>
+          <View style={[styles.scoreBox, { backgroundColor: activeTheme.surfaceColor }]}>
+            <Text style={[styles.scoreLabel, { color: activeTheme.secondaryTextColor }]}>
+              {t("game:best")}
+            </Text>
+            <AnimatedNumber
+              testID="text-high-score"
+              accessibilityLabel={t("game:best")}
+              value={highScore}
+              style={[styles.scoreValue, { color: activeTheme.textColor }]}
+            />
+          </View>
+        </View>
 
-          {/* Center Circle */}
-          <View style={styles.centerCircleWrapper}>
-            {showTimerRing && (
-              <View style={styles.timerRingContainer}>
-                <TimerRing
-                  progress={timeRemaining! / 60}
-                  size={80}
-                  strokeWidth={4}
-                  theme={activeTheme}
-                />
-              </View>
-            )}
-            <View
-              style={[
-                styles.centerCircle,
-                {
-                  backgroundColor: activeTheme.backgroundColor,
-                  borderColor: activeTheme.borderColor,
-                },
-                showTimerRing && styles.centerCircleNoRing,
-              ]}
-            >
-              {mode === "timed" && timeRemaining !== null && gameState !== "idle" ? (
-                <AnimatedCountdown
-                  value={Math.ceil(timeRemaining)}
-                  color={timeRemaining <= 10 ? "#ef4444" : activeTheme.textColor}
-                  style={styles.centerTimer}
-                />
-              ) : inputTimeRemaining !== null ? (
-                <AnimatedCountdown
-                  value={inputTimeRemaining}
-                  color={inputTimeRemaining <= 3 ? "#ef4444" : "#fbbf24"}
-                  style={styles.centerTimer}
-                />
-              ) : (
-                <Text style={[styles.centerText, { color: activeTheme.textColor }]}>
-                  {t("game:title")}
-                </Text>
+        {/* Reserved space prevents layout shift when tooltip appears on first run */}
+        <View style={styles.onboardingSlot}>
+          <OnboardingTooltip visible={showOnboardingTooltip} theme={activeTheme} />
+        </View>
+
+        {/* Game Board */}
+        <View style={styles.gameBoard}>
+          {wrongFlash && (
+            <EaseView
+              style={styles.wrongFlashOverlay}
+              initialAnimate={{ opacity: 0 }}
+              animate={{ opacity: 0.25 }}
+              transition={{ default: { type: "timing", duration: 100 } }}
+            />
+          )}
+          <View style={gameContainerStyle}>
+            {buttonPositions.map((color, index) => (
+              <GameButton
+                key={color}
+                color={color}
+                index={index}
+                isActive={activeButton === color}
+                disabled={gameState !== "waiting" || isShuffling}
+                buttonSize={buttonSize}
+                gameSize={gameSize}
+                isShuffling={isShuffling}
+                onPressIn={() => handleButtonTouch(color)}
+                onPressOut={() => handleButtonRelease(color)}
+                themeColor={activeTheme.buttonColors[color].color}
+                themeActiveColor={activeTheme.buttonColors[color].activeColor}
+              />
+            ))}
+
+            {/* Center Circle */}
+            <View style={styles.centerCircleWrapper}>
+              {showTimerRing && (
+                <View style={styles.timerRingContainer}>
+                  <TimerRing
+                    progress={timeRemaining! / 60}
+                    size={80}
+                    strokeWidth={4}
+                    theme={activeTheme}
+                  />
+                </View>
               )}
+              <View
+                style={[
+                  styles.centerCircle,
+                  {
+                    backgroundColor: activeTheme.backgroundColor,
+                    borderColor: activeTheme.borderColor,
+                  },
+                  showTimerRing && styles.centerCircleNoRing,
+                ]}
+              >
+                {mode === "timed" && timeRemaining !== null && gameState !== "idle" ? (
+                  <AnimatedCountdown
+                    value={Math.ceil(timeRemaining)}
+                    color={timeRemaining <= 10 ? "#ef4444" : activeTheme.textColor}
+                    style={styles.centerTimer}
+                  />
+                ) : inputTimeRemaining !== null ? (
+                  <AnimatedCountdown
+                    value={inputTimeRemaining}
+                    color={inputTimeRemaining <= 3 ? "#ef4444" : "#fbbf24"}
+                    style={styles.centerTimer}
+                  />
+                ) : (
+                  <Text style={[styles.centerText, { color: activeTheme.textColor }]}>
+                    {t("game:title")}
+                  </Text>
+                )}
+              </View>
             </View>
           </View>
         </View>
-      </View>
 
-      {/* Controls */}
-      <View style={styles.controlsContainer}>
-        {gameState === "idle" && (
-          <>
-            <StreakBanner theme={activeTheme} />
-            <EaseView
-              animate={{ scale: 1.02 }}
-              transition={{
-                default: { type: "timing", duration: 1200, easing: "easeInOut", loop: "reverse" },
-              }}
-              style={styles.startButtonWrapper}
+        {/* Controls */}
+        <View style={styles.controlsContainer}>
+          {gameState === "idle" && (
+            <>
+              <StreakBanner theme={activeTheme} />
+              <EaseView
+                animate={{ scale: 1.02 }}
+                transition={{
+                  default: { type: "timing", duration: 1200, easing: "easeInOut", loop: "reverse" },
+                }}
+                style={styles.startButtonWrapper}
+              >
+                <PressableScale
+                  testID="btn-start"
+                  accessibilityLabel={t("a11y:startGame")}
+                  accessibilityRole="button"
+                  style={[styles.startButton, { backgroundColor: activeTheme.accentColor }]}
+                  onPress={handleStartGame}
+                >
+                  <Ionicons name="play" size={24} color="white" />
+                  <Text style={styles.startButtonText}>{t("game:startGame")}</Text>
+                </PressableScale>
+              </EaseView>
+              <View style={styles.idleActions}>
+                <PressableScale
+                  testID="btn-leaderboard"
+                  accessibilityLabel={t("a11y:leaderboard")}
+                  accessibilityRole="button"
+                  style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                    router.push({ pathname: "/leaderboard", params: { mode } })
+                  }}
+                >
+                  <Ionicons name="trophy" size={20} color={activeTheme.warningColor} />
+                </PressableScale>
+                <PressableScale
+                  testID="btn-stats"
+                  accessibilityLabel={t("a11y:stats")}
+                  accessibilityRole="button"
+                  style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                    router.push("/stats")
+                  }}
+                >
+                  <Ionicons name="stats-chart" size={20} color={activeTheme.secondaryTextColor} />
+                </PressableScale>
+                <PressableScale
+                  testID="btn-achievements"
+                  accessibilityLabel={t("a11y:achievements")}
+                  accessibilityRole="button"
+                  style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                    router.push("/achievements")
+                  }}
+                >
+                  <Ionicons name="ribbon" size={20} color={activeTheme.secondaryTextColor} />
+                </PressableScale>
+              </View>
+            </>
+          )}
+
+          {(gameState === "showing" || gameState === "waiting") && (
+            <PressableScale
+              testID="btn-reset"
+              accessibilityLabel={t("a11y:endGame")}
+              accessibilityRole="button"
+              style={styles.resetButton}
+              onPress={endGame}
             >
-              <PressableScale
-                testID="btn-start"
-                accessibilityLabel={t("a11y:startGame")}
-                accessibilityRole="button"
-                style={[styles.startButton, { backgroundColor: activeTheme.accentColor }]}
-                onPress={handleStartGame}
-              >
-                <Ionicons name="play" size={24} color="white" />
-                <Text style={styles.startButtonText}>{t("game:startGame")}</Text>
-              </PressableScale>
-            </EaseView>
-            <View style={styles.idleActions}>
-              <PressableScale
-                testID="btn-leaderboard"
-                accessibilityLabel={t("a11y:leaderboard")}
-                accessibilityRole="button"
-                style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                  router.push({ pathname: "/leaderboard", params: { mode } })
-                }}
-              >
-                <Ionicons name="trophy" size={20} color={activeTheme.warningColor} />
-              </PressableScale>
-              <PressableScale
-                testID="btn-stats"
-                accessibilityLabel={t("a11y:stats")}
-                accessibilityRole="button"
-                style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                  router.push("/stats")
-                }}
-              >
-                <Ionicons name="stats-chart" size={20} color={activeTheme.secondaryTextColor} />
-              </PressableScale>
-              <PressableScale
-                testID="btn-achievements"
-                accessibilityLabel={t("a11y:achievements")}
-                accessibilityRole="button"
-                style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                  router.push("/achievements")
-                }}
-              >
-                <Ionicons name="ribbon" size={20} color={activeTheme.secondaryTextColor} />
-              </PressableScale>
-            </View>
-          </>
-        )}
+              <Ionicons name="stop" size={24} color="white" />
+              <Text style={styles.buttonText}>{t("game:endGame")}</Text>
+            </PressableScale>
+          )}
+        </View>
 
-        {(gameState === "showing" || gameState === "waiting") && (
-          <PressableScale
-            testID="btn-reset"
-            accessibilityLabel={t("a11y:endGame")}
-            accessibilityRole="button"
-            style={styles.resetButton}
-            onPress={endGame}
-          >
-            <Ionicons name="stop" size={24} color="white" />
-            <Text style={styles.buttonText}>{t("game:endGame")}</Text>
-          </PressableScale>
-        )}
-      </View>
+        <GameStatusBar
+          gameState={gameState}
+          sequence={sequence}
+          playerSequence={playerSequence}
+          theme={activeTheme}
+          timerDelta={mode === "timed" ? timerDelta : null}
+        />
 
-      <GameStatusBar
-        gameState={gameState}
-        sequence={sequence}
-        playerSequence={playerSequence}
-        theme={activeTheme}
-        timerDelta={mode === "timed" ? timerDelta : null}
-      />
-
-      {/* Mode Selector Modal */}
-      <Modal
-        visible={modeModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => {
-          if (!pulsingMode) setModeModalVisible(false)
-        }}
-      >
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={() => {
+        {/* Mode Selector Modal */}
+        <Modal
+          visible={modeModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
             if (!pulsingMode) setModeModalVisible(false)
           }}
         >
           <Pressable
-            style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}
+            style={styles.modalBackdrop}
+            onPress={() => {
+              if (!pulsingMode) setModeModalVisible(false)
+            }}
           >
-            <Text style={[styles.modalTitle, { color: activeTheme.textColor }]}>
-              {t("game:modeSelect")}
-            </Text>
-            {GAME_MODES.map((m) => {
-              const streak =
-                m.id === "daily" ? parseInt(loadString(DAILY_CURRENT_STREAK) ?? "0", 10) : 0
-              return (
-                <ModeItem
-                  key={m.id}
-                  mode={m}
-                  isSelected={mode === m.id}
-                  isPulsing={pulsingMode === m.id}
-                  pulsePhase={pulsePhase}
-                  streak={streak}
-                  theme={activeTheme}
-                  onPress={() => handleModeSelect(m.id)}
-                />
-              )
-            })}
+            <Pressable
+              style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}
+            >
+              <Text style={[styles.modalTitle, { color: activeTheme.textColor }]}>
+                {t("game:modeSelect")}
+              </Text>
+              {GAME_MODES.map((m) => {
+                const streak =
+                  m.id === "daily" ? parseInt(loadString(DAILY_CURRENT_STREAK) ?? "0", 10) : 0
+                return (
+                  <ModeItem
+                    key={m.id}
+                    mode={m}
+                    isSelected={mode === m.id}
+                    isPulsing={pulsingMode === m.id}
+                    pulsePhase={pulsePhase}
+                    streak={streak}
+                    theme={activeTheme}
+                    onPress={() => handleModeSelect(m.id)}
+                  />
+                )
+              })}
+            </Pressable>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </Modal>
 
-      <InitialEntryModal
-        visible={showInitialEntry}
-        score={score}
-        level={level}
-        theme={activeTheme}
-        onSubmit={handleInitialSubmit}
-        onDismiss={() => {
-          setShowInitialEntry(false)
-          pendingGameOver.current = false
-          // User skipped initials — still route to the game-over screen
-          // (score isn't recorded to leaderboard, but the overlay should still show)
-          navigateToGameOver()
-        }}
-      />
-
+        <InitialEntryModal
+          visible={showInitialEntry}
+          score={score}
+          level={level}
+          theme={activeTheme}
+          onSubmit={handleInitialSubmit}
+          onDismiss={() => {
+            setShowInitialEntry(false)
+            pendingGameOver.current = false
+            // User skipped initials — still route to the game-over screen
+            // (score isn't recorded to leaderboard, but the overlay should still show)
+            navigateToGameOver()
+          }}
+        />
       </View>
     </GameThemeProvider>
   )
@@ -648,11 +648,6 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-Bold",
     fontSize: 24,
   },
-  onboardingSlot: {
-    alignItems: "center",
-    height: 48,
-    justifyContent: "center",
-  },
   container: {
     alignItems: "center",
     backgroundColor: "#1a1a2e",
@@ -675,12 +670,6 @@ const styles = StyleSheet.create({
   },
   gestureRoot: {
     flex: 1,
-  },
-  wrongFlashOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#ef4444",
-    borderRadius: 999,
-    zIndex: 10,
   },
   idleActionButton: {
     alignItems: "center",
@@ -713,6 +702,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginBottom: 16,
     textAlign: "center",
+  },
+  onboardingSlot: {
+    alignItems: "center",
+    height: 48,
+    justifyContent: "center",
   },
   resetButton: {
     alignItems: "center",
@@ -754,6 +748,7 @@ const styles = StyleSheet.create({
   startButton: {
     alignItems: "center",
     borderRadius: 12,
+    elevation: 6,
     flexDirection: "row",
     gap: 10,
     justifyContent: "center",
@@ -763,7 +758,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 6,
   },
   startButtonText: {
     color: "white",
@@ -781,5 +775,11 @@ const styles = StyleSheet.create({
   waitingText: {
     color: "#22c55e",
     fontFamily: "Oxanium-Regular",
+  },
+  wrongFlashOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#ef4444",
+    borderRadius: 999,
+    zIndex: 10,
   },
 })

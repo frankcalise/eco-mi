@@ -4,8 +4,8 @@ import * as Haptics from "expo-haptics"
 import { useRouter } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
-import { EaseView } from "react-native-ease"
 import type { OscillatorType } from "react-native-audio-api"
+import { EaseView } from "react-native-ease"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { PressableScale } from "@/components/PressableScale"
@@ -27,10 +27,30 @@ import { loadString, saveString } from "@/utils/storage"
 
 function buildColorMap(theme: typeof gameThemes.classic): ColorMap {
   return {
-    red: { color: theme.buttonColors.red.color, activeColor: theme.buttonColors.red.activeColor, sound: 220, position: "topLeft" },
-    blue: { color: theme.buttonColors.blue.color, activeColor: theme.buttonColors.blue.activeColor, sound: 277, position: "topRight" },
-    green: { color: theme.buttonColors.green.color, activeColor: theme.buttonColors.green.activeColor, sound: 330, position: "bottomLeft" },
-    yellow: { color: theme.buttonColors.yellow.color, activeColor: theme.buttonColors.yellow.activeColor, sound: 415, position: "bottomRight" },
+    red: {
+      color: theme.buttonColors.red.color,
+      activeColor: theme.buttonColors.red.activeColor,
+      sound: 220,
+      position: "topLeft",
+    },
+    blue: {
+      color: theme.buttonColors.blue.color,
+      activeColor: theme.buttonColors.blue.activeColor,
+      sound: 277,
+      position: "topRight",
+    },
+    green: {
+      color: theme.buttonColors.green.color,
+      activeColor: theme.buttonColors.green.activeColor,
+      sound: 330,
+      position: "bottomLeft",
+    },
+    yellow: {
+      color: theme.buttonColors.yellow.color,
+      activeColor: theme.buttonColors.yellow.activeColor,
+      sound: 415,
+      position: "bottomRight",
+    },
   }
 }
 
@@ -40,18 +60,35 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets()
   const analytics = useAnalytics()
 
-  const { soundPack, previewSoundPack, setSoundPack, setPreviewSoundPack, clearSoundPreview } = useSoundPack()
+  const { soundPack, previewSoundPack, setSoundPack, setPreviewSoundPack, clearSoundPreview } =
+    useSoundPack()
   const { theme, activeTheme, previewTheme, setTheme, setPreviewTheme, clearPreview } = useTheme()
   const {
-    removeAds, purchaseRemoveAds, purchaseProduct, restorePurchases,
-    ownsTheme, ownsSoundPack, getThemeProductId, getSoundProductId,
+    removeAds,
+    purchaseRemoveAds,
+    purchaseProduct,
+    restorePurchases,
+    ownsTheme,
+    ownsSoundPack,
+    getThemeProductId,
+    getSoundProductId,
   } = usePurchases()
 
-  const [soundEnabled, setSoundEnabled] = useState(() => loadString(SETTINGS_SOUND_ENABLED) !== "false")
-  const [hapticsEnabled, setHapticsEnabled] = useState(() => loadString(SETTINGS_HAPTICS_ENABLED) !== "false")
-  const [notifyDaily, setNotifyDaily] = useState(() => loadString(SETTINGS_NOTIFY_DAILY) !== "false")
-  const [notifyStreak, setNotifyStreak] = useState(() => loadString(SETTINGS_NOTIFY_STREAK) !== "false")
-  const [notifyWinback, setNotifyWinback] = useState(() => loadString(SETTINGS_NOTIFY_WINBACK) !== "false")
+  const [soundEnabled, setSoundEnabled] = useState(
+    () => loadString(SETTINGS_SOUND_ENABLED) !== "false",
+  )
+  const [hapticsEnabled, setHapticsEnabled] = useState(
+    () => loadString(SETTINGS_HAPTICS_ENABLED) !== "false",
+  )
+  const [notifyDaily, setNotifyDaily] = useState(
+    () => loadString(SETTINGS_NOTIFY_DAILY) !== "false",
+  )
+  const [notifyStreak, setNotifyStreak] = useState(
+    () => loadString(SETTINGS_NOTIFY_STREAK) !== "false",
+  )
+  const [notifyWinback, setNotifyWinback] = useState(
+    () => loadString(SETTINGS_NOTIFY_WINBACK) !== "false",
+  )
 
   const [poppingSoundPack, setPoppingSoundPack] = useState<string | null>(null)
   const [soundHint, setSoundHint] = useState(false)
@@ -59,11 +96,17 @@ export default function SettingsScreen() {
   const [poppingTheme, setPoppingTheme] = useState<string | null>(null)
 
   const colorMap = buildColorMap(activeTheme)
-  const { playPreview, initialize, cleanup } = useAudioTones(colorMap, soundEnabled, soundPack.oscillatorType)
+  const { playPreview, initialize, cleanup } = useAudioTones(
+    colorMap,
+    soundEnabled,
+    soundPack.oscillatorType,
+  )
 
   useEffect(() => {
     initialize()
-    return () => { cleanup() }
+    return () => {
+      cleanup()
+    }
   }, [])
 
   function toggleSoundEnabled() {
@@ -103,7 +146,12 @@ export default function SettingsScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: activeTheme.backgroundColor }]}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: insets.top, backgroundColor: activeTheme.backgroundColor },
+      ]}
+    >
       <View style={styles.header}>
         <PressableScale
           accessibilityLabel={t("common:back")}
@@ -180,24 +228,35 @@ export default function SettingsScreen() {
                       {
                         borderColor: isSelected
                           ? activeTheme.accentColor
-                          : isPreviewing ? activeTheme.warningColor : activeTheme.borderColor,
+                          : isPreviewing
+                            ? activeTheme.warningColor
+                            : activeTheme.borderColor,
                       },
                       isSelected && styles.selectorButtonActive,
                       isPreviewing && styles.selectorButtonPreviewing,
                     ]}
                   >
                     <View style={styles.selectorButtonInner}>
-                      <Text style={{
-                        color: isSelected
-                          ? activeTheme.accentColor
-                          : isPreviewing ? activeTheme.warningColor : activeTheme.secondaryTextColor,
-                        fontFamily: "Oxanium-Regular",
-                        fontSize: 12,
-                      }}>
+                      <Text
+                        style={{
+                          color: isSelected
+                            ? activeTheme.accentColor
+                            : isPreviewing
+                              ? activeTheme.warningColor
+                              : activeTheme.secondaryTextColor,
+                          fontFamily: "Oxanium-Regular",
+                          fontSize: 12,
+                        }}
+                      >
                         {pack.name}
                       </Text>
                       {!isOwned && (
-                        <Ionicons name="lock-closed" size={10} color={activeTheme.secondaryTextColor} style={{ opacity: 0.6 }} />
+                        <Ionicons
+                          name="lock-closed"
+                          size={10}
+                          color={activeTheme.secondaryTextColor}
+                          style={{ opacity: 0.6 }}
+                        />
                       )}
                     </View>
                   </EaseView>
@@ -220,7 +279,9 @@ export default function SettingsScreen() {
               }}
             >
               <Ionicons name="lock-open" size={14} color="white" />
-              <Text style={styles.unlockBtnText}>{t("game:unlockSound", { name: previewSoundPack.name })}</Text>
+              <Text style={styles.unlockBtnText}>
+                {t("game:unlockSound", { name: previewSoundPack.name })}
+              </Text>
             </PressableScale>
           )}
           <EaseView
@@ -273,7 +334,12 @@ export default function SettingsScreen() {
                     ]}
                   >
                     {!isOwned && (
-                      <Ionicons name="lock-closed" size={12} color="rgba(255, 255, 255, 0.7)" style={{ opacity: 0.7 }} />
+                      <Ionicons
+                        name="lock-closed"
+                        size={12}
+                        color="rgba(255, 255, 255, 0.7)"
+                        style={{ opacity: 0.7 }}
+                      />
                     )}
                   </EaseView>
                 </Pressable>
@@ -295,7 +361,9 @@ export default function SettingsScreen() {
               }}
             >
               <Ionicons name="lock-open" size={14} color="white" />
-              <Text style={styles.unlockBtnText}>{t("game:unlockTheme", { name: previewTheme.name })}</Text>
+              <Text style={styles.unlockBtnText}>
+                {t("game:unlockTheme", { name: previewTheme.name })}
+              </Text>
             </PressableScale>
           )}
         </View>

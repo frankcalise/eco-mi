@@ -157,12 +157,9 @@ export function useAds(): UseAdsReturn {
         resolve(result)
       }
 
-      const unsubReward = rewarded.addAdEventListener(
-        RewardedAdEventType.EARNED_REWARD,
-        () => {
-          earned = true
-        },
-      )
+      const unsubReward = rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
+        earned = true
+      })
 
       const unsubClose = rewarded.addAdEventListener(AdEventType.CLOSED, () => {
         setAdShownThisSession(true)

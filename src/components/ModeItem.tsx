@@ -49,11 +49,7 @@ export function ModeItem({
         }}
         style={[styles.modeItem, { borderColor: showGreen ? accent : theme.borderColor }]}
       >
-        <Ionicons
-          name={m.icon}
-          size={22}
-          color={showGreen ? accent : theme.secondaryTextColor}
-        />
+        <Ionicons name={m.icon} size={22} color={showGreen ? accent : theme.secondaryTextColor} />
         <View style={styles.modeItemText}>
           <Text style={[styles.modeItemLabel, { color: showGreen ? accent : theme.textColor }]}>
             {t(`game:modes.${m.id}`)}

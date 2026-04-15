@@ -65,7 +65,11 @@ interface AudioTonesHook {
   initialize: () => Promise<void>
   cleanup: () => Promise<void>
   playSound: (color: Color, duration?: number) => void
-  playSequenceTones: (colors: Color[], intervalMs: number, flashDurationMs: number) => (() => void) | null
+  playSequenceTones: (
+    colors: Color[],
+    intervalMs: number,
+    flashDurationMs: number,
+  ) => (() => void) | null
   playPreview: (overrideType?: OscillatorType) => void
   playJingle: () => void
   playGameOverJingle: () => void
@@ -424,7 +428,9 @@ export function useAudioTones(
 
       const totalS = (colors.length + 1) * intervalS + durationS + 0.05
       const cleanupTimer = setTimeout(() => {
-        try { seqGain.disconnect() } catch {}
+        try {
+          seqGain.disconnect()
+        } catch {}
       }, totalS * 1000)
 
       return () => {
@@ -432,10 +438,16 @@ export function useAudioTones(
           const t = ctx.currentTime
           seqGain.gain.setTargetAtTime(0, t, 0.01)
           for (const osc of oscillators) {
-            try { osc.stop(t + 0.05) } catch {}
+            try {
+              osc.stop(t + 0.05)
+            } catch {}
           }
           clearTimeout(cleanupTimer)
-          setTimeout(() => { try { seqGain.disconnect() } catch {} }, 100)
+          setTimeout(() => {
+            try {
+              seqGain.disconnect()
+            } catch {}
+          }, 100)
         } catch {}
       }
     } catch {

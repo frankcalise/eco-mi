@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react"
 import { View, Text, Platform, Share, StyleSheet } from "react-native"
-import type ViewShot from "react-native-view-shot"
 import { useRouter } from "expo-router"
 import * as Sharing from "expo-sharing"
 import { Ionicons } from "@expo/vector-icons"
-import { useTranslation } from "react-i18next"
 import LottieView from "lottie-react-native"
+import { useTranslation } from "react-i18next"
 import { EaseView } from "react-native-ease"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import type ViewShot from "react-native-view-shot"
 
 import { AchievementToast } from "@/components/AchievementToast"
 import { PostPBPrompt } from "@/components/PostPBPrompt"
@@ -80,7 +80,8 @@ export default function GameOverScreen() {
   } = useGameOverStore()
 
   const { removeAds } = usePurchases()
-  const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } = useStoreReview()
+  const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
+    useStoreReview()
   const { showPostPBPrompt, triggerPostPBCheck, dismissPostPBPrompt } = usePostPBPrompt()
   const { checkAchievements, newlyUnlocked, clearNewlyUnlocked } = useAchievements()
 
@@ -138,10 +139,12 @@ export default function GameOverScreen() {
     }
   }, [newlyUnlocked])
 
-  const pbDelta =
-    isNewHighScore && previousHighScore > 0 ? score - previousHighScore : null
+  const pbDelta = isNewHighScore && previousHighScore > 0 ? score - previousHighScore : null
   const nearMiss =
-    !isNewHighScore && highScore > 0 && highScore - score <= NEAR_MISS_THRESHOLD && highScore - score > 0
+    !isNewHighScore &&
+    highScore > 0 &&
+    highScore - score <= NEAR_MISS_THRESHOLD &&
+    highScore - score > 0
       ? highScore - score
       : null
 
