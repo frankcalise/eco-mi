@@ -341,6 +341,7 @@ const styles = StyleSheet.create({
   },
   removeAdsButton: {
     alignItems: "center",
+    alignSelf: "center",
     flexDirection: "row",
     gap: 6,
     marginTop: 16,
