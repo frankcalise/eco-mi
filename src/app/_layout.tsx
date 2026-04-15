@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { View } from "react-native"
 import AppMetrics from "expo-eas-observe"
 import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
@@ -85,7 +86,9 @@ function Root() {
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <ThemeProvider>{inner}</ThemeProvider>
+      <View style={{ flex: 1, backgroundColor: "#1a1a2e" }}>
+        <ThemeProvider>{inner}</ThemeProvider>
+      </View>
     </SafeAreaProvider>
   )
 }
