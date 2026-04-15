@@ -63,6 +63,7 @@ function Root() {
       <Stack.Screen name="tracking" options={{ animation: "fade" }} />
       <Stack.Screen name="achievements" />
       <Stack.Screen name="stats" />
+      <Stack.Screen name="leaderboard" />
     </Stack>
   )
 

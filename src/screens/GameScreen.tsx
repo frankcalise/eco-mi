@@ -16,7 +16,6 @@ import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
 import { EaseView } from "react-native-ease"
-import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { AchievementToast } from "@/components/AchievementToast"
@@ -30,7 +29,6 @@ import { ModeItem } from "@/components/ModeItem"
 import { GameOverOverlay } from "@/components/GameOverOverlay"
 import { OnboardingTooltip } from "@/components/OnboardingTooltip"
 import { StreakBanner } from "@/components/StreakBanner"
-import { HighScoreTable } from "@/components/HighScoreTable"
 import { InitialEntryModal } from "@/components/InitialEntryModal"
 import { PressableScale } from "@/components/PressableScale"
 import { PostPBPrompt } from "@/components/PostPBPrompt"
@@ -137,9 +135,7 @@ export function GameScreen() {
   const sessionCounted = useRef(false)
   const [modeModalVisible, setModeModalVisible] = useState(false)
   const [settingsModalVisible, setSettingsModalVisible] = useState(false)
-  const [leaderboardModalVisible, setLeaderboardModalVisible] = useState(false)
   const [showInitialEntry, setShowInitialEntry] = useState(false)
-  const [highlightIndex, setHighlightIndex] = useState<number | undefined>(undefined)
   const pendingGameOver = useRef(false)
   const leaderboardRecorded = useRef(false)
   const previousHighScoreRef = useRef(highScore)
@@ -324,9 +320,16 @@ export function GameScreen() {
     const newIndex = updated.findIndex(
       (e) => e.initials === initials && e.score === score && e.date === entry.date,
     )
-    setHighlightIndex(newIndex >= 0 ? newIndex : undefined)
     setShowInitialEntry(false)
     pendingGameOver.current = false
+    router.push({
+      pathname: "/leaderboard",
+      params: {
+        mode,
+        highlightIndex: newIndex >= 0 ? String(newIndex) : undefined,
+        highlightMode: mode,
+      },
+    })
   }
 
   function handleReviewResponse(response: "love_it" | "not_really") {
@@ -551,8 +554,7 @@ export function GameScreen() {
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                  setHighlightIndex(undefined)
-                  setLeaderboardModalVisible(true)
+                  router.push({ pathname: "/leaderboard", params: { mode } })
                 }}
               >
                 <Ionicons name="trophy" size={20} color={activeTheme.warningColor} />
@@ -697,28 +699,6 @@ export function GameScreen() {
         theme={activeTheme}
       />
 
-      {/* Leaderboard Modal */}
-      <Modal
-        visible={leaderboardModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setLeaderboardModalVisible(false)}
-      >
-        <GestureHandlerRootView style={styles.gestureRoot}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setLeaderboardModalVisible(false)}>
-            <Pressable
-              style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}
-            >
-              <HighScoreTable
-                initialMode={mode}
-                highlightIndex={highlightIndex}
-                highlightMode={mode}
-                theme={activeTheme}
-              />
-            </Pressable>
-          </Pressable>
-        </GestureHandlerRootView>
-      </Modal>
 
       <ReviewPrompt
         visible={showReviewPrompt}
