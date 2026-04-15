@@ -65,6 +65,7 @@ function Root() {
       <Stack.Screen name="stats" />
       <Stack.Screen name="leaderboard" />
       <Stack.Screen name="settings" />
+      <Stack.Screen name="game-over" options={{ animation: "fade", gestureEnabled: false }} />
     </Stack>
   )
 

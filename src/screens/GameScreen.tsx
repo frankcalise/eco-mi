@@ -1,17 +1,14 @@
 import { useEffect, useRef, useState } from "react"
-import type ViewShot from "react-native-view-shot"
 import {
   View,
   Text,
   Pressable,
-  Share,
   StyleSheet,
   useWindowDimensions,
   Modal,
 } from "react-native"
 import * as Haptics from "expo-haptics"
-import { useRouter, useFocusEffect } from "expo-router"
-import * as Sharing from "expo-sharing"
+import { useRouter, useFocusEffect, useLocalSearchParams } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
@@ -25,14 +22,10 @@ import { GameButton } from "@/components/GameButton"
 import { GameHeader } from "@/components/GameHeader"
 import { GameStatusBar } from "@/components/GameStatusBar"
 import { ModeItem } from "@/components/ModeItem"
-import { GameOverOverlay } from "@/components/GameOverOverlay"
 import { OnboardingTooltip } from "@/components/OnboardingTooltip"
 import { StreakBanner } from "@/components/StreakBanner"
 import { InitialEntryModal } from "@/components/InitialEntryModal"
 import { PressableScale } from "@/components/PressableScale"
-import { PostPBPrompt } from "@/components/PostPBPrompt"
-import { ReviewPrompt } from "@/components/ReviewPrompt"
-import { ShareScoreCard } from "@/components/ShareScoreCard"
 import { TimerRing } from "@/components/TimerRing"
 import { ACHIEVEMENTS } from "@/config/achievements"
 import { DAILY_CURRENT_STREAK, ONBOARDING_COMPLETED, STATS_GAMES_PLAYED } from "@/config/storageKeys"
@@ -43,8 +36,6 @@ import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useSoundPack } from "@/hooks/useSoundPack"
 import { useNotifications, shouldShowNotificationPrompt } from "@/hooks/useNotifications"
-import { usePostPBPrompt } from "@/hooks/usePostPBPrompt"
-import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { useAnalytics } from "@/utils/analytics"
@@ -65,6 +56,7 @@ const DISMISS_DELAY = 200
 export function GameScreen() {
   const { t } = useTranslation()
   const router = useRouter()
+  const { action } = useLocalSearchParams<{ action?: string }>()
   const { width, height } = useWindowDimensions()
   const insets = useSafeAreaInsets()
   const gameSize = Math.min(width * 0.8, height * 0.5)
@@ -126,15 +118,9 @@ export function GameScreen() {
     incrementSessionCount,
     adShownThisSession,
   } = useAds()
-  const {
-    removeAds,
-    purchaseRemoveAds,
-  } = usePurchases()
-  const { getHighScores, isHighScore: checkIsHighScore, addHighScore } = useHighScores()
-  const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
-    useStoreReview()
+  const { removeAds } = usePurchases()
+  const { isHighScore: checkIsHighScore, addHighScore } = useHighScores()
   const { checkAchievements, newlyUnlocked, clearNewlyUnlocked } = useAchievements()
-  const { showPostPBPrompt, triggerPostPBCheck, dismissPostPBPrompt } = usePostPBPrompt()
   const { rescheduleAfterGameOver } = useNotifications()
   const sessionCounted = useRef(false)
   const [modeModalVisible, setModeModalVisible] = useState(false)
@@ -142,7 +128,6 @@ export function GameScreen() {
   const pendingGameOver = useRef(false)
   const leaderboardRecorded = useRef(false)
   const previousHighScoreRef = useRef(highScore)
-  const shareCardRef = useRef<ViewShot>(null)
   const [pulsingMode, setPulsingMode] = useState<GameMode | null>(null)
   const [pulsePhase, setPulsePhase] = useState<"bright" | "dim">("bright")
   const pulseTimers = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -244,20 +229,8 @@ export function GameScreen() {
         playHighScoreJingle()
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
         analytics.trackGameCompleted(score, level, true)
-        triggerReviewCheck("new_high_score", adShownThisSession)
-        if (!removeAds && !showReviewPrompt) {
-          triggerPostPBCheck()
-        }
       } else {
         playGameOverJingle()
-      }
-
-      // Check daily streak milestones (3-day, 7-day)
-      if (mode === "daily") {
-        const streak = parseInt(loadString(DAILY_CURRENT_STREAK) ?? "0", 10)
-        if (streak === 3 || streak === 7) {
-          triggerReviewCheck(`streak_${streak}`, adShownThisSession)
-        }
       }
 
       // Check achievement unlock conditions
@@ -271,7 +244,7 @@ export function GameScreen() {
         isDaily: mode === "daily",
       })
 
-      // Check if score qualifies for local top 10 (guard against duplicate on continue)
+      // Check if score qualifies for local top 10
       if (checkIsHighScore(score, mode) && !leaderboardRecorded.current) {
         leaderboardRecorded.current = true
         pendingGameOver.current = true
@@ -279,6 +252,23 @@ export function GameScreen() {
       }
 
       rescheduleAfterGameOver()
+
+      // Navigate to game-over screen (after initials if high score)
+      if (!checkIsHighScore(score, mode) || leaderboardRecorded.current) {
+        router.push({
+          pathname: "/game-over",
+          params: {
+            score: String(score),
+            level: String(level),
+            highScore: String(highScore),
+            previousHighScore: String(previousHighScoreRef.current),
+            isNewHighScore: String(isNewHighScore),
+            mode,
+            showRemoveAds: String(!removeAds && adShownThisSession),
+            showContinue: String(rewardedReady && !continuedThisGame),
+          },
+        })
+      }
     }
 
     if (prevGameState.current !== "idle" && gameState === "idle") {
@@ -319,48 +309,31 @@ export function GameScreen() {
       date: new Date().toISOString(),
       mode,
     }
-    const updated = addHighScore(entry)
-    const newIndex = updated.findIndex(
-      (e) => e.initials === initials && e.score === score && e.date === entry.date,
-    )
+    addHighScore(entry)
     setShowInitialEntry(false)
     pendingGameOver.current = false
     router.push({
-      pathname: "/leaderboard",
+      pathname: "/game-over",
       params: {
+        score: String(score),
+        level: String(level),
+        highScore: String(highScore),
+        previousHighScore: String(previousHighScoreRef.current),
+        isNewHighScore: String(isNewHighScore),
         mode,
-        highlightIndex: newIndex >= 0 ? String(newIndex) : undefined,
-        highlightMode: mode,
+        showRemoveAds: String(!removeAds && adShownThisSession),
+        showContinue: String(rewardedReady && !continuedThisGame),
       },
     })
   }
 
-  function handleReviewResponse(response: "love_it" | "not_really") {
-    analytics.trackReviewPromptShown(reviewTrigger)
-    analytics.trackReviewPromptResponse(response)
-  }
+  // Handle action params from game-over screen
+  useEffect(() => {
+    if (action === "play_again") handleStartGame()
+    else if (action === "continue") handleContinue()
+  }, [action])
 
-  async function handleShare() {
-    analytics.trackShareTapped(score, level)
-    const message = t("game:shareMessage", { level, score, mode: t(`game:modes.${mode}`) })
-    try {
-      const uri = await shareCardRef.current?.capture?.()
-      if (uri) {
-        const fileUri = uri.startsWith("file://") ? uri : `file://${uri}`
-        await Sharing.shareAsync(fileUri, { mimeType: "image/png", dialogTitle: message })
-      } else {
-        await Share.share({ message })
-      }
-    } catch {}
-  }
 
-  async function handleRemoveAds() {
-    analytics.trackIapInitiated("ecomi_remove_ads")
-    const success = await purchaseRemoveAds()
-    if (success) {
-      analytics.trackIapCompleted("ecomi_remove_ads")
-    }
-  }
 
   const showTimerRing = mode === "timed" && timeRemaining !== null && gameState !== "idle"
 
@@ -666,47 +639,6 @@ export function GameScreen() {
         }}
       />
 
-      <GameOverOverlay
-        visible={gameState === "gameover" && !showInitialEntry}
-        score={score}
-        level={level}
-        highScore={highScore}
-        previousHighScore={previousHighScoreRef.current}
-        isNewHighScore={isNewHighScore}
-        showRemoveAds={!removeAds && adShownThisSession}
-        showContinue={rewardedReady && !continuedThisGame}
-        theme={activeTheme}
-        onPlayAgain={handleStartGame}
-        onContinue={handleContinue}
-        onShare={handleShare}
-        onRemoveAds={handleRemoveAds}
-        onHome={resetGame}
-        onViewStats={() => router.push("/stats")}
-        onViewAchievements={() => router.push("/achievements")}
-      />
-
-      <ShareScoreCard
-        ref={shareCardRef}
-        score={score}
-        level={level}
-        mode={mode}
-        isNewHighScore={isNewHighScore}
-        theme={activeTheme}
-      />
-
-
-      <ReviewPrompt
-        visible={showReviewPrompt}
-        theme={activeTheme}
-        onDismiss={dismissReviewPrompt}
-        onResponse={handleReviewResponse}
-      />
-      <PostPBPrompt
-        visible={showPostPBPrompt && !showReviewPrompt}
-        theme={activeTheme}
-        onRemoveAds={handleRemoveAds}
-        onDismiss={dismissPostPBPrompt}
-      />
       <AchievementToast
         title={achievementToast?.title ?? ""}
         description={achievementToast?.description ?? ""}
