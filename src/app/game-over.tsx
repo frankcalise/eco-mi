@@ -295,7 +295,7 @@ export default function GameOverScreen() {
           <View style={styles.bottomRow}>
             <PressableScale
               testID="btn-share"
-              style={[styles.shareButton, { backgroundColor: activeTheme.surfaceColor }]}
+              style={[styles.shareButton, { borderColor: activeTheme.borderColor }]}
               onPress={handleShare}
               accessibilityLabel={t("game:share")}
               accessibilityRole="button"
@@ -460,7 +460,8 @@ const styles = StyleSheet.create({
   },
   shareButton: {
     alignItems: "center",
-    borderRadius: 12,
+    borderRadius: 8,
+    borderWidth: 1,
     justifyContent: "center",
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -468,6 +469,7 @@ const styles = StyleSheet.create({
   statLabel: {
     fontFamily: "Oxanium-Regular",
     fontSize: 12,
+    marginBottom: 4,
   },
   statPill: {
     alignItems: "center",
@@ -486,7 +488,6 @@ const styles = StyleSheet.create({
   statValue: {
     fontFamily: "Oxanium-Bold",
     fontSize: 28,
-    marginTop: 4,
   },
   title: {
     fontFamily: "Oxanium-Bold",

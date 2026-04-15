@@ -148,6 +148,16 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const wrongCountRef = useRef(0)
   const lastHapticSecond = useRef(-1)
   const [timerDelta, setTimerDelta] = useState<number | null>(null)
+  const deltaClearTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function showTimerDelta(value: number, clearAfterMs = 2000) {
+    if (deltaClearTimeoutRef.current) clearTimeout(deltaClearTimeoutRef.current)
+    setTimerDelta(value)
+    deltaClearTimeoutRef.current = setTimeout(() => {
+      setTimerDelta(null)
+      deltaClearTimeoutRef.current = null
+    }, clearAfterMs)
+  }
   const testSeed = getTestSeed()
   const seededRng = useRef(testSeed !== null ? mulberry32(testSeed) : null)
   const scoreRef = useRef(0)
@@ -337,6 +347,8 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     timerBonusRef.current = 0
     wrongCountRef.current = 0
     lastHapticSecond.current = -1
+    if (deltaClearTimeoutRef.current) clearTimeout(deltaClearTimeoutRef.current)
+    deltaClearTimeoutRef.current = null
     setTimerDelta(null)
     setActiveButton(null); setButtonPositions([...colors]); setIsShuffling(false)
 
@@ -431,8 +443,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       if (mode === "timed") {
         wrongCountRef.current += 1
         timerBonusRef.current -= wrongCountRef.current
-        setTimerDelta(-wrongCountRef.current)
-        addTimeout(() => setTimerDelta(null), 1000)
+        showTimerDelta(-wrongCountRef.current)
         addTimeout(() => showSequence(ctx.sequence, ctx.level), 500)
       } else {
         handleGameOverSideEffects()
@@ -448,8 +459,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     if (willComplete) {
       if (mode === "timed") {
         timerBonusRef.current += 2
-        setTimerDelta(2)
-        addTimeout(() => setTimerDelta(null), 1000)
+        showTimerDelta(2)
       }
       addTimeout(() => {
         if (mode === "chaos") {

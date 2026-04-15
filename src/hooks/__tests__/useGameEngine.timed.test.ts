@@ -136,17 +136,23 @@ describe("useGameEngine — timed mode penalties", () => {
     expect(result.current.timerDelta).toBe(2)
   })
 
-  it("clears timerDelta to null after 1 second", () => {
+  it("clears timerDelta to null after 2 seconds", () => {
     const { result } = startTimedGame()
     advanceToWaiting()
 
     tapWrong(result.current)
     expect(result.current.timerDelta).toBe(-1)
 
+    // Still visible at 1s
     act(() => {
       jest.advanceTimersByTime(1000)
     })
+    expect(result.current.timerDelta).toBe(-1)
 
+    // Cleared at 2s
+    act(() => {
+      jest.advanceTimersByTime(1000)
+    })
     expect(result.current.timerDelta).toBeNull()
   })
 

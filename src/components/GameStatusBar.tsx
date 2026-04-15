@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react"
 import { View, Text, StyleSheet } from "react-native"
 import { useTranslation } from "react-i18next"
+import { EaseView } from "react-native-ease"
 
 import type { GameTheme } from "@/config/themes"
 import type { Color } from "@/hooks/useGameEngine"
@@ -20,6 +22,20 @@ export function GameStatusBar({
   timerDelta,
 }: GameStatusBarProps) {
   const { t } = useTranslation()
+
+  // Lag displayDelta behind timerDelta so the exit fade has content to render
+  const [displayDelta, setDisplayDelta] = useState<number | null>(null)
+  useEffect(() => {
+    if (timerDelta !== null && timerDelta !== undefined) {
+      setDisplayDelta(timerDelta)
+      return undefined
+    }
+    if (displayDelta !== null) {
+      const timeout = setTimeout(() => setDisplayDelta(null), 350)
+      return () => clearTimeout(timeout)
+    }
+    return undefined
+  }, [timerDelta])
 
   return (
     <View style={styles.statusContainer}>
@@ -58,19 +74,30 @@ export function GameStatusBar({
       </View>
       {/* Reserved slot for timer delta feedback — prevents layout shift */}
       <View style={styles.deltaSlot}>
-        {timerDelta !== null && timerDelta !== undefined && (
-          <Text
-            style={[
-              styles.deltaText,
-              {
-                color: timerDelta > 0 ? theme.accentColor : theme.destructiveColor,
-              },
-            ]}
+        {displayDelta !== null && (
+          <EaseView
+            initialAnimate={{ opacity: 0, translateY: 4 }}
+            animate={{
+              opacity: timerDelta !== null && timerDelta !== undefined ? 1 : 0,
+              translateY: 0,
+            }}
+            transition={{
+              default: { type: "timing", duration: 300, easing: "easeInOut" },
+            }}
           >
-            {timerDelta > 0
-              ? t("game:timeGained", { delta: timerDelta })
-              : t("game:timePenalty", { delta: Math.abs(timerDelta) })}
-          </Text>
+            <Text
+              style={[
+                styles.deltaText,
+                {
+                  color: displayDelta > 0 ? theme.accentColor : theme.destructiveColor,
+                },
+              ]}
+            >
+              {displayDelta > 0
+                ? t("game:timeGained", { delta: displayDelta })
+                : t("game:timePenalty", { delta: Math.abs(displayDelta) })}
+            </Text>
+          </EaseView>
         )}
       </View>
     </View>
