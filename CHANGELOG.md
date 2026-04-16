@@ -6,6 +6,10 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 
 ## [Unreleased]
 
+### Docs (v1.1.0)
+
+- **Download landing page** (`docs/download.html`) — single shareable smart-link at `frankcalise.github.io/eco-mi/download.html`. UA-sniffs iOS/Android and `location.replace`s to the correct store listing; desktop/other users see a dark landing page with app icon, "Brain training color sequence" tagline, and official App Store + Google Play badges (Apple Media Services SVG + Google Play PNG). `<noscript>` fallback keeps badges visible when JS is disabled. Served via GitHub Pages from `docs/`. iOS 1.0.1 approved 2026-04-16; Android already live.
+
 ### Refactor (v1.1.0 — Route Migrations & State Architecture)
 
 - **Leaderboard route** (`/leaderboard`) — extracted HighScoreTable from in-screen Modal into dedicated Expo Router screen. Mode tabs redesigned with idle-action-button sizing + green-accent selected state (matches mode selector / sound pack pattern). Swipe-between-modes gesture removed, GestureHandlerRootView wrapper dropped. Empty state uses trophy-outline icon + title (matches stats.tsx). Added missing `game:leaderboard` i18n key.
