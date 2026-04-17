@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { View, Text, Pressable, Platform, StyleSheet, ScrollView } from "react-native"
+import * as Application from "expo-application"
 import * as Haptics from "expo-haptics"
 import { useRouter } from "expo-router"
 import { StatusBar } from "expo-status-bar"
@@ -517,6 +518,10 @@ export default function SettingsScreen() {
             </Text>
           </EaseView>
         </View>
+
+        <Text style={[styles.versionText, { color: activeTheme.secondaryTextColor }]}>
+          v{Application.nativeApplicationVersion}
+        </Text>
       </ScrollView>
     </View>
   )
@@ -660,6 +665,13 @@ const styles = StyleSheet.create({
     color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 14,
+  },
+  versionText: {
+    fontFamily: "Oxanium-Regular",
+    fontSize: 12,
+    marginTop: 16,
+    paddingBottom: 8,
+    textAlign: "center",
   },
   volumeLabel: {
     fontFamily: "Oxanium-Medium",
