@@ -30,8 +30,17 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 - **Splash background alignment** — changed from `#191015` to `#1a1a2e` to match Classic theme and eliminate color flash on launch.
 - **Theme-aware navigation transition background** — `_layout.tsx` now reads the selected theme from MMKV synchronously and applies its `backgroundColor` to the root View and Stack `contentStyle`. Fixes the dark `#1a1a2e` flash during screen transitions on non-classic themes (especially Pastel).
 
+### Refactor (v1.1.0 — Audio Architecture)
+
+- **Oscillator pool** — replaced create-per-note architecture with 4 always-running oscillators (220/277/330/415Hz) gated by gain nodes. 9 audio nodes total, created once at init, never destroyed during gameplay. Eliminates same-frequency overlap (impossible by design), JS timer jitter (sequences pre-scheduled on audio clock), node accumulation, and the ~300ms difficulty ceiling.
+- **linearRampToValueAtTime** replaces exponentialRampToValueAtTime — starts from true zero (no EPSILON hack), distributes gain change uniformly across audio quanta, avoids per-quantum normalization spikes.
+- **Advance delay restored** from 200ms to 600ms (matching v1.0.1) to ensure gain ramps fully settle between sequences.
+- **continueGame guard** — ref-lock prevents double-invoke during the 500ms window.
+- **react-native-audio-api upgraded** 0.8.2 → 0.11.7 (zero code changes required).
+
 ### Feat (v1.1.0)
 
+- **Difficulty curve extended beyond level 16** — levels 17+ continue scaling to 120ms interval floor and 100ms tone duration floor (human perception limit). Enabled by pool architecture removing the oscillator lifecycle bottleneck. Backward compatible — levels 1-16 unchanged.
 - **Game-over 2x2 stat pill grid** — 4 pills (Score/Level/Best/Time) laid out in a 2x2 grid that mirrors the game-pad color layout (red TL, blue TR, green BL, yellow BR). Each pill has a thick colored border matching its game-board position, a colored icon (flash/trending-up/trophy/time), and a staggered spring entrance (250/350/450/550ms). Bottom CTA section delay bumped to 700ms to cascade after the pills. New Time pill uses `formatDuration(sessionTime)`. Pill content is left-aligned so growing score values (30 → 300 → 3000) stay anchored instead of shifting horizontally. Statistics/Achievements/Leaderboard nav links removed from game-over — those entry points remain on the idle screen.
 - **Session time tracking in useGameEngine** — `sessionTime` (elapsed seconds) captured via `sessionStartTimeRef` on `startGame` and finalized on every `gameover` transition. Exposed through the hook return and persisted to `gameOverStore` for the /game-over screen.
 - **Inline initials on game-over (replace modal)** — First qualifying game shows "What should we call you?" inline between the title and stat pills. Save persists initials to MMKV; future qualifying games auto-record silently with zero friction. Skip persists a flag so the prompt never returns. Leaderboard reduced from 10 → 5 slots (each entry feels meaningful). `InitialEntryModal.tsx` deleted (277 lines), race condition hack removed, `pendingGameOver` ref eliminated.
