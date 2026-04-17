@@ -30,20 +30,20 @@ onFlowStart:
 - tapOn:
     id: "btn-red"
 
-# Score is 10 → qualifies for leaderboard → InitialEntryModal first
+# Score is 10 → qualifies for leaderboard → inline initials on game-over
+# Skip initials entry (first-time prompt)
 - extendedWaitUntil:
     visible:
-      id: "btn-initial-dismiss"
+      id: "btn-skip-initials"
     timeout: 10000
 
 - tapOn:
-    id: "btn-initial-dismiss"
+    id: "btn-skip-initials"
 
-# Now the game-over screen should appear
 - extendedWaitUntil:
     visible:
       id: "btn-play-again"
-    timeout: 10000
+    timeout: 5000
 - assertVisible:
     id: "btn-share"
 

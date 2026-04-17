@@ -13,16 +13,20 @@ import { AnimatedNumber } from "@/components/AnimatedNumber"
 import { GameButton } from "@/components/GameButton"
 import { GameHeader } from "@/components/GameHeader"
 import { GameStatusBar } from "@/components/GameStatusBar"
-import { InitialEntryModal } from "@/components/InitialEntryModal"
 import { ModeItem } from "@/components/ModeItem"
 import { OnboardingTooltip } from "@/components/OnboardingTooltip"
 import { PressableScale } from "@/components/PressableScale"
 import { StreakBanner } from "@/components/StreakBanner"
 import { TimerRing } from "@/components/TimerRing"
-import { DAILY_CURRENT_STREAK, ONBOARDING_COMPLETED } from "@/config/storageKeys"
+import {
+  DAILY_CURRENT_STREAK,
+  INITIALS_SKIPPED,
+  ONBOARDING_COMPLETED,
+  SAVED_INITIALS,
+} from "@/config/storageKeys"
 import { useAds } from "@/hooks/useAds"
 import { useGameEngine, type GameMode } from "@/hooks/useGameEngine"
-import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
+import { useHighScores } from "@/hooks/useHighScores"
 import { useNotifications, shouldShowNotificationPrompt } from "@/hooks/useNotifications"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useSoundPack } from "@/hooks/useSoundPack"
@@ -119,13 +123,10 @@ export function GameScreen() {
     adShownThisSession,
   } = useAds()
   const { removeAds } = usePurchases()
-  const { isHighScore: checkIsHighScore, addHighScore } = useHighScores()
+  const { isHighScore: checkIsHighScore, addHighScore, getRank } = useHighScores()
   const { rescheduleAfterGameOver } = useNotifications()
   const sessionCounted = useRef(false)
   const [modeModalVisible, setModeModalVisible] = useState(false)
-  const [showInitialEntry, setShowInitialEntry] = useState(false)
-  const pendingGameOver = useRef(false)
-  const leaderboardRecorded = useRef(false)
   const previousHighScoreRef = useRef(highScore)
   const [pulsingMode, setPulsingMode] = useState<GameMode | null>(null)
   const [pulsePhase, setPulsePhase] = useState<"bright" | "dim">("bright")
@@ -216,30 +217,44 @@ export function GameScreen() {
         playGameOverJingle()
       }
 
-      // Check if score qualifies for local top 10 — show initials modal first if so
-      if (checkIsHighScore(score, mode) && !leaderboardRecorded.current) {
-        leaderboardRecorded.current = true
-        pendingGameOver.current = true
-        setShowInitialEntry(true)
-      }
-
       rescheduleAfterGameOver()
 
-      // Navigate to game-over screen only if initials modal isn't pending
-      // (if it is, handleInitialSubmit will navigate after submission).
-      // Skip the game-over screen entirely for a score of 0 — nothing to show,
-      // just bounce back to the main menu.
-      if (!pendingGameOver.current) {
-        if (score === 0) {
-          resetGame()
+      if (score === 0) {
+        resetGame()
+      } else {
+        const qualifies = checkIsHighScore(score, mode)
+        const savedInitials = loadString(SAVED_INITIALS)
+        const initialsSkipped = loadString(INITIALS_SKIPPED) === "true"
+
+        if (qualifies && savedInitials) {
+          const updated = addHighScore({
+            initials: savedInitials,
+            score,
+            level,
+            date: new Date().toISOString(),
+            mode,
+          })
+          const rank = updated.findIndex((e) => e.score === score)
+          navigateToGameOver(false, rank >= 0 ? rank : null)
+        } else if (qualifies && initialsSkipped) {
+          const updated = addHighScore({
+            initials: "---",
+            score,
+            level,
+            date: new Date().toISOString(),
+            mode,
+          })
+          const rank = updated.findIndex((e) => e.score === score)
+          navigateToGameOver(false, rank >= 0 ? rank : null)
+        } else if (qualifies) {
+          navigateToGameOver(true, getRank(score, mode))
         } else {
-          navigateToGameOver()
+          navigateToGameOver(false, null)
         }
       }
     }
 
     if (prevGameState.current !== "idle" && gameState === "idle") {
-      playJingle()
       if (shouldShowNotificationPrompt()) {
         router.push("/notifications")
       }
@@ -249,7 +264,6 @@ export function GameScreen() {
   }, [gameState])
 
   async function handleStartGame() {
-    leaderboardRecorded.current = false
     previousHighScoreRef.current = highScore
     const adShown = await showInterstitial(level, removeAds)
     if (adShown) {
@@ -260,7 +274,7 @@ export function GameScreen() {
     startGame()
   }
 
-  function navigateToGameOver() {
+  function navigateToGameOver(needsInitials = false, leaderboardRank: number | null = null) {
     useGameOverStore.getState().setGameOver({
       score,
       level,
@@ -271,6 +285,8 @@ export function GameScreen() {
       showRemoveAds: !removeAds && adShownThisSession,
       showContinue: rewardedReady && !continuedThisGame,
       sessionTime,
+      needsInitials,
+      leaderboardRank,
     })
     router.push("/game-over")
   }
@@ -284,20 +300,6 @@ export function GameScreen() {
       // Ad not earned — return to game-over so user can try again or quit
       navigateToGameOver()
     }
-  }
-
-  function handleInitialSubmit(initials: string) {
-    const entry: HighScoreEntry = {
-      initials,
-      score,
-      level,
-      date: new Date().toISOString(),
-      mode,
-    }
-    addHighScore(entry)
-    setShowInitialEntry(false)
-    pendingGameOver.current = false
-    navigateToGameOver()
   }
 
   const showTimerRing = mode === "timed" && timeRemaining !== null && gameState !== "idle"
@@ -579,21 +581,6 @@ export function GameScreen() {
             </Pressable>
           </Pressable>
         </Modal>
-
-        <InitialEntryModal
-          visible={showInitialEntry}
-          score={score}
-          level={level}
-          theme={activeTheme}
-          onSubmit={handleInitialSubmit}
-          onDismiss={() => {
-            setShowInitialEntry(false)
-            pendingGameOver.current = false
-            // User skipped initials — still route to the game-over screen
-            // (score isn't recorded to leaderboard, but the overlay should still show)
-            navigateToGameOver()
-          }}
-        />
       </View>
     </GameThemeProvider>
   )

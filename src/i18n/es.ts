@@ -66,6 +66,9 @@ const es = {
     soundToggle: "Sonido",
     newHighScoreEntry: "¡NUEVO RÉCORD!",
     enterInitials: "Ingresa tus iniciales",
+    initialsPrompt: "¿Cómo te llamamos?",
+    saveInitials: "Guardar",
+    skipInitials: "Omitir",
     done: "LISTO",
     highScores: "Mejores Puntuaciones",
     rank: "POS",
@@ -165,6 +168,8 @@ const es = {
     maybeLater: "Quizás más tarde",
   },
   settings: {
+    soundEnabled: "Activado",
+    volume: "Volumen",
     haptics: "Hápticos",
     hapticsToggle: "Vibración",
     notifications: "Notificaciones",

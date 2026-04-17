@@ -12,6 +12,8 @@ type GameOverData = {
   showRemoveAds: boolean
   showContinue: boolean
   sessionTime: number
+  needsInitials: boolean
+  leaderboardRank: number | null
 }
 
 type GameOverState = GameOverData & {
@@ -29,6 +31,8 @@ const DEFAULTS: GameOverData = {
   showRemoveAds: false,
   showContinue: false,
   sessionTime: 0,
+  needsInitials: false,
+  leaderboardRank: null,
 }
 
 /**

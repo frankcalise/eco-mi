@@ -26,20 +26,20 @@ onFlowStart:
 - tapOn:
     id: "btn-red"
 
-# InitialEntryModal appears for qualifying score
+# Inline initials prompt on game-over (first-time)
 - extendedWaitUntil:
     visible:
-      id: "btn-initial-dismiss"
+      id: "btn-skip-initials"
     timeout: 10000
 
 - tapOn:
-    id: "btn-initial-dismiss"
+    id: "btn-skip-initials"
 
-# Game-over screen
+# Game-over screen CTAs
 - extendedWaitUntil:
     visible:
       id: "btn-home"
-    timeout: 10000
+    timeout: 5000
 
 - assertVisible:
     id: "btn-share"

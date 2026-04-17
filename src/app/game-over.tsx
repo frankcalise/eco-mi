@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { View, Text, Platform, Share, StyleSheet } from "react-native"
+import { View, Text, TextInput, Platform, Share, StyleSheet } from "react-native"
 import { useRouter } from "expo-router"
 import * as Sharing from "expo-sharing"
 import { Ionicons } from "@expo/vector-icons"
@@ -15,9 +15,15 @@ import { PressableScale } from "@/components/PressableScale"
 import { ReviewPrompt } from "@/components/ReviewPrompt"
 import { ShareScoreCard } from "@/components/ShareScoreCard"
 import { ACHIEVEMENTS } from "@/config/achievements"
-import { DAILY_CURRENT_STREAK, STATS_GAMES_PLAYED } from "@/config/storageKeys"
+import {
+  DAILY_CURRENT_STREAK,
+  INITIALS_SKIPPED,
+  SAVED_INITIALS,
+  STATS_GAMES_PLAYED,
+} from "@/config/storageKeys"
 import type { GameTheme } from "@/config/themes"
 import { useAchievements } from "@/hooks/useAchievements"
+import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
 import { usePostPBPrompt } from "@/hooks/usePostPBPrompt"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useStoreReview } from "@/hooks/useStoreReview"
@@ -28,7 +34,7 @@ import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { UI_COLORS } from "@/theme/uiColors"
 import { useAnalytics } from "@/utils/analytics"
 import { formatDuration } from "@/utils/formatTime"
-import { loadString } from "@/utils/storage"
+import { loadString, saveString } from "@/utils/storage"
 
 const NEAR_MISS_THRESHOLD = 5
 
@@ -78,7 +84,68 @@ export default function GameOverScreen() {
     showRemoveAds,
     showContinue,
     sessionTime,
+    needsInitials,
+    leaderboardRank: _leaderboardRank,
   } = useGameOverStore()
+
+  const { addHighScore } = useHighScores()
+
+  const [letters, setLetters] = useState(["", "", ""])
+  const [initialsSaved, setInitialsSaved] = useState(false)
+  const inputRef0 = useRef<TextInput>(null)
+  const inputRef1 = useRef<TextInput>(null)
+  const inputRef2 = useRef<TextInput>(null)
+  const inputRefs = [inputRef0, inputRef1, inputRef2]
+
+  const allFilled = letters.every((l) => l.length === 1)
+  const showInitialsInput = needsInitials && !initialsSaved
+
+  function handleLetterChange(text: string, index: number) {
+    const letter = text
+      .replace(/[^A-Za-z]/g, "")
+      .toUpperCase()
+      .slice(-1)
+    const next = [...letters]
+    next[index] = letter
+    setLetters(next)
+    if (letter && index < 2) inputRefs[index + 1].current?.focus()
+  }
+
+  function handleLetterKeyPress(key: string, index: number) {
+    if (key === "Backspace" && !letters[index] && index > 0) {
+      const next = [...letters]
+      next[index - 1] = ""
+      setLetters(next)
+      inputRefs[index - 1].current?.focus()
+    }
+  }
+
+  function handleSaveInitials() {
+    if (!allFilled) return
+    const initials = letters.join("")
+    saveString(SAVED_INITIALS, initials)
+    const entry: HighScoreEntry = {
+      initials,
+      score,
+      level,
+      date: new Date().toISOString(),
+      mode,
+    }
+    addHighScore(entry)
+    setInitialsSaved(true)
+  }
+
+  function handleSkipInitials() {
+    saveString(INITIALS_SKIPPED, "true")
+    setInitialsSaved(true)
+  }
+
+  // Auto-focus first input after entrance animation settles
+  useEffect(() => {
+    if (!showInitialsInput) return
+    const timer = setTimeout(() => inputRefs[0].current?.focus(), 400)
+    return () => clearTimeout(timer)
+  }, [showInitialsInput])
 
   const { removeAds } = usePurchases()
   const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
@@ -243,6 +310,67 @@ export default function GameOverScreen() {
               <Text style={[styles.deltaTextTitle, { color: activeTheme.accentColor }]}>
                 {t("game:pbDelta", { delta: pbDelta })}
               </Text>
+            </EaseView>
+          )}
+
+          {/* Inline initials — first qualifying game only */}
+          {showInitialsInput && (
+            <EaseView
+              testID="inline-initials"
+              initialAnimate={{ opacity: 0, translateY: 12 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ default: { type: "spring", stiffness: 220, damping: 18, delay: 200 } }}
+              style={styles.initialsSection}
+            >
+              <Text style={[styles.initialsPrompt, { color: activeTheme.secondaryTextColor }]}>
+                {t("game:initialsPrompt")}
+              </Text>
+              <View style={styles.initialsRow}>
+                {[0, 1, 2].map((i) => (
+                  <View
+                    key={i}
+                    style={[styles.initialsBox, { borderColor: activeTheme.accentColor }]}
+                  >
+                    <TextInput
+                      ref={inputRefs[i]}
+                      testID={`input-initial-${i + 1}`}
+                      style={[styles.initialsText, { color: activeTheme.textColor }]}
+                      value={letters[i]}
+                      onChangeText={(text) => handleLetterChange(text, i)}
+                      onKeyPress={({ nativeEvent }) => handleLetterKeyPress(nativeEvent.key, i)}
+                      maxLength={1}
+                      autoCapitalize="characters"
+                      autoCorrect={false}
+                      textAlign="center"
+                      selectionColor={activeTheme.accentColor}
+                    />
+                  </View>
+                ))}
+              </View>
+              <View style={styles.initialsActions}>
+                <PressableScale
+                  testID="btn-save-initials"
+                  style={[
+                    styles.saveButton,
+                    {
+                      backgroundColor: allFilled
+                        ? activeTheme.accentColor
+                        : activeTheme.surfaceColor,
+                    },
+                  ]}
+                  onPress={handleSaveInitials}
+                  disabled={!allFilled}
+                >
+                  <Text style={[styles.saveButtonText, { color: UI_COLORS.white }]}>
+                    {t("game:saveInitials")}
+                  </Text>
+                </PressableScale>
+                <PressableScale testID="btn-skip-initials" onPress={handleSkipInitials}>
+                  <Text style={[styles.skipText, { color: activeTheme.secondaryTextColor }]}>
+                    {t("game:skipInitials")}
+                  </Text>
+                </PressableScale>
+              </View>
             </EaseView>
           )}
 
@@ -442,6 +570,37 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: "center",
   },
+  initialsActions: {
+    alignItems: "center",
+    gap: 12,
+    marginTop: 16,
+  },
+  initialsBox: {
+    alignItems: "center",
+    borderRadius: 10,
+    borderWidth: 2,
+    height: 64,
+    justifyContent: "center",
+    width: 52,
+  },
+  initialsPrompt: {
+    fontFamily: "Oxanium-Medium",
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  initialsRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  initialsSection: {
+    alignItems: "center",
+    marginTop: 20,
+  },
+  initialsText: {
+    fontFamily: "Oxanium-Bold",
+    fontSize: 32,
+    textAlign: "center",
+  },
   lottie: {
     height: 100,
     width: 100,
@@ -504,6 +663,15 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-Medium",
     fontSize: 13,
   },
+  saveButton: {
+    borderRadius: 10,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+  },
+  saveButtonText: {
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 16,
+  },
   shareButton: {
     alignItems: "center",
     borderRadius: 8,
@@ -511,6 +679,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 14,
     paddingVertical: 12,
+  },
+  skipText: {
+    fontFamily: "Oxanium-Regular",
+    fontSize: 14,
+    paddingVertical: 4,
   },
   statsGrid: {
     flexDirection: "column",

@@ -29,20 +29,20 @@ describe("useHighScores", () => {
     expect(scores.map((s) => s.score)).toEqual([100, 75, 50])
   })
 
-  it("caps at 10 entries", () => {
+  it("caps at 5 entries", () => {
     const { result } = renderHook(() => useHighScores())
 
-    for (let i = 1; i <= 12; i++) {
+    for (let i = 1; i <= 7; i++) {
       result.current.addHighScore(makeEntry(i * 10))
     }
 
     const scores = result.current.getHighScores("classic")
-    expect(scores).toHaveLength(10)
-    expect(scores[0].score).toBe(120)
-    expect(scores[9].score).toBe(30)
+    expect(scores).toHaveLength(5)
+    expect(scores[0].score).toBe(70)
+    expect(scores[4].score).toBe(30)
   })
 
-  it("isHighScore returns true when list has fewer than 10 entries", () => {
+  it("isHighScore returns true when list has fewer than 5 entries", () => {
     const { result } = renderHook(() => useHighScores())
 
     result.current.addHighScore(makeEntry(100))
@@ -52,7 +52,7 @@ describe("useHighScores", () => {
   it("isHighScore returns true when score beats lowest in full list", () => {
     const { result } = renderHook(() => useHighScores())
 
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= 5; i++) {
       result.current.addHighScore(makeEntry(i * 10))
     }
 
@@ -63,12 +63,38 @@ describe("useHighScores", () => {
   it("isHighScore returns false when score does not beat lowest in full list", () => {
     const { result } = renderHook(() => useHighScores())
 
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= 5; i++) {
       result.current.addHighScore(makeEntry(i * 10))
     }
 
     // Lowest is 10, so 5 should not qualify
     expect(result.current.isHighScore(5, "classic")).toBe(false)
+  })
+
+  it("getRank returns correct 0-based index for qualifying score", () => {
+    const { result } = renderHook(() => useHighScores())
+
+    result.current.addHighScore(makeEntry(100))
+    result.current.addHighScore(makeEntry(50))
+    result.current.addHighScore(makeEntry(25))
+
+    // 75 should slot in at index 1 (between 100 and 50)
+    expect(result.current.getRank(75, "classic")).toBe(1)
+    // 200 should slot in at index 0
+    expect(result.current.getRank(200, "classic")).toBe(0)
+  })
+
+  it("getRank returns null for non-qualifying score in full list", () => {
+    const { result } = renderHook(() => useHighScores())
+
+    for (let i = 1; i <= 5; i++) {
+      result.current.addHighScore(makeEntry(i * 10))
+    }
+
+    // 5 doesn't beat lowest (10), full list
+    expect(result.current.getRank(5, "classic")).toBeNull()
+    // 0 always returns null
+    expect(result.current.getRank(0, "classic")).toBeNull()
   })
 
   it("isHighScore returns false for score of 0", () => {

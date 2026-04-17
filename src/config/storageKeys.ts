@@ -60,3 +60,6 @@ export const POST_PB_LAST_PROMPT_DATE = "ecomi:postPB:lastPromptDate"
 
 // High scores (leaderboard)
 export const HIGH_SCORES_PREFIX = "ecomi:highScores:"
+export const SETTINGS_SOUND_VOLUME = "ecomi:settings:soundVolume"
+export const SAVED_INITIALS = "ecomi:highScores:savedInitials"
+export const INITIALS_SKIPPED = "ecomi:highScores:initialsSkipped"

@@ -66,6 +66,9 @@ const en = {
     soundToggle: "Sound",
     newHighScoreEntry: "NEW HIGH SCORE!",
     enterInitials: "Enter your initials",
+    initialsPrompt: "What should we call you?",
+    saveInitials: "Save",
+    skipInitials: "Skip",
     done: "DONE",
     highScores: "High Scores",
     rank: "RANK",
@@ -165,6 +168,8 @@ const en = {
     maybeLater: "Maybe Later",
   },
   settings: {
+    soundEnabled: "Enabled",
+    volume: "Volume",
     haptics: "Haptics",
     hapticsToggle: "Vibration feedback",
     notifications: "Notifications",

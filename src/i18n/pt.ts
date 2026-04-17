@@ -66,6 +66,9 @@ const pt = {
     soundToggle: "Som",
     newHighScoreEntry: "NOVO RECORDE!",
     enterInitials: "Digite suas iniciais",
+    initialsPrompt: "Como devemos te chamar?",
+    saveInitials: "Salvar",
+    skipInitials: "Pular",
     done: "PRONTO",
     highScores: "Melhores Pontuações",
     rank: "POS",
@@ -164,6 +167,8 @@ const pt = {
     maybeLater: "Talvez mais tarde",
   },
   settings: {
+    soundEnabled: "Ativado",
+    volume: "Volume",
     haptics: "Hápticos",
     hapticsToggle: "Vibração",
     notifications: "Notificações",

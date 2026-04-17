@@ -61,7 +61,7 @@ export function HighScoreTable({
   const highlight = theme.buttonColors.red.color
   const activeHighlight = selectedMode === highlightMode ? highlightIndex : undefined
 
-  const rows = Array.from({ length: 10 }, (_, i) => {
+  const rows = Array.from({ length: 5 }, (_, i) => {
     const entry = scores[i]
     return {
       rank: i + 1,
