@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { StyleSheet, View } from "react-native"
+import { registerDevMenuItems } from "expo-dev-menu"
 import AppMetrics from "expo-eas-observe"
 import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
@@ -15,7 +16,18 @@ import { useWebFonts } from "@/hooks/useWebFonts"
 import { initI18n } from "@/i18n"
 import { ThemeProvider } from "@/theme/context"
 import { UI_COLORS } from "@/theme/uiColors"
+import { seedScreenshotData } from "@/utils/screenshotSeed"
 import { loadString } from "@/utils/storage"
+
+if (__DEV__) {
+  registerDevMenuItems([
+    {
+      name: "Seed Screenshot Data",
+      callback: () => seedScreenshotData(),
+      shouldCollapse: true,
+    },
+  ])
+}
 
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? ""
 
