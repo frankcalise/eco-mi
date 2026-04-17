@@ -247,8 +247,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 10,
     borderWidth: 1,
+    flex: 1,
     gap: 4,
-    paddingHorizontal: 10,
     paddingVertical: 12,
   },
   modeTabLabel: {
