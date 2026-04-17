@@ -36,7 +36,7 @@ const en = {
     mainMenu: "Main Menu",
     leaderboard: "Leaderboard",
     shareMessage:
-      "I reached Level {{level}} with a score of {{score}} in {{mode}} mode on Eco Mi! Can you beat me?",
+      "I reached Level {{level}} with a score of {{score}} in {{mode}} mode on Eco Mi! Can you beat me?\n\nhttps://frankcalise.github.io/eco-mi/download.html",
     timeRemaining: "{{time}}s",
     sequencesCompleted: "Sequences: {{count}}",
     unlockSound: "Unlock Sound ({{name}})",

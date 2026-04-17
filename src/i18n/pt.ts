@@ -36,7 +36,7 @@ const pt = {
     mainMenu: "Menu Principal",
     leaderboard: "Classificação",
     shareMessage:
-      "Cheguei ao Nível {{level}} com {{score}} pontos no modo {{mode}} no Eco Mi! Consegue me superar?",
+      "Cheguei ao Nível {{level}} com {{score}} pontos no modo {{mode}} no Eco Mi! Consegue me superar?\n\nhttps://frankcalise.github.io/eco-mi/download.html",
     timeRemaining: "{{time}}s",
     sequencesCompleted: "Sequências: {{count}}",
     unlockSound: "Desbloquear Som ({{name}})",
