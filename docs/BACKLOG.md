@@ -858,7 +858,18 @@ These are account setup and asset creation tasks. Track alongside code work.
       Current Spanish and Portuguese store listings use screenshots captured with the simulator in English, so the in-app UI strings (buttons, labels, stats, achievements) are still in English even though the surrounding store copy is translated. This dilutes the localization signal and hurts conversion in those markets. Workflow: set the simulator/device language to `es` (and then `pt-BR`), launch the app so `initI18n()` picks up the new locale, re-capture all screenshots (home, play, stats, achievements), run them through the existing compose script, and replace the ES + PT entries in App Store Connect and Play Console. Verify the in-game copy (level text, scores, game-over overlay) is visibly translated in each frame before uploading.
 - [x] Design Google Play feature graphic (1024x500)
 - [x] Write store listing copy (title, subtitle, description, keywords)
-- [ ] Record 15–30s preview video
+- [ ] **Record 15–30s App Store preview video**
+      Auto-plays muted in search results — must be visually compelling without sound.
+  - [ ] Seed screenshot data (dev menu → Seed Screenshot Data) for polished stats
+  - [ ] Record on physical device (smoother animations than simulator)
+  - [ ] **Hook (0-3s):** Idle screen with neon title cycling → press Start
+  - [ ] **Gameplay (3-10s):** Level 5-6 sequence playback + player repeating correctly, progress dots filling, level advancing
+  - [ ] **Payoff (10-15s):** Wrong input red flash → Game Over with 2x2 pills cascading in, OR New High Score → trophy Lottie
+  - [ ] **Variety (15-20s, optional):** Flash mode selector (5 modes), Chaos shuffle, Timed countdown
+  - [ ] **Close (20-25s):** Back to idle with Play button pulsing
+  - [ ] Trim and edit in iMovie/CapCut — no bezels needed for video
+  - [ ] Export specs: 886x1920 (iPhone 6.7") or 1080x1920 (Android), H.264, 30fps
+  - [ ] Upload to App Store Connect + Play Console
 - [x] Create privacy policy page and host at a public URL
 - [x] Set up Google Form or email for user feedback channel (review pre-prompt "Not really" path)
 - [x] **Build `download.html` smart-link page at `frankcalise.github.io/eco-mi/download.html`**
