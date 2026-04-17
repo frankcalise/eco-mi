@@ -3,6 +3,9 @@ import { AppState } from "react-native"
 import { AudioContext, GainNode, OscillatorNode } from "react-native-audio-api"
 import type { OscillatorType } from "react-native-audio-api"
 
+import { SETTINGS_SOUND_VOLUME } from "@/config/storageKeys"
+import { loadString } from "@/utils/storage"
+
 // Envelope constants — tuned to avoid clicks on react-native-audio-api
 // which has per-quantum normalization that amplifies discontinuities
 const ATTACK_S = 0.03 // 30ms fade-in
@@ -74,6 +77,7 @@ interface AudioTonesHook {
   playJingle: () => void
   playGameOverJingle: () => void
   playHighScoreJingle: () => void
+  syncVolume: () => void
   startContinuousSound: (color: Color) => void
   stopContinuousSound: (color: Color) => void
   stopContinuousSoundWithFade: (color: Color, fadeDuration?: number) => void
@@ -195,15 +199,30 @@ export function useAudioTones(
   // Create a fresh context + master gain node. All oscillators route through
   // the master gain to avoid per-quantum normalization artifacts from
   // varying peak levels hitting the destination directly.
+  function readVolume(): number {
+    const raw = loadString(SETTINGS_SOUND_VOLUME)
+    if (raw == null) return 1.0
+    const v = parseFloat(raw)
+    return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 1.0
+  }
+
   function createFreshContext() {
     const ctx = new AudioContext()
     audioContextRef.current = ctx
     const master = ctx.createGain()
-    master.gain.setValueAtTime(1.0, ctx.currentTime)
+    master.gain.setValueAtTime(readVolume(), ctx.currentTime)
     master.connect(ctx.destination)
     masterGainRef.current = master
     nodeCountRef.current = 0
     contextReadyRef.current = true
+  }
+
+  function syncVolume() {
+    const master = masterGainRef.current
+    const ctx = audioContextRef.current
+    if (master && ctx) {
+      master.gain.setValueAtTime(readVolume(), ctx.currentTime)
+    }
   }
 
   // Monitor node count — log but don't recycle. The audio engine's
@@ -623,6 +642,7 @@ export function useAudioTones(
     playJingle,
     playGameOverJingle,
     playHighScoreJingle,
+    syncVolume,
     startContinuousSound,
     stopContinuousSound,
     stopContinuousSoundWithFade,

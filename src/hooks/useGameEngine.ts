@@ -200,6 +200,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     playJingle,
     playGameOverJingle,
     playHighScoreJingle,
+    syncVolume: syncAudioVolume,
     startContinuousSound,
     stopContinuousSoundWithFade,
   } = useAudioTones(
@@ -587,6 +588,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
   function syncSoundState() {
     setSoundEnabled(loadString(SETTINGS_SOUND_ENABLED) !== "false")
+    syncAudioVolume()
   }
 
   function setModeAction(newMode: GameMode) {

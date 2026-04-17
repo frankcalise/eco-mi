@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react"
-import { View, Text, Pressable, StyleSheet, ScrollView, Switch } from "react-native"
+import { View, Text, Pressable, Platform, StyleSheet, ScrollView } from "react-native"
 import * as Haptics from "expo-haptics"
 import { useRouter } from "expo-router"
+import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
 import { EaseView } from "react-native-ease"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { NativeToggle } from "@/components/NativeToggle"
 import { PressableScale } from "@/components/PressableScale"
 import { SOUND_PACKS } from "@/config/soundPacks"
 import {
@@ -15,6 +17,7 @@ import {
   SETTINGS_NOTIFY_STREAK,
   SETTINGS_NOTIFY_WINBACK,
   SETTINGS_SOUND_ENABLED,
+  SETTINGS_SOUND_VOLUME,
 } from "@/config/storageKeys"
 import { themeIds, gameThemes } from "@/config/themes"
 import { useAudioTones, type ColorMap } from "@/hooks/useAudioTones"
@@ -24,6 +27,10 @@ import { useTheme } from "@/hooks/useTheme"
 import { UI_COLORS } from "@/theme/uiColors"
 import { useAnalytics } from "@/utils/analytics"
 import { loadString, saveString } from "@/utils/storage"
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { Host, Slider: NativeSlider } =
+  Platform.OS === "ios" ? require("@expo/ui/swift-ui") : require("@expo/ui/jetpack-compose")
 
 function buildColorMap(theme: typeof gameThemes.classic): ColorMap {
   return {
@@ -77,6 +84,10 @@ export default function SettingsScreen() {
   const [soundEnabled, setSoundEnabled] = useState(
     () => loadString(SETTINGS_SOUND_ENABLED) !== "false",
   )
+  const [volume, setVolume] = useState(() => {
+    const raw = loadString(SETTINGS_SOUND_VOLUME)
+    return raw != null ? parseFloat(raw) : 1.0
+  })
   const [hapticsEnabled, setHapticsEnabled] = useState(
     () => loadString(SETTINGS_HAPTICS_ENABLED) !== "false",
   )
@@ -96,7 +107,7 @@ export default function SettingsScreen() {
   const [poppingTheme, setPoppingTheme] = useState<string | null>(null)
 
   const colorMap = buildColorMap(activeTheme)
-  const { playPreview, initialize, cleanup } = useAudioTones(
+  const { playPreview, initialize, cleanup, syncVolume } = useAudioTones(
     colorMap,
     soundEnabled,
     soundPack.oscillatorType,
@@ -113,6 +124,13 @@ export default function SettingsScreen() {
     const next = !soundEnabled
     setSoundEnabled(next)
     saveString(SETTINGS_SOUND_ENABLED, next ? "true" : "false")
+  }
+
+  function handleVolumeChange(value: number) {
+    const clamped = Math.round(value * 100) / 100
+    setVolume(clamped)
+    saveString(SETTINGS_SOUND_VOLUME, String(clamped))
+    syncVolume()
   }
 
   function toggleHaptics() {
@@ -152,6 +170,7 @@ export default function SettingsScreen() {
         { paddingTop: insets.top, backgroundColor: activeTheme.backgroundColor },
       ]}
     >
+      <StatusBar style={activeTheme.statusBarStyle} />
       <View style={styles.header}>
         <PressableScale
           accessibilityLabel={t("common:back")}
@@ -165,26 +184,62 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        {/* Sound Toggle */}
+        {/* Sound */}
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: activeTheme.secondaryTextColor }]}>
-            {t("game:soundToggle")}
+            {t("game:sound")}
           </Text>
-          <PressableScale
-            testID="btn-sound-toggle"
-            accessibilityLabel={t("a11y:soundToggle")}
-            accessibilityRole="button"
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-              toggleSoundEnabled()
-            }}
-            style={[styles.soundToggleBtn, soundEnabled && styles.soundToggleBtnActive]}
-          >
-            <Ionicons name={soundEnabled ? "volume-high" : "volume-mute"} size={20} color="white" />
-            <Text style={styles.soundToggleText}>
-              {soundEnabled ? t("common:on") : t("common:off")}
+          <View style={styles.switchRow}>
+            <Text style={[styles.switchLabel, { color: activeTheme.textColor }]}>
+              {t("settings:soundEnabled")}
             </Text>
-          </PressableScale>
+            <NativeToggle
+              testID="btn-sound-toggle"
+              value={soundEnabled}
+              onValueChange={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                toggleSoundEnabled()
+              }}
+              activeColor={activeTheme.accentColor}
+              inactiveColor={activeTheme.secondaryTextColor}
+            />
+          </View>
+          <View style={styles.volumeRow}>
+            <Text
+              style={[
+                styles.switchLabel,
+                { color: soundEnabled ? activeTheme.textColor : activeTheme.secondaryTextColor },
+              ]}
+            >
+              {t("settings:volume")}
+            </Text>
+            <Host style={styles.volumeSlider}>
+              <NativeSlider
+                value={volume}
+                min={0}
+                max={1}
+                {...(Platform.OS === "ios"
+                  ? { step: 0.05 }
+                  : {
+                      steps: 20,
+                      enabled: soundEnabled,
+                      colors: {
+                        thumbColor: soundEnabled
+                          ? activeTheme.accentColor
+                          : activeTheme.secondaryTextColor,
+                        activeTrackColor: soundEnabled
+                          ? activeTheme.accentColor
+                          : activeTheme.secondaryTextColor,
+                        inactiveTrackColor: activeTheme.secondaryTextColor,
+                      },
+                    })}
+                onValueChange={handleVolumeChange}
+              />
+            </Host>
+            <Text style={[styles.volumeLabel, { color: activeTheme.secondaryTextColor }]}>
+              {Math.round(volume * 100)}%
+            </Text>
+          </View>
         </View>
 
         {/* Sound Pack */}
@@ -198,13 +253,19 @@ export default function SettingsScreen() {
               const isSelected = pack.id === soundPack.id
               const isPreviewing = !isOwned && pack.id === (previewSoundPack?.id ?? null)
               const isPopping = poppingSoundPack === pack.id
+              const labelColor = isSelected
+                ? activeTheme.accentColor
+                : activeTheme.secondaryTextColor
               return (
                 <Pressable
                   key={pack.id}
                   testID={`btn-sound-pack-${pack.id}`}
                   hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
                   onPress={() => {
-                    if (pack.id === soundPack.id) return
+                    if (pack.id === soundPack.id) {
+                      clearSoundPreview()
+                      return
+                    }
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
                     if (!soundEnabled) {
                       setSoundHint(true)
@@ -237,28 +298,8 @@ export default function SettingsScreen() {
                     ]}
                   >
                     <View style={styles.selectorButtonInner}>
-                      <Text
-                        style={[
-                          styles.soundPackName,
-                          {
-                            color: isSelected
-                              ? activeTheme.accentColor
-                              : isPreviewing
-                                ? activeTheme.warningColor
-                                : activeTheme.secondaryTextColor,
-                          },
-                        ]}
-                      >
-                        {pack.name}
-                      </Text>
-                      {!isOwned && (
-                        <Ionicons
-                          name="lock-closed"
-                          size={10}
-                          color={activeTheme.secondaryTextColor}
-                          style={styles.lockIconSmall}
-                        />
-                      )}
+                      <Text style={[styles.soundPackName, { color: labelColor }]}>{pack.name}</Text>
+                      {!isOwned && <Ionicons name="lock-closed" size={10} color={labelColor} />}
                     </View>
                   </EaseView>
                 </Pressable>
@@ -313,7 +354,10 @@ export default function SettingsScreen() {
                   testID={`btn-theme-${id}`}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   onPress={() => {
-                    if (id === theme.id) return
+                    if (id === theme.id) {
+                      clearPreview()
+                      return
+                    }
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
                     setPoppingTheme(id)
                     setTimeout(() => setPoppingTheme(null), 150)
@@ -378,10 +422,11 @@ export default function SettingsScreen() {
             <Text style={[styles.switchLabel, { color: activeTheme.textColor }]}>
               {t("settings:hapticsToggle")}
             </Text>
-            <Switch
+            <NativeToggle
               value={hapticsEnabled}
               onValueChange={toggleHaptics}
-              trackColor={{ false: activeTheme.borderColor, true: activeTheme.accentColor }}
+              activeColor={activeTheme.accentColor}
+              inactiveColor={activeTheme.secondaryTextColor}
             />
           </View>
         </View>
@@ -395,30 +440,33 @@ export default function SettingsScreen() {
             <Text style={[styles.switchLabel, { color: activeTheme.textColor }]}>
               {t("settings:notifyDaily")}
             </Text>
-            <Switch
+            <NativeToggle
               value={notifyDaily}
               onValueChange={toggleNotifyDaily}
-              trackColor={{ false: activeTheme.borderColor, true: activeTheme.accentColor }}
+              activeColor={activeTheme.accentColor}
+              inactiveColor={activeTheme.secondaryTextColor}
             />
           </View>
           <View style={styles.switchRow}>
             <Text style={[styles.switchLabel, { color: activeTheme.textColor }]}>
               {t("settings:notifyStreak")}
             </Text>
-            <Switch
+            <NativeToggle
               value={notifyStreak}
               onValueChange={toggleNotifyStreak}
-              trackColor={{ false: activeTheme.borderColor, true: activeTheme.accentColor }}
+              activeColor={activeTheme.accentColor}
+              inactiveColor={activeTheme.secondaryTextColor}
             />
           </View>
           <View style={styles.switchRow}>
             <Text style={[styles.switchLabel, { color: activeTheme.textColor }]}>
               {t("settings:notifyWinback")}
             </Text>
-            <Switch
+            <NativeToggle
               value={notifyWinback}
               onValueChange={toggleNotifyWinback}
-              trackColor={{ false: activeTheme.borderColor, true: activeTheme.accentColor }}
+              activeColor={activeTheme.accentColor}
+              inactiveColor={activeTheme.secondaryTextColor}
             />
           </View>
         </View>
@@ -504,9 +552,6 @@ const styles = StyleSheet.create({
   lockIconMedium: {
     opacity: 0.7,
   },
-  lockIconSmall: {
-    opacity: 0.6,
-  },
   removeAdsBtn: {
     alignItems: "center",
     backgroundColor: UI_COLORS.brandPurple,
@@ -571,24 +616,6 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-Regular",
     fontSize: 12,
   },
-  soundToggleBtn: {
-    alignItems: "center",
-    backgroundColor: UI_COLORS.whiteFaint,
-    borderRadius: 8,
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  soundToggleBtnActive: {
-    backgroundColor: UI_COLORS.greenTint20,
-  },
-  soundToggleText: {
-    color: UI_COLORS.white,
-    fontFamily: "Oxanium-SemiBold",
-    fontSize: 14,
-  },
   switchLabel: {
     fontFamily: "Oxanium-Regular",
     fontSize: 14,
@@ -597,6 +624,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
+    paddingRight: Platform.OS === "ios" ? 8 : 0,
     paddingVertical: 8,
   },
   themeCircle: {
@@ -632,5 +660,21 @@ const styles = StyleSheet.create({
     color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 14,
+  },
+  volumeLabel: {
+    fontFamily: "Oxanium-Medium",
+    fontSize: 12,
+    minWidth: 36,
+    textAlign: "right",
+  },
+  volumeRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    paddingVertical: 4,
+  },
+  volumeSlider: {
+    flex: 1,
+    height: 32,
   },
 })

@@ -9,10 +9,13 @@ import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-c
 
 import { AnalyticsBootstrap } from "@/components/AnalyticsBootstrap"
 import { RouteTracker } from "@/components/RouteTracker"
+import { SETTINGS_SELECTED_THEME } from "@/config/storageKeys"
+import { getThemeById } from "@/config/themes"
 import { useWebFonts } from "@/hooks/useWebFonts"
 import { initI18n } from "@/i18n"
 import { ThemeProvider } from "@/theme/context"
 import { UI_COLORS } from "@/theme/uiColors"
+import { loadString } from "@/utils/storage"
 
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? ""
 
@@ -41,6 +44,17 @@ function Root() {
 
   const loaded = isI18nInitialized && isFontsLoaded
 
+  const [themeBg, setThemeBg] = useState(() => {
+    const id = loadString(SETTINGS_SELECTED_THEME) ?? "classic"
+    return getThemeById(id).backgroundColor
+  })
+
+  function syncThemeBg() {
+    const id = loadString(SETTINGS_SELECTED_THEME) ?? "classic"
+    const bg = getThemeById(id).backgroundColor
+    setThemeBg((prev) => (prev === bg ? prev : bg))
+  }
+
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync()
@@ -62,8 +76,9 @@ function Root() {
       screenOptions={{
         headerShown: false,
         animation: "ios_from_right",
-        contentStyle: styles.stackContentBg,
+        contentStyle: { backgroundColor: themeBg },
       }}
+      screenListeners={{ state: syncThemeBg }}
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="tracking" options={{ animation: "fade" }} />
@@ -91,7 +106,7 @@ function Root() {
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <View style={styles.splashBg}>
+      <View style={[styles.splashBg, { backgroundColor: themeBg }]}>
         <ThemeProvider>{inner}</ThemeProvider>
       </View>
     </SafeAreaProvider>
@@ -102,9 +117,6 @@ const styles = StyleSheet.create({
   splashBg: {
     backgroundColor: UI_COLORS.classicBackground,
     flex: 1,
-  },
-  stackContentBg: {
-    backgroundColor: UI_COLORS.classicBackground,
   },
 })
 
