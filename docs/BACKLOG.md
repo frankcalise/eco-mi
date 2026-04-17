@@ -858,7 +858,7 @@ These are account setup and asset creation tasks. Track alongside code work.
 - [ ] Record 15–30s preview video
 - [x] Create privacy policy page and host at a public URL
 - [x] Set up Google Form or email for user feedback channel (review pre-prompt "Not really" path)
-- [ ] **Build `download.html` smart-link page at `frankcalise.github.io/eco-mi/download.html`**
+- [x] **Build `download.html` smart-link page at `frankcalise.github.io/eco-mi/download.html`**
       A single shareable URL that routes users to the correct store listing based on their device. Useful for social posts, QR codes, email signatures, the game-over share sheet, and anywhere else we can't maintain two separate links. Behavior:
   - **iOS** (detect `iPad|iPhone|iPod` in UA, excluding iPadOS-masquerading-as-Mac): `window.location.replace(APP_STORE_URL)`
   - **Android** (detect `Android` in UA): `window.location.replace(PLAY_STORE_URL)`
