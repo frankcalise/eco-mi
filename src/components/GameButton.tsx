@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet } from "react-native"
+import { View, StyleSheet } from "react-native"
 import { EaseView } from "react-native-ease"
 
 import { colorMap, type Color } from "@/hooks/useGameEngine"
@@ -107,14 +107,15 @@ export function GameButton({
         { top: baseCoords.top, left: baseCoords.left, width: buttonSize, height: buttonSize },
       ]}
     >
-      <Pressable
+      <View
         testID={`btn-${color}${isActive ? "-active" : ""}`}
         style={[styles.pressable, buttonStyle, borderRadius]}
-        disabled={disabled}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
+        accessible
         accessibilityLabel={color}
         accessibilityRole="button"
+        onTouchStart={disabled ? undefined : () => onPressIn()}
+        onTouchEnd={disabled ? undefined : () => onPressOut()}
+        onTouchCancel={disabled ? undefined : () => onPressOut()}
       />
     </EaseView>
   )

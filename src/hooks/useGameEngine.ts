@@ -102,6 +102,7 @@ interface UseGameEngineReturn {
   wrongFlash: boolean
   timerDelta: number | null
   sessionTime: number
+  getSessionTime: () => number
 
   startGame: () => void
   resetGame: () => void
@@ -170,6 +171,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
   const buttonPressStartTime = useRef<number | null>(null)
   const inputLocked = useRef(false)
+  const continueLocked = useRef(false)
   const timerBonusRef = useRef(0)
   const wrongCountRef = useRef(0)
   const lastHapticSecond = useRef(-1)
@@ -195,14 +197,15 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const {
     initialize,
     cleanup,
-    playSound,
+    noteOn,
+    noteOff,
+    silenceAll,
+    scheduleSequence,
     playPreview,
     playJingle,
     playGameOverJingle,
     playHighScoreJingle,
     syncVolume: syncAudioVolume,
-    startContinuousSound,
-    stopContinuousSoundWithFade,
   } = useAudioTones(
     activeColorMap,
     soundEnabled,
@@ -301,8 +304,10 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       if (remaining <= 0) {
         stopTimer()
         clearAllTimeouts()
+        silenceAll()
         send({ type: "TIMER_EXPIRED" })
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+        setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error), 150)
         handleGameOverSideEffects()
       } else {
         setTimeRemaining(remaining)
@@ -328,7 +333,6 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
   function flashButton(color: Color, duration: number) {
     setActiveButton(color)
-    playSound(color, duration)
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     addTimeout(() => setActiveButton(null), duration)
   }
@@ -338,6 +342,10 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     const interval = getSequenceInterval(currentLevel)
     const flashDuration = Math.min(toneDuration, interval - 80)
 
+    // Audio: pre-schedule entire sequence on the audio clock (zero JS jitter)
+    scheduleSequence(seq, interval / 1000, toneDuration / 1000)
+
+    // Visual: still via setTimeout (doesn't need audio-clock precision)
     seq.forEach((color, index) => {
       addTimeout(
         () => {
@@ -470,21 +478,26 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     if (sv !== "showing" && sv !== "waiting") return
     clearAllTimeouts()
     stopTimer()
+    silenceAll()
     inputLocked.current = false
     setActiveButton(null)
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+    setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error), 150)
     send({ type: "END_GAME" })
     handleGameOverSideEffects()
   }
 
   function continueGame() {
     if (state.value !== "gameover") return
+    if (continueLocked.current) return
+    continueLocked.current = true
     clearAllTimeouts()
     inputLocked.current = false
     setActiveButton(null)
     send({ type: "CONTINUE" })
 
     addTimeout(() => {
+      continueLocked.current = false
       // Replay existing sequence (preserved by setupContinue action)
       showSequence(ctx.sequence, ctx.level)
       // Machine transitions starting → showing via SET_INITIAL_SEQUENCE
@@ -499,7 +512,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
     buttonPressStartTime.current = Date.now()
     setActiveButton(color)
-    startContinuousSound(color)
+    noteOn(color)
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
   }
 
@@ -510,12 +523,14 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       ? Date.now() - buttonPressStartTime.current
       : 0
 
+    // Audio: always release immediately (150ms fade handles smoothness)
+    noteOff(color)
+
+    // Visual: keep button lit for minimum toneDuration on quick taps
     if (pressDuration < toneDuration) {
-      stopContinuousSoundWithFade(color, 100)
       addTimeout(() => setActiveButton(null), toneDuration - pressDuration)
     } else {
       setActiveButton(null)
-      stopContinuousSoundWithFade(color, 200)
     }
 
     // Clear input countdown
@@ -532,7 +547,9 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     const expectedColor = ctx.sequence[expectedIndex]
 
     if (color !== expectedColor) {
+      silenceAll()
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+      setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error), 150)
       setWrongFlash(true)
       addTimeout(() => setWrongFlash(false), 300)
       send({ type: "WRONG_INPUT" })
@@ -565,13 +582,13 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
             const newSeq = [...ctx.sequence, colors[getNextColorIndex()]]
             send({ type: "ADVANCE_COMPLETE", newSequence: newSeq })
             showSequence(newSeq, ctx.level + 1)
-          }, shuffleDuration + 200)
+          }, shuffleDuration + 600)
         } else {
           addTimeout(() => {
             const newSeq = [...ctx.sequence, colors[getNextColorIndex()]]
             send({ type: "ADVANCE_COMPLETE", newSequence: newSeq })
             showSequence(newSeq, ctx.level + 1)
-          }, 200)
+          }, 600)
         }
       }, 400)
     }
@@ -584,6 +601,11 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       saveString(SETTINGS_SOUND_ENABLED, prev ? "false" : "true")
       return !prev
     })
+  }
+
+  function getSessionTime(): number {
+    if (!sessionStartTimeRef.current) return 0
+    return Math.floor((Date.now() - sessionStartTimeRef.current) / 1000)
   }
 
   function syncSoundState() {
@@ -615,6 +637,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     wrongFlash,
     timerDelta,
     sessionTime,
+    getSessionTime,
 
     startGame,
     resetGame,

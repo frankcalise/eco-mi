@@ -89,7 +89,7 @@ export function GameScreen() {
     inputTimeRemaining,
     wrongFlash,
     timerDelta,
-    sessionTime,
+    getSessionTime,
     syncSoundState,
   } = useGameEngine({
     oscillatorType: soundPack.oscillatorType,
@@ -284,7 +284,7 @@ export function GameScreen() {
       mode,
       showRemoveAds: !removeAds && adShownThisSession,
       showContinue: rewardedReady && !continuedThisGame,
-      sessionTime,
+      sessionTime: getSessionTime(),
       needsInitials,
       leaderboardRank,
     })
