@@ -303,6 +303,9 @@
 
 ## Tech Debt
 
+- [ ] **Migrate from expo-eas-observe to expo-observe**
+      `expo-eas-observe` was the early-access package name. The public release is `expo-observe`. Swap the dependency, update imports in `_layout.tsx` (`AppMetrics.markFirstRender`, `AppMetrics.markInteractive`), and verify TTI / frame-drop tracking still reports in the Expo dashboard.
+
 - [ ] **Lift `useAds` state into shared store (singleton + Zustand)**
       Currently `useAds` is called once in GameScreen, so `/game-over` can't directly invoke `showRewarded()` — it has to signal GameScreen via the pending-action store, which then shows the ad. If the ad fails, user bounces back to `/game-over` (handled gracefully now, but still awkward). Fix: split `useAds` — keep AdMob refs + event listeners in a module-level singleton (`src/services/adsService.ts`), expose reactive state (`rewardedReady`, `adShownThisSession`, `consentReady`) via a Zustand store. Any screen can then read store state and call `adsService.showRewarded()` directly. Non-blocking since the current fallback works; pick up when we touch ads for another reason.
 
