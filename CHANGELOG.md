@@ -6,10 +6,6 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 
 ## [Unreleased]
 
-### Docs (v1.1.0)
-
-- **Download landing page** (`docs/download.html`) — single shareable smart-link at `frankcalise.github.io/eco-mi/download.html`. UA-sniffs iOS/Android and `location.replace`s to the correct store listing; desktop/other users see a dark landing page with app icon, "Brain training color sequence" tagline, and official App Store + Google Play badges (Apple Media Services SVG + Google Play PNG). `<noscript>` fallback keeps badges visible when JS is disabled. Served via GitHub Pages from `docs/`. iOS 1.0.1 approved 2026-04-16; Android already live.
-
 ### Refactor (v1.1.0 — Route Migrations & State Architecture)
 
 - **Leaderboard route** (`/leaderboard`) — extracted HighScoreTable from in-screen Modal into dedicated Expo Router screen. Mode tabs redesigned with idle-action-button sizing + green-accent selected state (matches mode selector / sound pack pattern). Swipe-between-modes gesture removed, GestureHandlerRootView wrapper dropped. Empty state uses trophy-outline icon + title (matches stats.tsx). Added missing `game:leaderboard` i18n key.
@@ -32,11 +28,13 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 - **Onboarding tooltip loop in timed mode** — dismisses after any first attempt (correct or wrong), not just correct input.
 - **Onboarding tooltip layout shift** — wrapped in fixed-height reserved slot so first-run content doesn't jump.
 - **Splash background alignment** — changed from `#191015` to `#1a1a2e` to match Classic theme and eliminate color flash on launch.
+- **Theme-aware navigation transition background** — `_layout.tsx` now reads the selected theme from MMKV synchronously and applies its `backgroundColor` to the root View and Stack `contentStyle`. Fixes the dark `#1a1a2e` flash during screen transitions on non-classic themes (especially Pastel).
 
 ### Feat (v1.1.0)
 
 - **Game-over 2x2 stat pill grid** — 4 pills (Score/Level/Best/Time) laid out in a 2x2 grid that mirrors the game-pad color layout (red TL, blue TR, green BL, yellow BR). Each pill has a thick colored border matching its game-board position, a colored icon (flash/trending-up/trophy/time), and a staggered spring entrance (250/350/450/550ms). Bottom CTA section delay bumped to 700ms to cascade after the pills. New Time pill uses `formatDuration(sessionTime)`. Pill content is left-aligned so growing score values (30 → 300 → 3000) stay anchored instead of shifting horizontally. Statistics/Achievements/Leaderboard nav links removed from game-over — those entry points remain on the idle screen.
 - **Session time tracking in useGameEngine** — `sessionTime` (elapsed seconds) captured via `sessionStartTimeRef` on `startGame` and finalized on every `gameover` transition. Exposed through the hook return and persisted to `gameOverStore` for the /game-over screen.
+- **Inline initials on game-over (replace modal)** — First qualifying game shows "What should we call you?" inline between the title and stat pills. Save persists initials to MMKV; future qualifying games auto-record silently with zero friction. Skip persists a flag so the prompt never returns. Leaderboard reduced from 10 → 5 slots (each entry feels meaningful). `InitialEntryModal.tsx` deleted (277 lines), race condition hack removed, `pendingGameOver` ref eliminated.
 - **Timed mode wrong-input penalty** — escalating time deduction (1s first wrong, 2s second, etc.) + 2s bonus on correct sequence. Status-line feedback: "Great job! +2s" / "Oops, try again! -Ns" with 2-second display + fade in/out. Stale clear timers cancel on new delta so consecutive inputs don't clear early.
 - **Timed countdown haptics** — light impact under 10s, medium under 5s, heavy under 3s. Fires once per second boundary.
 - **Level 12 achievement** — "Getting Serious" fills feedback gap between levels 10-15. Localized en/es/pt.

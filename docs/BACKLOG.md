@@ -142,7 +142,7 @@
   - Whether worklet integration improves responsiveness during animations
   - Backward compatibility — ensure Android API 24+ coverage is acceptable
 
-- [ ] **Theme-aware navigation transition background**
+- [x] **Theme-aware navigation transition background**
       `_layout.tsx` currently hardcodes the stack `contentStyle.backgroundColor` and the root wrapper View to `#1a1a2e` (Classic theme). Users on other themes (Neon, Retro, Pastel) see a momentary flash to that classic dark color during slide transitions. To fix: lift the theme context up to `_layout.tsx` so the root View and stack contentStyle use `activeTheme.backgroundColor` dynamically. Particularly noticeable on Pastel (light theme) where the flash goes from light → dark → light.
 
 - [ ] **Explore Expo UI adaptive/dynamic colors as a theme option**
@@ -272,7 +272,7 @@
   - [x] Add Time stat pill alongside Score/Level/Best (4-pill 2x2 grid mirrors game-pad color layout)
   - [ ] Browse LottieFiles for a premium game-over animation (current trophy is placeholder)
   - [x] Colored accent borders on stat pills (Duolingo-style) — borders mirror game-pad red/blue/green/yellow
-  - [ ] Inline initials entry on game-over screen (replace InitialEntryModal) — separate backlog entry below
+  - [x] Inline initials entry on game-over screen (replace InitialEntryModal) — shipped with persist + 5-slot reduction
 
 - [x] **Add time penalty for wrong input in timed mode**
       Wrong input replays the current sequence with no score or time penalty — effectively a free hint. Add a small time penalty (e.g., -3 seconds) so wrong inputs feel like a genuine setback rather than a free replay.
@@ -309,8 +309,8 @@
 - [ ] **Animated floating timer delta for timed mode**
       Currently the timed-mode +Ns / -Ns feedback renders as static text under the sequence dots ("Great job! +2s" / "Oops, try again! -1s"). Nice clear messaging but lacks the celebratory feel of a floating score popup (like arcade games / Duolingo XP). Redesign: emit a time-delta event (or use Zustand store) rendered at the screen root level, animate it on a randomized arc/path across the board area — start large at the game board center, scale down, drift up-and-outward with a slight random horizontal offset, fade out over ~1.2s. Keep the status-bar version as a fallback/secondary indicator, or replace entirely if the float is clear enough on its own. Blocked before: the EaseView animated transform was conflicting with style-level centering transforms, and the wrapper element was clipping. Solving that requires rendering outside the gameContainer hierarchy.
 
-- [ ] **Inline initials entry on /game-over screen (replace modal)**
-      Currently the high-score initials prompt is a `<Modal>` that pops over GameScreen before navigating to `/game-over`. It's a holdover from the old overlay architecture and breaks flow — two stacked modal-ish layers with a navigation in between. With the full-screen Duolingo game-over, initials entry should be inline on that screen when `isNewHighScore` is true. Layout: three-letter inputs directly below the "New High Score!" title, with a celebratory feel. Primary "Save" button, secondary "Skip" option. Removes the race condition fix we added for the modal-before-navigation bug and simplifies the flow to a single screen. Also let us drop `InitialEntryModal.tsx` + its keyboard-avoidance + dismiss plumbing.
+- [x] **Inline initials entry on /game-over screen (replace modal)**
+      Replaced InitialEntryModal with inline 3-letter input on the game-over screen. First qualifying game shows "What should we call you?" between title and stat pills. Save persists initials to MMKV; future games auto-record silently. Skip persists a flag so we don't re-prompt. Leaderboard reduced from 10 → 5 slots. InitialEntryModal.tsx deleted (277 lines).
 
 - [ ] **Shared Button component with variants + fullWidth preset**
       We have ~8 bespoke button styles across screens (Play Again, Continue, Share, Remove Ads, Restore Purchases, Sound toggle, Enable Reminders, etc.) each with near-identical padding/radius/flex rules. Every time a button is full width, centering icon+text in a flex row has to be remembered manually — missed it on Remove Ads and Sound toggle until a visual review. Create `<Button variant="primary|secondary|outlined|ghost" fullWidth size="sm|md|lg">` with centering baked into `fullWidth`, consistent padding/radius tokens, and theme-aware colors. Migrate existing buttons incrementally. Prevents future inconsistency drift and kills ~100 lines of duplicated StyleSheet rules.
@@ -730,9 +730,6 @@ These are where v1.1 earns its keep. Ship on top of Phase B foundation.
 - [x] **Arcade high score table with three-initial entry**
       Top 10 local leaderboard stored in MMKV (`ecomi:highScores` key) as `{ initials: string, score: number, level: number, date: string, mode: GameMode }[]` sorted by score descending, capped at 10. When a player's score qualifies for the top 10, show a three-letter initial input modal (standard keyboard input for v1). Display the leaderboard on the idle screen or as a dedicated view accessible from the header. Retro arcade cabinet aesthetic — monospaced, numbered rows, blinking cursor on entry. Coexists cleanly with future global leaderboards (Phase 5) as a "This Device" tab.
 
-- [ ] **Enhanced initial input: gesture/drawing recognition**
-      Phase 2 of the high score table. Replace the keyboard-based three-initial entry with a draw-to-letter input using `@shopify/react-native-skia`. Player draws each letter on a canvas, app converts the Skia path to a recognized character. Gives a unique, tactile arcade feel. Investigate ML-based handwriting recognition (on-device, lightweight) or a simpler template-matching approach for A-Z recognition. Could also explore gesture-based input (swipe patterns mapped to letters) as an alternative.
-
 - [ ] **Tablet-optimized layout (iPad / Android tablets)**
       Current layout uses `useWindowDimensions()` and scales the game board relative to screen size, but the UI is phone-optimized. On tablets the game board floats in the center with excessive empty space, text is undersized, and modals feel small. Adapt for larger screens:
   - Scale the game board to fill more of the available space while keeping it centered
@@ -861,7 +858,7 @@ These are account setup and asset creation tasks. Track alongside code work.
 - [ ] Record 15–30s preview video
 - [x] Create privacy policy page and host at a public URL
 - [x] Set up Google Form or email for user feedback channel (review pre-prompt "Not really" path)
-- [x] **Build `download.html` smart-link page at `frankcalise.github.io/eco-mi/download.html`**
+- [ ] **Build `download.html` smart-link page at `frankcalise.github.io/eco-mi/download.html`**
       A single shareable URL that routes users to the correct store listing based on their device. Useful for social posts, QR codes, email signatures, the game-over share sheet, and anywhere else we can't maintain two separate links. Behavior:
   - **iOS** (detect `iPad|iPhone|iPod` in UA, excluding iPadOS-masquerading-as-Mac): `window.location.replace(APP_STORE_URL)`
   - **Android** (detect `Android` in UA): `window.location.replace(PLAY_STORE_URL)`
