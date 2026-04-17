@@ -17,11 +17,17 @@ export function useAnalytics() {
     trackGameStarted(mode = "classic") {
       capture("game_started", { mode })
     },
-    trackGameOver(score: number, level: number, reason = "wrong_input") {
-      capture("game_over", { score, level, reason })
+    trackGameOver(score: number, level: number, sessionTimeS: number, reason = "wrong_input") {
+      capture("game_over", { score, level, sessionTimeS, reason })
     },
-    trackGameCompleted(score: number, level: number, isHighScore: boolean, mode = "classic") {
-      capture("game_completed", { score, level, isHighScore, mode })
+    trackGameCompleted(
+      score: number,
+      level: number,
+      isHighScore: boolean,
+      sessionTimeS: number,
+      mode = "classic",
+    ) {
+      capture("game_completed", { score, level, isHighScore, sessionTimeS, mode })
     },
     trackAdShown(type: string, placement: string) {
       capture("ad_shown", { type, placement })

@@ -207,12 +207,13 @@ export function GameScreen() {
   useEffect(() => {
     if (prevGameState.current !== "gameover" && gameState === "gameover") {
       incrementGamesPlayed()
-      analytics.trackGameOver(score, level)
+      const elapsed = getSessionTime()
+      analytics.trackGameOver(score, level, elapsed)
 
       if (isNewHighScore) {
         playHighScoreJingle()
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-        analytics.trackGameCompleted(score, level, true)
+        analytics.trackGameCompleted(score, level, true, elapsed)
       } else {
         playGameOverJingle()
       }
