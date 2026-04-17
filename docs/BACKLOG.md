@@ -120,7 +120,7 @@
 - [x] **Achievement unlock notification/toast**
       `useAchievements.ts` tracks `newlyUnlocked` state but nothing reads it. No toast, banner, or animation when earning an achievement. The entire point of achievements is the moment of recognition — without visible feedback they have zero motivational value. Add a brief celebration toast that appears over gameplay.
 
-- [ ] **Upgrade high score celebration with premium Lottie animation**
+- [x] **Upgrade high score celebration with premium Lottie animation**
       The current high score celebration is basic. Browse [LottieFiles](https://lottiefiles.com/) for a higher-quality trophy/confetti animation that better matches the game's aesthetic. Look for animations with:
   - Gold trophy or medal with particle confetti burst
   - Dark background compatibility (transparent or dark-themed)
