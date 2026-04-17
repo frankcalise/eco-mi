@@ -270,7 +270,7 @@
   **Still TODO:**
   - [x] Track session play time in useGameEngine (start on startGame, stop on gameover, expose as `sessionTime`)
   - [x] Add Time stat pill alongside Score/Level/Best (4-pill 2x2 grid mirrors game-pad color layout)
-  - [ ] Browse LottieFiles for a premium game-over animation (current trophy is placeholder)
+  - [x] Browse LottieFiles for a premium game-over animation — upgraded trophy.json, sized to 160x160
   - [x] Colored accent borders on stat pills (Duolingo-style) — borders mirror game-pad red/blue/green/yellow
   - [x] Inline initials entry on game-over screen (replace InitialEntryModal) — shipped with persist + 5-slot reduction
 
