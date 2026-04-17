@@ -602,8 +602,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   lottie: {
-    height: 100,
-    width: 100,
+    height: 160,
+    width: 160,
   },
   mainMenuLink: {
     paddingVertical: 8,
