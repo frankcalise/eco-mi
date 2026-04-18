@@ -17,7 +17,8 @@ import {
 } from "@/config/storageKeys"
 import { save, saveString } from "@/utils/storage"
 
-type AchievementRecord = Record<AchievementId, boolean>
+type AchievementEntry = { unlocked: boolean; unlockedAt?: string }
+type AchievementRecord = Record<AchievementId, AchievementEntry>
 
 export function seedScreenshotData() {
   // --- Stats ---
@@ -29,22 +30,22 @@ export function seedScreenshotData() {
 
   // --- Achievements (unlock a healthy subset) ---
   const unlocked: AchievementRecord = {
-    first_game: true,
-    score_100: true,
-    score_500: false,
-    score_1000: false,
-    level_5: true,
-    level_10: true,
-    level_12: true,
-    level_15: false,
-    level_20: false,
-    streak_3: true,
-    streak_7: true,
-    streak_14: false,
-    daily_first: true,
-    games_10: true,
-    games_50: true,
-    games_100: false,
+    first_game: { unlocked: true, unlockedAt: "2026-04-01T10:00:00.000Z" },
+    score_100: { unlocked: true, unlockedAt: "2026-04-03T10:00:00.000Z" },
+    score_500: { unlocked: false },
+    score_1000: { unlocked: false },
+    level_5: { unlocked: true, unlockedAt: "2026-04-02T10:00:00.000Z" },
+    level_10: { unlocked: true, unlockedAt: "2026-04-05T10:00:00.000Z" },
+    level_12: { unlocked: true, unlockedAt: "2026-04-08T10:00:00.000Z" },
+    level_15: { unlocked: false },
+    level_20: { unlocked: false },
+    streak_3: { unlocked: true, unlockedAt: "2026-04-04T10:00:00.000Z" },
+    streak_7: { unlocked: true, unlockedAt: "2026-04-10T10:00:00.000Z" },
+    streak_14: { unlocked: false },
+    daily_first: { unlocked: true, unlockedAt: "2026-04-02T10:00:00.000Z" },
+    games_10: { unlocked: true, unlockedAt: "2026-04-03T10:00:00.000Z" },
+    games_50: { unlocked: true, unlockedAt: "2026-04-09T10:00:00.000Z" },
+    games_100: { unlocked: false },
   }
   save(ACHIEVEMENTS_KEY, unlocked)
 
