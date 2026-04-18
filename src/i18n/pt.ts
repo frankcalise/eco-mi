@@ -76,7 +76,7 @@ const pt = {
     emptyInitials: "---",
     emptyScore: "----",
     emptyLeaderboard: "Jogue uma partida para conseguir sua primeira pontuação!",
-    streakAtRisk: "🔥 Sequência de {{count}} dias — jogue Daily para manter!",
+    streakAtRisk: "🔥 Sequência de {{count}} dias. Jogue Daily para manter!",
     pbDelta: "+{{delta}} acima da sua melhor marca anterior!",
     nearMiss: "Quase lá! Apenas {{delta}} do seu melhor!",
     shareCardWatermark: "Jogue Eco Mi — Consegue superar isso?",

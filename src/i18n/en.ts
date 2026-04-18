@@ -76,7 +76,7 @@ const en = {
     emptyInitials: "---",
     emptyScore: "----",
     emptyLeaderboard: "Play a game to set your first score!",
-    streakAtRisk: "🔥 Day {{count}} streak — play Daily to keep it!",
+    streakAtRisk: "🔥 Day {{count}} streak. Play Daily to keep it!",
     pbDelta: "+{{delta}} from your previous best!",
     nearMiss: "So close! Just {{delta}} away from your best!",
     shareCardWatermark: "Play Eco Mi — Can you beat this?",

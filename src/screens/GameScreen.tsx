@@ -322,8 +322,8 @@ export function GameScreen() {
           styles.container,
           {
             backgroundColor: activeTheme.backgroundColor,
-            paddingTop: insets.top,
-            paddingBottom: insets.bottom,
+            paddingTop: 16 + insets.top + 16,
+            paddingBottom: insets.bottom + 16,
           },
         ]}
       >
@@ -382,72 +382,74 @@ export function GameScreen() {
         </View>
 
         {/* Game Board */}
-        <View style={styles.gameBoard}>
-          {wrongFlash && (
-            <EaseView
-              style={styles.wrongFlashOverlay}
-              initialAnimate={{ opacity: 0 }}
-              animate={{ opacity: 0.25 }}
-              transition={{ default: { type: "timing", duration: 100 } }}
-            />
-          )}
-          <View style={gameContainerStyle}>
-            {buttonPositions.map((color, index) => (
-              <GameButton
-                key={color}
-                color={color}
-                index={index}
-                isActive={activeButton === color}
-                disabled={gameState !== "waiting" || isShuffling}
-                buttonSize={buttonSize}
-                gameSize={gameSize}
-                isShuffling={isShuffling}
-                onPressIn={() => handleButtonTouch(color)}
-                onPressOut={() => handleButtonRelease(color)}
-                themeColor={activeTheme.buttonColors[color].color}
-                themeActiveColor={activeTheme.buttonColors[color].activeColor}
+        <View style={styles.gameBoardFill}>
+          <View style={styles.gameBoard}>
+            {wrongFlash && (
+              <EaseView
+                style={styles.wrongFlashOverlay}
+                initialAnimate={{ opacity: 0 }}
+                animate={{ opacity: 0.25 }}
+                transition={{ default: { type: "timing", duration: 100 } }}
               />
-            ))}
+            )}
+            <View style={gameContainerStyle}>
+              {buttonPositions.map((color, index) => (
+                <GameButton
+                  key={color}
+                  color={color}
+                  index={index}
+                  isActive={activeButton === color}
+                  disabled={gameState !== "waiting" || isShuffling}
+                  buttonSize={buttonSize}
+                  gameSize={gameSize}
+                  isShuffling={isShuffling}
+                  onPressIn={() => handleButtonTouch(color)}
+                  onPressOut={() => handleButtonRelease(color)}
+                  themeColor={activeTheme.buttonColors[color].color}
+                  themeActiveColor={activeTheme.buttonColors[color].activeColor}
+                />
+              ))}
 
-            {/* Center Circle */}
-            <View style={styles.centerCircleWrapper}>
-              {showTimerRing && (
-                <View style={styles.timerRingContainer}>
-                  <TimerRing
-                    progress={timeRemaining! / 60}
-                    size={80}
-                    strokeWidth={4}
-                    theme={activeTheme}
-                  />
-                </View>
-              )}
-              <View
-                style={[
-                  styles.centerCircle,
-                  {
-                    backgroundColor: activeTheme.backgroundColor,
-                    borderColor: activeTheme.borderColor,
-                  },
-                  showTimerRing && styles.centerCircleNoRing,
-                ]}
-              >
-                {mode === "timed" && timeRemaining !== null && gameState !== "idle" ? (
-                  <AnimatedCountdown
-                    value={Math.ceil(timeRemaining)}
-                    color={timeRemaining <= 10 ? "#ef4444" : activeTheme.textColor}
-                    style={styles.centerTimer}
-                  />
-                ) : inputTimeRemaining !== null ? (
-                  <AnimatedCountdown
-                    value={inputTimeRemaining}
-                    color={inputTimeRemaining <= 3 ? "#ef4444" : "#fbbf24"}
-                    style={styles.centerTimer}
-                  />
-                ) : (
-                  <Text style={[styles.centerText, { color: activeTheme.secondaryTextColor }]}>
-                    {t(`game:modes.${mode}`)}
-                  </Text>
+              {/* Center Circle */}
+              <View style={styles.centerCircleWrapper}>
+                {showTimerRing && (
+                  <View style={styles.timerRingContainer}>
+                    <TimerRing
+                      progress={timeRemaining! / 60}
+                      size={80}
+                      strokeWidth={4}
+                      theme={activeTheme}
+                    />
+                  </View>
                 )}
+                <View
+                  style={[
+                    styles.centerCircle,
+                    {
+                      backgroundColor: activeTheme.backgroundColor,
+                      borderColor: activeTheme.borderColor,
+                    },
+                    showTimerRing && styles.centerCircleNoRing,
+                  ]}
+                >
+                  {mode === "timed" && timeRemaining !== null && gameState !== "idle" ? (
+                    <AnimatedCountdown
+                      value={Math.ceil(timeRemaining)}
+                      color={timeRemaining <= 10 ? "#ef4444" : activeTheme.textColor}
+                      style={styles.centerTimer}
+                    />
+                  ) : inputTimeRemaining !== null ? (
+                    <AnimatedCountdown
+                      value={inputTimeRemaining}
+                      color={inputTimeRemaining <= 3 ? "#ef4444" : "#fbbf24"}
+                      style={styles.centerTimer}
+                    />
+                  ) : (
+                    <Text style={[styles.centerText, { color: activeTheme.secondaryTextColor }]}>
+                      {t(`game:modes.${mode}`)}
+                    </Text>
+                  )}
+                </View>
               </View>
             </View>
           </View>
@@ -633,8 +635,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: UI_COLORS.classicBackground,
     flex: 1,
-    justifyContent: "center",
-    paddingVertical: 20,
   },
   controlsContainer: {
     flexDirection: "row",
@@ -647,7 +647,13 @@ const styles = StyleSheet.create({
   gameBoard: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 30,
+  },
+  gameBoardFill: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+    paddingBottom: 24,
+    width: "100%",
   },
   idleActionButton: {
     alignItems: "center",
