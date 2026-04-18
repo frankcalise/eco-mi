@@ -249,3 +249,8 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 - Added `CLAUDE.md` — project-level agent instructions
 - Added `.env.example` — environment variable template
 - Updated `.gitignore` — added `.env` protection for open source repo
+
+### Polish
+
+- `8f4d28f` — Screenshot seed: fixed achievement entries from plain booleans to `{ unlocked, unlockedAt }` objects matching the shape `useAchievements` reads. All seeded achievements now render highlighted.
+- `dce20a7` — GameScreen safe-area layout fix: replaced `justifyContent: "center"` with a `gameBoardFill` flex wrapper so the header stays pinned at the top and the game board centers in remaining space. StreakBanner no longer pushes the header toward the notch. Added `paddingHorizontal: 20` and `insets + 16` top/bottom buffer to match other screens.
