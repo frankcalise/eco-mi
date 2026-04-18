@@ -856,6 +856,13 @@ These are account setup and asset creation tasks. Track alongside code work.
 - [x] Design App Store screenshots (3+ per device size)
 - [ ] **Re-capture ES and PT screenshots with simulator language set to the target locale**
       Current Spanish and Portuguese store listings use screenshots captured with the simulator in English, so the in-app UI strings (buttons, labels, stats, achievements) are still in English even though the surrounding store copy is translated. This dilutes the localization signal and hurts conversion in those markets. Workflow: set the simulator/device language to `es` (and then `pt-BR`), launch the app so `initI18n()` picks up the new locale, re-capture all screenshots (home, play, stats, achievements), run them through the existing compose script, and replace the ES + PT entries in App Store Connect and Play Console. Verify the in-game copy (level text, scores, game-over overlay) is visibly translated in each frame before uploading.
+- [ ] **Move app-ads.txt to frankcalise.dev + update store Marketing URLs**
+      `app-ads.txt` currently lives in the eco-mi repo docs/ but AdMob needs it at the domain root of the developer website. Move to the `frankcalise.github.io` repo (served as `frankcalise.dev`) at `/app-ads.txt`. Then update:
+  - [ ] Host `app-ads.txt` at `https://frankcalise.dev/app-ads.txt`
+  - [ ] App Store Connect: set Marketing URL to `https://frankcalise.dev`
+  - [ ] Play Console: set Developer website to `https://frankcalise.dev` (account-level, Settings → Developer page)
+  - [ ] Verify AdMob app-ads.txt verification passes after DNS propagates
+  - [ ] Remove `docs/app-ads.txt` from eco-mi repo (no longer needed here)
 - [x] Design Google Play feature graphic (1024x500)
 - [x] Write store listing copy (title, subtitle, description, keywords)
 - [ ] **Record 15–30s App Store preview video**
