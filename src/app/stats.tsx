@@ -1,20 +1,30 @@
+import { useLayoutEffect } from "react"
 import { View, Text, StyleSheet } from "react-native"
-import { useRouter } from "expo-router"
+import { useRouter, useNavigation } from "expo-router"
+import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { PressableScale } from "@/components/PressableScale"
 import { useStats } from "@/hooks/useStats"
 import { useTheme } from "@/hooks/useTheme"
+import { stackHeaderOptionsFromTheme } from "@/navigation/secondaryStackHeader"
 import { UI_COLORS } from "@/theme/uiColors"
 
 export default function StatsScreen() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const router = useRouter()
+  const navigation = useNavigation()
   const stats = useStats()
-  const insets = useSafeAreaInsets()
   const { activeTheme } = useTheme()
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: t("stats:title"),
+      headerBackAccessibilityLabel: t("common:back"),
+      ...stackHeaderOptionsFromTheme(activeTheme),
+    })
+  }, [navigation, t, i18n.language, activeTheme])
 
   const dayUnit = (n: number) => (n !== 1 ? t("stats:daysUnit") : t("stats:dayUnit"))
 
@@ -34,24 +44,8 @@ export default function StatsScreen() {
   ]
 
   return (
-    <View
-      style={[
-        styles.container,
-        { paddingTop: insets.top, backgroundColor: activeTheme.backgroundColor },
-      ]}
-    >
-      <View style={styles.header}>
-        <PressableScale
-          accessibilityLabel={t("common:back")}
-          accessibilityRole="button"
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color={activeTheme.textColor} />
-        </PressableScale>
-        <Text style={[styles.title, { color: activeTheme.textColor }]}>{t("stats:title")}</Text>
-      </View>
-
+    <View style={[styles.container, { backgroundColor: activeTheme.backgroundColor }]}>
+      <StatusBar style={activeTheme.statusBarStyle} backgroundColor={activeTheme.backgroundColor} />
       {stats.gamesPlayed === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons
@@ -93,10 +87,6 @@ export default function StatsScreen() {
 }
 
 const styles = StyleSheet.create({
-  backButton: {
-    marginRight: 16,
-    padding: 10,
-  },
   container: {
     flex: 1,
     paddingHorizontal: 20,
@@ -126,10 +116,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 24,
   },
-  header: {
-    alignItems: "center",
-    flexDirection: "row",
-  },
   playNowButton: {
     alignItems: "center",
     borderRadius: 10,
@@ -158,10 +144,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   statValue: {
-    fontFamily: "Oxanium-Bold",
-    fontSize: 28,
-  },
-  title: {
     fontFamily: "Oxanium-Bold",
     fontSize: 28,
   },

@@ -1,14 +1,12 @@
-import { useEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { View, Text, Pressable, Platform, StyleSheet, ScrollView } from "react-native"
 import * as Application from "expo-application"
 import * as Haptics from "expo-haptics"
-import { useRouter } from "expo-router"
+import { useNavigation } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
 import { EaseView } from "react-native-ease"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
-
 import { NativeToggle } from "@/components/NativeToggle"
 import { PressableScale } from "@/components/PressableScale"
 import { SOUND_PACKS } from "@/config/soundPacks"
@@ -25,6 +23,7 @@ import { useAudioTones, type ColorMap } from "@/hooks/useAudioTones"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useSoundPack } from "@/hooks/useSoundPack"
 import { useTheme } from "@/hooks/useTheme"
+import { stackHeaderOptionsFromTheme } from "@/navigation/secondaryStackHeader"
 import { UI_COLORS } from "@/theme/uiColors"
 import { useAnalytics } from "@/utils/analytics"
 import { loadString, saveString } from "@/utils/storage"
@@ -63,14 +62,17 @@ function buildColorMap(theme: typeof gameThemes.classic): ColorMap {
 }
 
 export default function SettingsScreen() {
-  const { t } = useTranslation()
-  const router = useRouter()
-  const insets = useSafeAreaInsets()
+  const { t, i18n } = useTranslation()
+  const navigation = useNavigation()
   const analytics = useAnalytics()
 
   const { soundPack, previewSoundPack, setSoundPack, setPreviewSoundPack, clearSoundPreview } =
     useSoundPack()
   const { theme, activeTheme, previewTheme, setTheme, setPreviewTheme, clearPreview } = useTheme()
+  const clearPreviewRef = useRef(clearPreview)
+  const clearSoundPreviewRef = useRef(clearSoundPreview)
+  clearPreviewRef.current = clearPreview
+  clearSoundPreviewRef.current = clearSoundPreview
   const {
     removeAds,
     purchaseRemoveAds,
@@ -121,6 +123,21 @@ export default function SettingsScreen() {
     }
   }, [])
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: t("game:settings"),
+      headerBackAccessibilityLabel: t("common:back"),
+      ...stackHeaderOptionsFromTheme(activeTheme),
+    })
+  }, [navigation, t, i18n.language, activeTheme])
+
+  useEffect(() => {
+    return navigation.addListener("beforeRemove", () => {
+      clearPreviewRef.current()
+      clearSoundPreviewRef.current()
+    })
+  }, [navigation])
+
   function toggleSoundEnabled() {
     const next = !soundEnabled
     setSoundEnabled(next)
@@ -158,31 +175,9 @@ export default function SettingsScreen() {
     saveString(SETTINGS_NOTIFY_WINBACK, next ? "true" : "false")
   }
 
-  function handleBack() {
-    clearPreview()
-    clearSoundPreview()
-    router.back()
-  }
-
   return (
-    <View
-      style={[
-        styles.container,
-        { paddingTop: insets.top, backgroundColor: activeTheme.backgroundColor },
-      ]}
-    >
+    <View style={[styles.container, { backgroundColor: activeTheme.backgroundColor }]}>
       <StatusBar style={activeTheme.statusBarStyle} />
-      <View style={styles.header}>
-        <PressableScale
-          accessibilityLabel={t("common:back")}
-          accessibilityRole="button"
-          style={styles.backButton}
-          onPress={handleBack}
-        >
-          <Ionicons name="arrow-back" size={24} color={activeTheme.textColor} />
-        </PressableScale>
-        <Text style={[styles.title, { color: activeTheme.textColor }]}>{t("game:settings")}</Text>
-      </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         {/* Sound */}
@@ -317,6 +312,7 @@ export default function SettingsScreen() {
                 const success = await purchaseProduct(productId)
                 if (success) {
                   analytics.trackIapCompleted(productId)
+                  playPreview(previewSoundPack.oscillatorType)
                   setSoundPack(previewSoundPack.id)
                 }
               }}
@@ -528,10 +524,6 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  backButton: {
-    marginRight: 16,
-    padding: 10,
-  },
   container: {
     flex: 1,
     paddingHorizontal: 20,
@@ -539,10 +531,6 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: 40,
     paddingTop: 8,
-  },
-  header: {
-    alignItems: "center",
-    flexDirection: "row",
   },
   hidden: {
     height: 0,
@@ -646,10 +634,6 @@ const styles = StyleSheet.create({
   themeCircleSelected: {
     borderColor: UI_COLORS.green500,
     borderWidth: 2,
-  },
-  title: {
-    fontFamily: "Oxanium-Bold",
-    fontSize: 28,
   },
   unlockBtn: {
     alignItems: "center",

@@ -1,43 +1,33 @@
+import { useLayoutEffect } from "react"
 import { View, Text, ScrollView, StyleSheet } from "react-native"
-import { useRouter } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
+import { useNavigation } from "expo-router"
+import { StatusBar } from "expo-status-bar"
 import { useTranslation } from "react-i18next"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { PressableScale } from "@/components/PressableScale"
 import { ACHIEVEMENTS } from "@/config/achievements"
 import { useAchievements } from "@/hooks/useAchievements"
 import { useTheme } from "@/hooks/useTheme"
+import { stackHeaderOptionsFromTheme } from "@/navigation/secondaryStackHeader"
 import { UI_COLORS } from "@/theme/uiColors"
 
 export default function AchievementsScreen() {
-  const { t } = useTranslation()
-  const router = useRouter()
+  const { t, i18n } = useTranslation()
+  const navigation = useNavigation()
   const { isUnlocked } = useAchievements()
-  const insets = useSafeAreaInsets()
   const { activeTheme } = useTheme()
 
-  return (
-    <View
-      style={[
-        styles.container,
-        { paddingTop: insets.top, backgroundColor: activeTheme.backgroundColor },
-      ]}
-    >
-      <View style={styles.header}>
-        <PressableScale
-          accessibilityLabel={t("common:back")}
-          accessibilityRole="button"
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color={activeTheme.textColor} />
-        </PressableScale>
-        <Text style={[styles.title, { color: activeTheme.textColor }]}>
-          {t("achievements:title")}
-        </Text>
-      </View>
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: t("achievements:title"),
+      headerBackAccessibilityLabel: t("common:back"),
+      ...stackHeaderOptionsFromTheme(activeTheme),
+    })
+  }, [navigation, t, i18n.language, activeTheme])
 
+  return (
+    <View style={[styles.container, { backgroundColor: activeTheme.backgroundColor }]}>
+      <StatusBar style={activeTheme.statusBarStyle} backgroundColor={activeTheme.backgroundColor} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.grid}>
         {ACHIEVEMENTS.map((achievement) => {
           const unlocked = isUnlocked(achievement.id)
@@ -76,10 +66,6 @@ export default function AchievementsScreen() {
 }
 
 const styles = StyleSheet.create({
-  backButton: {
-    marginRight: 16,
-    padding: 10,
-  },
   badge: {
     alignItems: "center",
     borderRadius: 12,
@@ -114,13 +100,5 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingBottom: 40,
     paddingTop: 24,
-  },
-  header: {
-    alignItems: "center",
-    flexDirection: "row",
-  },
-  title: {
-    fontFamily: "Oxanium-Bold",
-    fontSize: 28,
   },
 })

@@ -1,18 +1,17 @@
-import { View, Text, StyleSheet } from "react-native"
-import { useRouter, useLocalSearchParams } from "expo-router"
-import { Ionicons } from "@expo/vector-icons"
+import { useLayoutEffect } from "react"
+import { View, StyleSheet } from "react-native"
+import { useLocalSearchParams, useNavigation } from "expo-router"
+import { StatusBar } from "expo-status-bar"
 import { useTranslation } from "react-i18next"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { HighScoreTable } from "@/components/HighScoreTable"
-import { PressableScale } from "@/components/PressableScale"
 import type { GameMode } from "@/hooks/useGameEngine"
 import { useTheme } from "@/hooks/useTheme"
+import { stackHeaderOptionsFromTheme } from "@/navigation/secondaryStackHeader"
 
 export default function LeaderboardScreen() {
-  const { t } = useTranslation()
-  const router = useRouter()
-  const insets = useSafeAreaInsets()
+  const { t, i18n } = useTranslation()
+  const navigation = useNavigation()
   const { activeTheme } = useTheme()
   const params = useLocalSearchParams<{
     mode?: string
@@ -24,27 +23,17 @@ export default function LeaderboardScreen() {
   const highlightIndex = params.highlightIndex ? parseInt(params.highlightIndex, 10) : undefined
   const highlightMode = (params.highlightMode as GameMode) ?? mode
 
-  return (
-    <View
-      style={[
-        styles.container,
-        { paddingTop: insets.top, backgroundColor: activeTheme.backgroundColor },
-      ]}
-    >
-      <View style={styles.header}>
-        <PressableScale
-          accessibilityLabel={t("common:back")}
-          accessibilityRole="button"
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color={activeTheme.textColor} />
-        </PressableScale>
-        <Text style={[styles.title, { color: activeTheme.textColor }]}>
-          {t("game:leaderboard")}
-        </Text>
-      </View>
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: t("game:leaderboard"),
+      headerBackAccessibilityLabel: t("common:back"),
+      ...stackHeaderOptionsFromTheme(activeTheme),
+    })
+  }, [navigation, t, i18n.language, activeTheme])
 
+  return (
+    <View style={[styles.container, { backgroundColor: activeTheme.backgroundColor }]}>
+      <StatusBar style={activeTheme.statusBarStyle} backgroundColor={activeTheme.backgroundColor} />
       <HighScoreTable
         initialMode={mode}
         highlightIndex={highlightIndex}
@@ -56,20 +45,8 @@ export default function LeaderboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  backButton: {
-    marginRight: 16,
-    padding: 10,
-  },
   container: {
     flex: 1,
     paddingHorizontal: 20,
-  },
-  header: {
-    alignItems: "center",
-    flexDirection: "row",
-  },
-  title: {
-    fontFamily: "Oxanium-Bold",
-    fontSize: 28,
   },
 })

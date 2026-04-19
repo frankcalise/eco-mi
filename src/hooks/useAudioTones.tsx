@@ -233,6 +233,16 @@ export function useAudioTones(
     }
   }
 
+  // Rebuild pooled oscillators when the selected sound pack changes.
+  // noteOn/noteOff/scheduleSequence use the prebuilt pool frequencies (220/277/330/415),
+  // so we need to recreate the pool to apply a new oscillator type.
+  useEffect(() => {
+    const ctx = audioContextRef.current
+    const master = masterGainRef.current
+    if (!contextReadyRef.current || !ctx || !master) return
+    initPool(ctx, master, oscillatorType)
+  }, [oscillatorType])
+
   // --- Pool-based note control (game frequencies only) ---
 
   function noteOn(color: Color) {

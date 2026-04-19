@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { View, Text, TextInput, Platform, Share, StyleSheet } from "react-native"
-import { useRouter } from "expo-router"
+import { useNavigation, useRouter } from "expo-router"
 import * as Sharing from "expo-sharing"
 import { Ionicons } from "@expo/vector-icons"
 import LottieView from "lottie-react-native"
@@ -69,6 +69,7 @@ function StatPill({ label, value, icon, borderColor, theme, delay, testID }: Sta
 export default function GameOverScreen() {
   const { t } = useTranslation()
   const router = useRouter()
+  const navigation = useNavigation()
   const insets = useSafeAreaInsets()
   const { activeTheme } = useTheme()
   const analytics = useAnalytics()
@@ -231,6 +232,16 @@ export default function GameOverScreen() {
   }
 
   const setPendingAction = usePendingActionStore((s) => s.setAction)
+
+  useEffect(() => {
+    return navigation.addListener("beforeRemove", () => {
+      const { action, setAction } = usePendingActionStore.getState()
+      if (!action) {
+        // Android/system back from /game-over should always return to a valid idle game state.
+        setAction("main_menu")
+      }
+    })
+  }, [navigation])
 
   function handlePlayAgain() {
     setPendingAction("play_again")

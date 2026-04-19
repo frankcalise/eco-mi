@@ -21,7 +21,7 @@ export function StreakBanner({ theme }: StreakBannerProps) {
   const lastPlayed = loadString(DAILY_LAST_PLAYED) ?? ""
   const today = getTodayKey()
 
-  if (streak <= 0 || lastPlayed === today) return null
+  if (streak <= 0 || lastPlayed === today) return <View style={styles.banner} />
 
   return (
     <View style={[styles.banner, { backgroundColor: `${theme.warningColor}20` }]}>

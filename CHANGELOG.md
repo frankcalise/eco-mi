@@ -6,6 +6,17 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 
 ## [Unreleased]
 
+### Fix
+
+- **Game-over back gesture / Android back button** — `beforeRemove` listener in `/game-over` ensures any system-initiated back (swipe, hardware button) sets `pending_action = main_menu`, so GameScreen always returns to a valid idle state instead of freezing in gameover. GameScreen additionally calls `resetGame` on focus if it finds itself in gameover without a pending action.
+- **Sound pack purchase takes effect immediately** — `useAudioTones` now rebuilds its oscillator pool when `oscillatorType` changes, so a newly unlocked sound pack is heard right away without restarting the app. Also plays a preview tone immediately after a successful IAP to confirm the purchase.
+- **Theme and sound pack state sync across instances** — `useTheme` and `useSoundPack` switched from local `useState` to `useSyncExternalStore` backed by module-level state, so changes in Settings propagate immediately to GameScreen and every other mounted consumer.
+- **Legacy sound-pack entitlement IDs** — `SOUND_ENTITLEMENT_MAP` now accepts both canonical IDs (`sound_square`, `sound_sawtooth`, `sound_triangle`) and original aliases (`sound_retro`, `sound_buzzy`, `sound_mellow`), keeping existing subscribers unlocked after the entitlement rename.
+
+### Refactor
+
+- **Native Stack headers** — Stats, leaderboard, achievements, and settings use the Expo Router native stack header with shared options in `src/navigation/secondaryStackHeader.ts` (Oxanium, classic baseline). Each screen updates title, theme colors, and back accessibility via `navigation.setOptions`. Settings clears theme/sound preview state on `beforeRemove` (gesture, hardware back, or header). Use `useNavigation` from **`expo-router`** (not `@react-navigation/native`) so the navigation object resolves inside Expo Router’s container.
+
 ### Refactor (v1.1.0 — Route Migrations & State Architecture)
 
 - **Leaderboard route** (`/leaderboard`) — extracted HighScoreTable from in-screen Modal into dedicated Expo Router screen. Mode tabs redesigned with idle-action-button sizing + green-accent selected state (matches mode selector / sound pack pattern). Swipe-between-modes gesture removed, GestureHandlerRootView wrapper dropped. Empty state uses trophy-outline icon + title (matches stats.tsx). Added missing `game:leaderboard` i18n key.

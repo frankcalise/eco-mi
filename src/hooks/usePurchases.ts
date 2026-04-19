@@ -18,10 +18,11 @@ const THEME_ENTITLEMENT_MAP: Record<string, string> = {
   pastel: "theme_pastel",
 }
 
-const SOUND_ENTITLEMENT_MAP: Record<string, string> = {
-  square: "sound_retro",
-  sawtooth: "sound_buzzy",
-  triangle: "sound_mellow",
+const SOUND_ENTITLEMENT_MAP: Record<string, string[]> = {
+  // Canonical entitlement IDs + legacy aliases for backward compatibility.
+  square: ["sound_square", "sound_retro"],
+  sawtooth: ["sound_sawtooth", "sound_buzzy"],
+  triangle: ["sound_triangle", "sound_mellow"],
 }
 
 const THEME_PRODUCT_MAP: Record<string, string> = {
@@ -95,7 +96,7 @@ export function usePurchases(): UsePurchasesReturn {
 
     const allEntitlements = [
       ...Object.values(THEME_ENTITLEMENT_MAP),
-      ...Object.values(SOUND_ENTITLEMENT_MAP),
+      ...Object.values(SOUND_ENTITLEMENT_MAP).flat(),
     ]
     for (const entId of allEntitlements) {
       const owned = !!info.entitlements.active[entId]
@@ -119,9 +120,9 @@ export function usePurchases(): UsePurchasesReturn {
 
   function ownsSoundPack(packId: string): boolean {
     if (packId === "sine") return true
-    const entId = SOUND_ENTITLEMENT_MAP[packId]
-    if (!entId) return false
-    return checkEntitlement(entId)
+    const entIds = SOUND_ENTITLEMENT_MAP[packId]
+    if (!entIds) return false
+    return entIds.some((entId) => checkEntitlement(entId))
   }
 
   function getThemeProductId(themeId: string): string | undefined {
