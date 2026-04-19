@@ -101,6 +101,9 @@ export function GameScreen() {
 
   useFocusEffect(() => {
     syncSoundState()
+    if (gameState === "gameover") {
+      resetGame()
+    }
   })
 
   const pendingAction = usePendingActionStore((s) => s.action)
@@ -650,7 +653,6 @@ const styles = StyleSheet.create({
   },
   gameBoardFill: {
     alignItems: "center",
-    flex: 1,
     justifyContent: "center",
     paddingBottom: 24,
     width: "100%",
