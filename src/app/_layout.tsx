@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { StyleSheet, View } from "react-native"
+import i18n from "i18next"
 import { registerDevMenuItems } from "expo-dev-menu"
 import AppMetrics from "expo-eas-observe"
 import { Stack } from "expo-router"
@@ -14,6 +15,7 @@ import { SETTINGS_SELECTED_THEME } from "@/config/storageKeys"
 import { getThemeById } from "@/config/themes"
 import { useWebFonts } from "@/hooks/useWebFonts"
 import { initI18n } from "@/i18n"
+import { secondaryStackScreenOptions } from "@/navigation/secondaryStackHeader"
 import { ThemeProvider } from "@/theme/context"
 import { UI_COLORS } from "@/theme/uiColors"
 import { seedScreenshotData } from "@/utils/screenshotSeed"
@@ -92,12 +94,18 @@ function Root() {
       }}
       screenListeners={{ state: syncThemeBg }}
     >
-      <Stack.Screen name="index" />
+      <Stack.Screen
+        name="index"
+        options={{
+          /** Used as previous-screen label (e.g. iOS back long-press); header stays hidden via screenOptions. */
+          title: i18n.t("game:mainMenu"),
+        }}
+      />
       <Stack.Screen name="tracking" options={{ animation: "fade" }} />
-      <Stack.Screen name="achievements" />
-      <Stack.Screen name="stats" />
-      <Stack.Screen name="leaderboard" />
-      <Stack.Screen name="settings" />
+      <Stack.Screen name="achievements" options={secondaryStackScreenOptions} />
+      <Stack.Screen name="stats" options={secondaryStackScreenOptions} />
+      <Stack.Screen name="leaderboard" options={secondaryStackScreenOptions} />
+      <Stack.Screen name="settings" options={secondaryStackScreenOptions} />
       <Stack.Screen name="game-over" options={{ animation: "fade", gestureEnabled: false }} />
     </Stack>
   )
