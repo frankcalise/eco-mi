@@ -45,6 +45,11 @@ if (SENTRY_DSN) {
 
 SplashScreen.preventAutoHideAsync()
 
+/** Keeps index under modal routes for correct deep-link / back stack behavior. */
+export const unstable_settings = {
+  anchor: "index",
+}
+
 const POSTHOG_KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY ?? ""
 
 function Root() {
@@ -108,6 +113,15 @@ function Root() {
       <Stack.Screen name="leaderboard" options={secondaryStackScreenOptions as any} />
       <Stack.Screen name="settings" options={secondaryStackScreenOptions as any} />
       <Stack.Screen name="game-over" options={{ animation: "fade", gestureEnabled: false }} />
+      <Stack.Screen
+        name="mode-select"
+        options={{
+          presentation: "transparentModal",
+          headerShown: false,
+          animation: "fade",
+          contentStyle: { backgroundColor: "transparent" },
+        }}
+      />
     </Stack>
   )
 

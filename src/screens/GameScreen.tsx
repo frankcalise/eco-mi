@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import type { LayoutChangeEvent } from "react-native"
-import { Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native"
+import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native"
 import * as Haptics from "expo-haptics"
 import { useFocusEffect, useRouter } from "expo-router"
 import { StatusBar } from "expo-status-bar"
@@ -11,16 +11,21 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { AnimatedCountdown } from "@/components/AnimatedCountdown"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
+import { CompactModePickerSheet } from "@/components/CompactModePickerSheet"
+import type { CompactModePickerSheetHandle } from "@/components/CompactModePickerSheet.types"
 import { GameButton } from "@/components/GameButton"
 import { GameHeader } from "@/components/GameHeader"
 import { GameStatusBar } from "@/components/GameStatusBar"
-import { ModeItem } from "@/components/ModeItem"
 import { OnboardingTooltip } from "@/components/OnboardingTooltip"
 import { PressableScale } from "@/components/PressableScale"
 import { StreakBanner } from "@/components/StreakBanner"
 import { TimerRing } from "@/components/TimerRing"
 import {
-  DAILY_CURRENT_STREAK,
+  MODE_PICKER_DISMISS_DELAY_MS,
+  MODE_PICKER_PULSE_COUNT,
+  MODE_PICKER_PULSE_DURATION_MS,
+} from "@/config/modePickerTiming"
+import {
   INITIALS_SKIPPED,
   ONBOARDING_COMPLETED,
   SAVED_INITIALS,
@@ -35,29 +40,20 @@ import { useSoundPack } from "@/hooks/useSoundPack"
 import { useTheme } from "@/hooks/useTheme"
 import { useGameOverStore } from "@/stores/gameOverStore"
 import { usePendingActionStore } from "@/stores/pendingActionStore"
+import { usePendingModeStore } from "@/stores/pendingModeStore"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { UI_COLORS } from "@/theme/uiColors"
 import { useAnalytics } from "@/utils/analytics"
 import { useBreakpoints } from "@/utils/layoutBreakpoints"
 import { loadString, saveString } from "@/utils/storage"
 
-const GAME_MODES: { id: GameMode; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { id: "classic", label: "Classic", icon: "game-controller" },
-  { id: "daily", label: "Daily", icon: "calendar" },
-  { id: "timed", label: "Timed", icon: "timer" },
-  { id: "reverse", label: "Reverse", icon: "swap-horizontal" },
-  { id: "chaos", label: "Chaos", icon: "shuffle" },
-]
-
-const PULSE_DURATION = 150
-const PULSE_COUNT = 2
-const DISMISS_DELAY = 200
-
 export function GameScreen() {
   const { t } = useTranslation()
   const router = useRouter()
   const { width, height } = useWindowDimensions()
   const { isTablet } = useBreakpoints()
+  /** Expo UI sheets are iOS/Android-only; other platforms use /mode-select. */
+  const compactNativeSheetsAvailable = Platform.OS === "ios" || Platform.OS === "android"
   const isTabletLandscape = isTablet && width > height
   const isTabletPortrait = isTablet && !isTabletLandscape
   const insets = useSafeAreaInsets()
@@ -120,6 +116,16 @@ export function GameScreen() {
     else if (pendingAction === "main_menu") resetGame()
   }, [pendingAction])
 
+  const pendingMode = usePendingModeStore((s) => s.pendingMode)
+  const clearPendingMode = usePendingModeStore((s) => s.clear)
+
+  useEffect(() => {
+    if (!pendingMode) return
+    const next = pendingMode
+    clearPendingMode()
+    setMode(next)
+  }, [pendingMode, clearPendingMode, setMode])
+
   const {
     showInterstitial,
     showRewarded,
@@ -134,7 +140,8 @@ export function GameScreen() {
   const sessionCounted = useRef(false)
   const continueInFlight = useRef(false)
   const queuedAutoStart = useRef(false)
-  const [modeModalVisible, setModeModalVisible] = useState(false)
+  const [compactModeSheetVisible, setCompactModeSheetVisible] = useState(false)
+  const compactModePickerRef = useRef<CompactModePickerSheetHandle>(null)
   const previousHighScoreRef = useRef(highScore)
   const [pulsingMode, setPulsingMode] = useState<GameMode | null>(null)
   const [pulsePhase, setPulsePhase] = useState<"bright" | "dim">("bright")
@@ -155,7 +162,19 @@ export function GameScreen() {
     }
   }, [playerSequence.length, onboardingDone, wrongFlash])
 
-  function handleModeSelect(id: GameMode) {
+  function openModePicker() {
+    if (isTablet || !compactNativeSheetsAvailable) {
+      router.push({ pathname: "/mode-select", params: { currentMode: mode } })
+      return
+    }
+    setCompactModeSheetVisible(true)
+  }
+
+  /**
+   * Compact path only: setMode runs immediately; tablet path uses /mode-select + pendingModeStore
+   * so the engine updates after pulse (see mode-select.tsx).
+   */
+  function handleCompactModeSelect(id: GameMode) {
     if (id === mode) return
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
@@ -168,21 +187,29 @@ export function GameScreen() {
     setPulsePhase("bright")
 
     let delay = 0
-    for (let i = 0; i < PULSE_COUNT; i++) {
-      pulseTimers.current.push(setTimeout(() => setPulsePhase("dim"), delay + PULSE_DURATION))
-      if (i < PULSE_COUNT - 1) {
+    for (let i = 0; i < MODE_PICKER_PULSE_COUNT; i++) {
+      pulseTimers.current.push(
+        setTimeout(() => setPulsePhase("dim"), delay + MODE_PICKER_PULSE_DURATION_MS),
+      )
+      if (i < MODE_PICKER_PULSE_COUNT - 1) {
         pulseTimers.current.push(
-          setTimeout(() => setPulsePhase("bright"), delay + PULSE_DURATION * 2),
+          setTimeout(
+            () => setPulsePhase("bright"),
+            delay + MODE_PICKER_PULSE_DURATION_MS * 2,
+          ),
         )
       }
-      delay += PULSE_DURATION * 2
+      delay += MODE_PICKER_PULSE_DURATION_MS * 2
     }
 
     pulseTimers.current.push(
       setTimeout(() => {
-        setPulsingMode(null)
-        setModeModalVisible(false)
-      }, delay + DISMISS_DELAY),
+        void (async () => {
+          setPulsingMode(null)
+          await compactModePickerRef.current?.hideIfNeeded()
+          setCompactModeSheetVisible(false)
+        })()
+      }, delay + MODE_PICKER_DISMISS_DELAY_MS),
     )
   }
 
@@ -676,7 +703,7 @@ export function GameScreen() {
         <GameHeader
           isIdle={isIdle}
           theme={activeTheme}
-          onModePress={() => setModeModalVisible(true)}
+          onModePress={openModePicker}
           onSettingsPress={() => router.push("/settings")}
         />
 
@@ -832,45 +859,20 @@ export function GameScreen() {
           </>
         )}
 
-        <Modal
-          visible={modeModalVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => {
-            if (!pulsingMode) setModeModalVisible(false)
-          }}
-        >
-          <Pressable
-            style={styles.modalBackdrop}
-            onPress={() => {
-              if (!pulsingMode) setModeModalVisible(false)
+        {compactNativeSheetsAvailable && !isTablet ? (
+          <CompactModePickerSheet
+            ref={compactModePickerRef}
+            visible={compactModeSheetVisible}
+            onVisibleChange={(visible) => {
+              if (!visible && !pulsingMode) setCompactModeSheetVisible(false)
             }}
-          >
-            <Pressable
-              style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}
-            >
-              <Text style={[styles.modalTitle, { color: activeTheme.textColor }]}>
-                {t("game:modeSelect")}
-              </Text>
-              {GAME_MODES.map((entry) => {
-                const streak =
-                  entry.id === "daily" ? parseInt(loadString(DAILY_CURRENT_STREAK) ?? "0", 10) : 0
-                return (
-                  <ModeItem
-                    key={entry.id}
-                    mode={entry}
-                    isSelected={mode === entry.id}
-                    isPulsing={pulsingMode === entry.id}
-                    pulsePhase={pulsePhase}
-                    streak={streak}
-                    theme={activeTheme}
-                    onPress={() => handleModeSelect(entry.id)}
-                  />
-                )
-              })}
-            </Pressable>
-          </Pressable>
-        </Modal>
+            pulsingMode={pulsingMode}
+            selectedMode={mode}
+            pulsePhase={pulsePhase}
+            theme={activeTheme}
+            onSelectMode={handleCompactModeSelect}
+          />
+        ) : null}
       </View>
     </GameThemeProvider>
   )
@@ -989,25 +991,6 @@ const styles = StyleSheet.create({
     gap: 20,
     paddingHorizontal: 20,
     width: "100%",
-  },
-  modalBackdrop: {
-    alignItems: "center",
-    backgroundColor: UI_COLORS.backdropModal,
-    flex: 1,
-    justifyContent: "center",
-    padding: 24,
-  },
-  modalContent: {
-    borderRadius: 16,
-    maxWidth: 380,
-    padding: 20,
-    width: "85%",
-  },
-  modalTitle: {
-    fontFamily: "Oxanium-Bold",
-    fontSize: 20,
-    marginBottom: 16,
-    textAlign: "center",
   },
   onboardingSlot: {
     alignItems: "center",
