@@ -71,7 +71,9 @@ export function AchievementToast({
 
 const styles = StyleSheet.create({
   container: {
+    alignSelf: "center",
     left: 0,
+    maxWidth: 500,
     position: "absolute",
     right: 0,
     zIndex: 999,

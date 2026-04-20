@@ -10,6 +10,7 @@ import { useStats } from "@/hooks/useStats"
 import { useTheme } from "@/hooks/useTheme"
 import { stackHeaderOptionsFromTheme } from "@/navigation/secondaryStackHeader"
 import { UI_COLORS } from "@/theme/uiColors"
+import { useBreakpoints } from "@/utils/layoutBreakpoints"
 
 export default function StatsScreen() {
   const { t, i18n } = useTranslation()
@@ -17,6 +18,7 @@ export default function StatsScreen() {
   const navigation = useNavigation()
   const stats = useStats()
   const { activeTheme } = useTheme()
+  const { isTablet } = useBreakpoints()
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -46,42 +48,59 @@ export default function StatsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: activeTheme.backgroundColor }]}>
       <StatusBar style={activeTheme.statusBarStyle} backgroundColor={activeTheme.backgroundColor} />
-      {stats.gamesPlayed === 0 ? (
-        <View style={styles.emptyState}>
-          <Ionicons
-            name="game-controller-outline"
-            size={48}
-            color={activeTheme.secondaryTextColor}
-          />
-          <Text style={[styles.emptyTitle, { color: activeTheme.textColor }]}>
-            {t("stats:emptyTitle")}
-          </Text>
-          <Text style={[styles.emptyBody, { color: activeTheme.secondaryTextColor }]}>
-            {t("stats:emptyBody")}
-          </Text>
-          <PressableScale
-            style={[styles.playNowButton, { backgroundColor: activeTheme.accentColor }]}
-            onPress={() => router.back()}
+      <View style={[styles.content, isTablet && styles.contentTablet]}>
+        {stats.gamesPlayed === 0 ? (
+          <View
+            style={[
+              styles.emptyState,
+              isTablet && styles.emptyStateTablet,
+              isTablet && {
+                backgroundColor: activeTheme.surfaceColor,
+                borderColor: activeTheme.borderColor,
+              },
+            ]}
           >
-            <Ionicons name="play" size={18} color="white" />
-            <Text style={styles.playNowText}>{t("stats:playNow")}</Text>
-          </PressableScale>
-        </View>
-      ) : (
-        <View style={styles.grid}>
-          {statItems.map((item) => (
-            <View
-              key={item.label}
-              style={[styles.statCard, { backgroundColor: activeTheme.surfaceColor }]}
+            <Ionicons
+              name="game-controller-outline"
+              size={48}
+              color={activeTheme.secondaryTextColor}
+            />
+            <Text style={[styles.emptyTitle, { color: activeTheme.textColor }]}>
+              {t("stats:emptyTitle")}
+            </Text>
+            <Text style={[styles.emptyBody, { color: activeTheme.secondaryTextColor }]}>
+              {t("stats:emptyBody")}
+            </Text>
+            <PressableScale
+              style={[
+                styles.playNowButton,
+                isTablet && styles.playNowButtonTablet,
+                { backgroundColor: activeTheme.accentColor },
+              ]}
+              onPress={() => router.back()}
             >
-              <Text style={[styles.statValue, { color: activeTheme.textColor }]}>{item.value}</Text>
-              <Text style={[styles.statLabel, { color: activeTheme.secondaryTextColor }]}>
-                {item.label}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
+              <Ionicons name="play" size={18} color="white" />
+              <Text style={styles.playNowText}>{t("stats:playNow")}</Text>
+            </PressableScale>
+          </View>
+        ) : (
+          <View style={styles.grid}>
+            {statItems.map((item) => (
+              <View
+                key={item.label}
+                style={[styles.statCard, { backgroundColor: activeTheme.surfaceColor }]}
+              >
+                <Text style={[styles.statValue, { color: activeTheme.textColor }]}>
+                  {item.value}
+                </Text>
+                <Text style={[styles.statLabel, { color: activeTheme.secondaryTextColor }]}>
+                  {item.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
     </View>
   )
 }
@@ -91,18 +110,37 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
+  content: {
+    flex: 1,
+    width: "100%",
+  },
+  contentTablet: {
+    alignSelf: "center",
+    maxWidth: 700,
+    width: "100%",
+  },
   emptyBody: {
     fontFamily: "Oxanium-Regular",
     fontSize: 14,
     marginTop: 8,
+    maxWidth: 340,
     textAlign: "center",
   },
   emptyState: {
     alignItems: "center",
+    borderRadius: 20,
     flex: 1,
     gap: 8,
     justifyContent: "center",
     paddingBottom: 60,
+    width: "100%",
+  },
+  emptyStateTablet: {
+    alignSelf: "center",
+    borderWidth: 1,
+    maxWidth: 420,
+    paddingHorizontal: 32,
+    paddingTop: 32,
   },
   emptyTitle: {
     fontFamily: "Oxanium-Bold",
@@ -124,6 +162,10 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 24,
     paddingVertical: 12,
+  },
+  playNowButtonTablet: {
+    justifyContent: "center",
+    minWidth: 220,
   },
   playNowText: {
     color: UI_COLORS.white,

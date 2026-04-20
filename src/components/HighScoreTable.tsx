@@ -19,6 +19,7 @@ interface HighScoreTableProps {
   initialMode: GameMode
   highlightIndex?: number
   highlightMode?: GameMode
+  isTablet?: boolean
   theme: GameTheme
 }
 
@@ -51,6 +52,7 @@ export function HighScoreTable({
   initialMode,
   highlightIndex,
   highlightMode,
+  isTablet = false,
   theme,
 }: HighScoreTableProps) {
   const [selectedMode, setSelectedMode] = useState<GameMode>(initialMode)
@@ -100,6 +102,7 @@ export function HighScoreTable({
               <Text
                 style={[
                   styles.modeTabLabel,
+                  isTablet && styles.modeTabLabelTablet,
                   { color: isActive ? theme.accentColor : theme.secondaryTextColor },
                 ]}
               >
@@ -123,16 +126,44 @@ export function HighScoreTable({
       ) : (
         <View>
           <View style={[styles.headerRow, { borderBottomColor: theme.borderColor }]}>
-            <Text style={[styles.headerCell, styles.rankCol, { color: theme.secondaryTextColor }]}>
+            <Text
+              style={[
+                styles.headerCell,
+                isTablet && styles.headerCellTablet,
+                styles.rankCol,
+                { color: theme.secondaryTextColor },
+              ]}
+            >
               {translate("game:rank")}
             </Text>
-            <Text style={[styles.headerCell, styles.nameCol, { color: theme.secondaryTextColor }]}>
+            <Text
+              style={[
+                styles.headerCell,
+                isTablet && styles.headerCellTablet,
+                styles.nameCol,
+                { color: theme.secondaryTextColor },
+              ]}
+            >
               {translate("game:initials")}
             </Text>
-            <Text style={[styles.headerCell, styles.scoreCol, { color: theme.secondaryTextColor }]}>
+            <Text
+              style={[
+                styles.headerCell,
+                isTablet && styles.headerCellTablet,
+                styles.scoreCol,
+                { color: theme.secondaryTextColor },
+              ]}
+            >
               {translate("game:scoreLbl")}
             </Text>
-            <Text style={[styles.headerCell, styles.levelCol, { color: theme.secondaryTextColor }]}>
+            <Text
+              style={[
+                styles.headerCell,
+                isTablet && styles.headerCellTablet,
+                styles.levelCol,
+                { color: theme.secondaryTextColor },
+              ]}
+            >
               {translate("game:levelLbl")}
             </Text>
           </View>
@@ -144,6 +175,7 @@ export function HighScoreTable({
                 key={i}
                 style={[
                   styles.row,
+                  isTablet && styles.rowTablet,
                   i % 2 === 0 && { backgroundColor: theme.surfaceColor },
                   isHighlighted && styles.rowHighlighted,
                 ]}
@@ -151,6 +183,7 @@ export function HighScoreTable({
                 <Text
                   style={[
                     styles.cell,
+                    isTablet && styles.cellTablet,
                     styles.rankCol,
                     { color: cellColor },
                     isHighlighted && { color: highlight },
@@ -161,6 +194,7 @@ export function HighScoreTable({
                 <Text
                   style={[
                     styles.cell,
+                    isTablet && styles.cellTablet,
                     styles.nameCol,
                     { color: cellColor },
                     isHighlighted && { color: highlight },
@@ -171,6 +205,7 @@ export function HighScoreTable({
                 <Text
                   style={[
                     styles.cell,
+                    isTablet && styles.cellTablet,
                     styles.scoreCol,
                     { color: cellColor },
                     isHighlighted && { color: highlight },
@@ -181,6 +216,7 @@ export function HighScoreTable({
                 <Text
                   style={[
                     styles.cell,
+                    isTablet && styles.cellTablet,
                     styles.levelCol,
                     { color: cellColor },
                     isHighlighted && { color: highlight },
@@ -207,6 +243,9 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-Bold",
     fontSize: 15,
   },
+  cellTablet: {
+    fontSize: 17,
+  },
   container: {
     paddingVertical: 8,
   },
@@ -232,6 +271,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 1,
   },
+  headerCellTablet: {
+    fontSize: 14,
+  },
   headerRow: {
     borderBottomWidth: 1,
     flexDirection: "row",
@@ -256,6 +298,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textTransform: "uppercase",
   },
+  modeTabLabelTablet: {
+    fontSize: 14,
+  },
   modeTabs: {
     flexDirection: "row",
     gap: 8,
@@ -279,6 +324,9 @@ const styles = StyleSheet.create({
     borderColor: UI_COLORS.amberTint30,
     borderRadius: 4,
     borderWidth: 1,
+  },
+  rowTablet: {
+    paddingVertical: 16,
   },
   scoreCol: {
     textAlign: "right",

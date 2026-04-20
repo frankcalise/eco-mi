@@ -34,6 +34,7 @@ import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { UI_COLORS } from "@/theme/uiColors"
 import { useAnalytics } from "@/utils/analytics"
 import { formatDuration } from "@/utils/formatTime"
+import { useBreakpoints } from "@/utils/layoutBreakpoints"
 import { loadString, saveString } from "@/utils/storage"
 
 const NEAR_MISS_THRESHOLD = 5
@@ -73,6 +74,7 @@ export default function GameOverScreen() {
   const insets = useSafeAreaInsets()
   const { activeTheme } = useTheme()
   const analytics = useAnalytics()
+  const { isTablet } = useBreakpoints()
   const shareCardRef = useRef<ViewShot>(null)
 
   const {
@@ -279,229 +281,239 @@ export default function GameOverScreen() {
           },
         ]}
       >
-        {/* Top Section: Animation + Title + Stats */}
-        <View style={styles.topSection}>
-          {isNewHighScore && (
-            <EaseView
-              initialAnimate={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ default: { type: "spring", stiffness: 200, damping: 15 } }}
-            >
-              <LottieView
-                source={require("../../assets/animations/trophy.json")}
-                autoPlay
-                loop={false}
-                style={styles.lottie}
-              />
-            </EaseView>
-          )}
+        <View style={[styles.content, isTablet && styles.contentTablet]}>
+          {/* Top Section: Animation + Title + Stats */}
+          <View style={styles.topSection}>
+            {isNewHighScore && (
+              <EaseView
+                initialAnimate={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ default: { type: "spring", stiffness: 200, damping: 15 } }}
+              >
+                <LottieView
+                  source={require("../../assets/animations/trophy.json")}
+                  autoPlay
+                  loop={false}
+                  style={styles.lottie}
+                />
+              </EaseView>
+            )}
 
-          <EaseView
-            initialAnimate={{ opacity: 0, translateY: 12 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ default: { type: "timing", duration: 300 } }}
-          >
-            <Text
-              style={[
-                styles.title,
-                { color: isNewHighScore ? activeTheme.warningColor : activeTheme.destructiveColor },
-              ]}
-            >
-              {isNewHighScore ? t("game:newHighScore") : t("game:gameOver")}
-            </Text>
-          </EaseView>
-
-          {/* PB delta directly under title when new high score */}
-          {pbDelta !== null && (
             <EaseView
-              initialAnimate={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ default: { type: "timing", duration: 300, delay: 150 } }}
-            >
-              <Text style={[styles.deltaTextTitle, { color: activeTheme.accentColor }]}>
-                {t("game:pbDelta", { delta: pbDelta })}
-              </Text>
-            </EaseView>
-          )}
-
-          {/* Inline initials — first qualifying game only */}
-          {showInitialsInput && (
-            <EaseView
-              testID="inline-initials"
               initialAnimate={{ opacity: 0, translateY: 12 }}
               animate={{ opacity: 1, translateY: 0 }}
-              transition={{ default: { type: "spring", stiffness: 220, damping: 18, delay: 200 } }}
-              style={styles.initialsSection}
+              transition={{ default: { type: "timing", duration: 300 } }}
             >
-              <Text style={[styles.initialsPrompt, { color: activeTheme.secondaryTextColor }]}>
-                {t("game:initialsPrompt")}
+              <Text
+                style={[
+                  styles.title,
+                  {
+                    color: isNewHighScore ? activeTheme.warningColor : activeTheme.destructiveColor,
+                  },
+                ]}
+              >
+                {isNewHighScore ? t("game:newHighScore") : t("game:gameOver")}
               </Text>
-              <View style={styles.initialsRow}>
-                {[0, 1, 2].map((i) => (
-                  <View
-                    key={i}
-                    style={[styles.initialsBox, { borderColor: activeTheme.accentColor }]}
-                  >
-                    <TextInput
-                      ref={inputRefs[i]}
-                      testID={`input-initial-${i + 1}`}
-                      style={[styles.initialsText, { color: activeTheme.textColor }]}
-                      value={letters[i]}
-                      onChangeText={(text) => handleLetterChange(text, i)}
-                      onKeyPress={({ nativeEvent }) => handleLetterKeyPress(nativeEvent.key, i)}
-                      maxLength={1}
-                      autoCapitalize="characters"
-                      autoCorrect={false}
-                      textAlign="center"
-                      selectionColor={activeTheme.accentColor}
-                    />
-                  </View>
-                ))}
-              </View>
-              <View style={styles.initialsActions}>
-                <PressableScale
-                  testID="btn-save-initials"
-                  style={[
-                    styles.saveButton,
-                    {
-                      backgroundColor: allFilled
-                        ? activeTheme.accentColor
-                        : activeTheme.surfaceColor,
-                    },
-                  ]}
-                  onPress={handleSaveInitials}
-                  disabled={!allFilled}
-                >
-                  <Text style={[styles.saveButtonText, { color: UI_COLORS.white }]}>
-                    {t("game:saveInitials")}
-                  </Text>
-                </PressableScale>
-                <PressableScale testID="btn-skip-initials" onPress={handleSkipInitials}>
-                  <Text style={[styles.skipText, { color: activeTheme.secondaryTextColor }]}>
-                    {t("game:skipInitials")}
-                  </Text>
-                </PressableScale>
-              </View>
             </EaseView>
-          )}
 
-          {/* Stat Pills — 2x2 grid mirrors the game pad layout (red/blue/green/yellow) */}
-          <View style={styles.statsGrid}>
-            <View style={styles.statsGridRow}>
-              <StatPill
-                testID="pill-score"
-                label={t("game:score")}
-                value={score}
-                icon="flash"
-                borderColor={activeTheme.buttonColors.red.color}
-                theme={activeTheme}
-                delay={250}
-              />
-              <StatPill
-                testID="pill-level"
-                label={t("game:level")}
-                value={level}
-                icon="trending-up"
-                borderColor={activeTheme.buttonColors.blue.color}
-                theme={activeTheme}
-                delay={350}
-              />
+            {/* PB delta directly under title when new high score */}
+            {pbDelta !== null && (
+              <EaseView
+                initialAnimate={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ default: { type: "timing", duration: 300, delay: 150 } }}
+              >
+                <Text style={[styles.deltaTextTitle, { color: activeTheme.accentColor }]}>
+                  {t("game:pbDelta", { delta: pbDelta })}
+                </Text>
+              </EaseView>
+            )}
+
+            {/* Inline initials — first qualifying game only */}
+            {showInitialsInput && (
+              <EaseView
+                testID="inline-initials"
+                initialAnimate={{ opacity: 0, translateY: 12 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{
+                  default: { type: "spring", stiffness: 220, damping: 18, delay: 200 },
+                }}
+                style={styles.initialsSection}
+              >
+                <Text style={[styles.initialsPrompt, { color: activeTheme.secondaryTextColor }]}>
+                  {t("game:initialsPrompt")}
+                </Text>
+                <View style={styles.initialsRow}>
+                  {[0, 1, 2].map((i) => (
+                    <View
+                      key={i}
+                      style={[styles.initialsBox, { borderColor: activeTheme.accentColor }]}
+                    >
+                      <TextInput
+                        ref={inputRefs[i]}
+                        testID={`input-initial-${i + 1}`}
+                        style={[styles.initialsText, { color: activeTheme.textColor }]}
+                        value={letters[i]}
+                        onChangeText={(text) => handleLetterChange(text, i)}
+                        onKeyPress={({ nativeEvent }) => handleLetterKeyPress(nativeEvent.key, i)}
+                        maxLength={1}
+                        autoCapitalize="characters"
+                        autoCorrect={false}
+                        textAlign="center"
+                        selectionColor={activeTheme.accentColor}
+                      />
+                    </View>
+                  ))}
+                </View>
+                <View style={styles.initialsActions}>
+                  <PressableScale
+                    testID="btn-save-initials"
+                    style={[
+                      styles.saveButton,
+                      {
+                        backgroundColor: allFilled
+                          ? activeTheme.accentColor
+                          : activeTheme.surfaceColor,
+                      },
+                    ]}
+                    onPress={handleSaveInitials}
+                    disabled={!allFilled}
+                  >
+                    <Text style={[styles.saveButtonText, { color: UI_COLORS.white }]}>
+                      {t("game:saveInitials")}
+                    </Text>
+                  </PressableScale>
+                  <PressableScale testID="btn-skip-initials" onPress={handleSkipInitials}>
+                    <Text style={[styles.skipText, { color: activeTheme.secondaryTextColor }]}>
+                      {t("game:skipInitials")}
+                    </Text>
+                  </PressableScale>
+                </View>
+              </EaseView>
+            )}
+
+            {/* Stat Pills — 2x2 grid mirrors the game pad layout (red/blue/green/yellow) */}
+            <View style={styles.statsGrid}>
+              <View style={styles.statsGridRow}>
+                <StatPill
+                  testID="pill-score"
+                  label={t("game:score")}
+                  value={score}
+                  icon="flash"
+                  borderColor={activeTheme.buttonColors.red.color}
+                  theme={activeTheme}
+                  delay={250}
+                />
+                <StatPill
+                  testID="pill-level"
+                  label={t("game:level")}
+                  value={level}
+                  icon="trending-up"
+                  borderColor={activeTheme.buttonColors.blue.color}
+                  theme={activeTheme}
+                  delay={350}
+                />
+              </View>
+              <View style={styles.statsGridRow}>
+                <StatPill
+                  testID="pill-best"
+                  label={t("game:best")}
+                  value={highScore}
+                  icon="trophy"
+                  borderColor={activeTheme.buttonColors.green.color}
+                  theme={activeTheme}
+                  delay={450}
+                />
+                <StatPill
+                  testID="pill-time"
+                  label={t("game:time")}
+                  value={formatDuration(sessionTime)}
+                  icon="time"
+                  borderColor={activeTheme.buttonColors.yellow.color}
+                  theme={activeTheme}
+                  delay={550}
+                />
+              </View>
             </View>
-            <View style={styles.statsGridRow}>
-              <StatPill
-                testID="pill-best"
-                label={t("game:best")}
-                value={highScore}
-                icon="trophy"
-                borderColor={activeTheme.buttonColors.green.color}
-                theme={activeTheme}
-                delay={450}
-              />
-              <StatPill
-                testID="pill-time"
-                label={t("game:time")}
-                value={formatDuration(sessionTime)}
-                icon="time"
-                borderColor={activeTheme.buttonColors.yellow.color}
-                theme={activeTheme}
-                delay={550}
-              />
-            </View>
+
+            {nearMiss !== null && (
+              <Text style={[styles.deltaText, { color: activeTheme.warningColor }]}>
+                {t("game:nearMiss", { delta: nearMiss })}
+              </Text>
+            )}
           </View>
 
-          {nearMiss !== null && (
-            <Text style={[styles.deltaText, { color: activeTheme.warningColor }]}>
-              {t("game:nearMiss", { delta: nearMiss })}
-            </Text>
-          )}
-        </View>
-
-        {/* Bottom Section: CTAs */}
-        <EaseView
-          initialAnimate={{ opacity: 0, translateY: 20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ default: { type: "timing", duration: 300, delay: 700 } }}
-          style={styles.bottomSection}
-        >
-          {showContinue && (
-            <PressableScale
-              testID="btn-continue"
-              style={[styles.continueButton, { borderColor: activeTheme.borderColor }]}
-              onPress={handleContinue}
-            >
-              <Ionicons name="play-forward" size={18} color={activeTheme.textColor} />
-              <Text style={[styles.continueText, { color: activeTheme.textColor }]}>
-                {t("game:continue")}
-              </Text>
-            </PressableScale>
-          )}
-
-          <PressableScale
-            testID="btn-play-again"
-            style={[styles.playAgainButton, { backgroundColor: activeTheme.accentColor }]}
-            onPress={handlePlayAgain}
-            accessibilityLabel={t("game:playAgain")}
-            accessibilityRole="button"
+          {/* Bottom Section: CTAs */}
+          <EaseView
+            initialAnimate={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ default: { type: "timing", duration: 300, delay: 700 } }}
+            style={styles.bottomSection}
           >
-            <Ionicons name="refresh" size={20} color="white" />
-            <Text style={styles.playAgainText}>{t("game:playAgain")}</Text>
-          </PressableScale>
+            {showContinue && (
+              <PressableScale
+                testID="btn-continue"
+                style={[styles.continueButton, { borderColor: activeTheme.borderColor }]}
+                onPress={handleContinue}
+              >
+                <Ionicons name="play-forward" size={18} color={activeTheme.textColor} />
+                <Text style={[styles.continueText, { color: activeTheme.textColor }]}>
+                  {t("game:continue")}
+                </Text>
+              </PressableScale>
+            )}
 
-          <View style={styles.bottomRow}>
             <PressableScale
-              testID="btn-share"
-              style={[styles.shareButton, { borderColor: activeTheme.borderColor }]}
-              onPress={handleShare}
-              accessibilityLabel={t("game:share")}
+              testID="btn-play-again"
+              style={[styles.playAgainButton, { backgroundColor: activeTheme.accentColor }]}
+              onPress={handlePlayAgain}
+              accessibilityLabel={t("game:playAgain")}
               accessibilityRole="button"
             >
-              <Ionicons
-                name={Platform.OS === "ios" ? "share-outline" : "share-social-outline"}
-                size={22}
-                color={activeTheme.textColor}
-              />
+              <Ionicons name="refresh" size={20} color="white" />
+              <Text style={styles.playAgainText}>{t("game:playAgain")}</Text>
             </PressableScale>
-            <PressableScale testID="btn-home" style={styles.mainMenuLink} onPress={handleMainMenu}>
-              <Text style={[styles.mainMenuText, { color: activeTheme.secondaryTextColor }]}>
-                {t("game:mainMenu")}
-              </Text>
-            </PressableScale>
-            <View style={styles.bottomRowSpacer} />
-          </View>
 
-          {showRemoveAds && (
-            <PressableScale
-              testID="btn-remove-ads"
-              style={styles.removeAdsLink}
-              onPress={() => router.push("/settings")}
-            >
-              <Ionicons name="close-circle-outline" size={16} color={activeTheme.warningColor} />
-              <Text style={[styles.removeAdsText, { color: activeTheme.warningColor }]}>
-                {t("game:removeAds")}
-              </Text>
-            </PressableScale>
-          )}
-        </EaseView>
+            <View style={styles.bottomRow}>
+              <PressableScale
+                testID="btn-share"
+                style={[styles.shareButton, { borderColor: activeTheme.borderColor }]}
+                onPress={handleShare}
+                accessibilityLabel={t("game:share")}
+                accessibilityRole="button"
+              >
+                <Ionicons
+                  name={Platform.OS === "ios" ? "share-outline" : "share-social-outline"}
+                  size={22}
+                  color={activeTheme.textColor}
+                />
+              </PressableScale>
+              <PressableScale
+                testID="btn-home"
+                style={styles.mainMenuLink}
+                onPress={handleMainMenu}
+              >
+                <Text style={[styles.mainMenuText, { color: activeTheme.secondaryTextColor }]}>
+                  {t("game:mainMenu")}
+                </Text>
+              </PressableScale>
+              <View style={styles.bottomRowSpacer} />
+            </View>
+
+            {showRemoveAds && (
+              <PressableScale
+                testID="btn-remove-ads"
+                style={styles.removeAdsLink}
+                onPress={() => router.push("/settings")}
+              >
+                <Ionicons name="close-circle-outline" size={16} color={activeTheme.warningColor} />
+                <Text style={[styles.removeAdsText, { color: activeTheme.warningColor }]}>
+                  {t("game:removeAds")}
+                </Text>
+              </PressableScale>
+            )}
+          </EaseView>
+        </View>
 
         <ShareScoreCard
           ref={shareCardRef}
@@ -555,6 +567,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
     justifyContent: "space-between",
+  },
+  content: {
+    flex: 1,
+    width: "100%",
+  },
+  contentTablet: {
+    alignSelf: "center",
+    maxWidth: 600,
   },
   continueButton: {
     alignItems: "center",
