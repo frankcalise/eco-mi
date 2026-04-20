@@ -26,7 +26,17 @@ export function StreakBanner({ theme, style }: StreakBannerProps) {
   if (streak <= 0 || lastPlayed === today) return null
 
   return (
-    <View style={[styles.banner, style, { backgroundColor: `${theme.warningColor}20` }]}>
+    <View
+      style={[
+        styles.banner,
+        style,
+        {
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: theme.warningColor,
+          backgroundColor: `${theme.warningColor}20`,
+        },
+      ]}
+    >
       <Text style={[styles.bannerText, { color: theme.warningColor }]}>
         {t("game:streakAtRisk", { count: streak })}
       </Text>
@@ -41,7 +51,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 10,
     paddingVertical: 10,
-    width: "80%",
   },
   bannerText: {
     fontFamily: "Oxanium-SemiBold",
