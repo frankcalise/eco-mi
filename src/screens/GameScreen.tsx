@@ -806,19 +806,11 @@ export function GameScreen() {
             >
               <View
                 style={[
-                  styles.compactStatusSlot,
-                  isTabletPortrait && styles.compactStatusSlotTabletPortrait,
+                  styles.compactTopInfoSlot,
+                  isTabletPortrait && styles.compactTopInfoSlotTabletPortrait,
                 ]}
               >
-                {!isIdle && statusBarNode}
-              </View>
-              <View
-                style={[
-                  styles.compactBannerSlot,
-                  isTabletPortrait && styles.compactBannerSlotTabletPortrait,
-                ]}
-              >
-                {isIdle && <StreakBanner theme={activeTheme} />}
+                {isIdle ? <StreakBanner theme={activeTheme} /> : statusBarNode}
               </View>
               <View
                 style={[
@@ -941,16 +933,6 @@ const styles = StyleSheet.create({
     minHeight: 60,
     width: "100%",
   },
-  compactBannerSlot: {
-    alignItems: "center",
-    justifyContent: "flex-start",
-    minHeight: 44,
-    width: "100%",
-  },
-  compactBannerSlotTabletPortrait: {
-    minHeight: 52,
-    width: "100%",
-  },
   compactBottomPanel: {
     marginBottom: 12,
     paddingHorizontal: 20,
@@ -970,13 +952,13 @@ const styles = StyleSheet.create({
     minHeight: 78,
     width: "100%",
   },
-  compactStatusSlot: {
+  compactTopInfoSlot: {
     alignItems: "center",
     justifyContent: "flex-start",
-    minHeight: 36,
+    minHeight: 62,
     width: "100%",
   },
-  compactStatusSlotTabletPortrait: {
+  compactTopInfoSlotTabletPortrait: {
     minHeight: 72,
     width: "100%",
   },
