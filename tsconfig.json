@@ -8,6 +8,7 @@
     "customConditions": ["react-native"],
     "module": "esnext",
     "moduleResolution": "bundler",
+    "moduleSuffixes": [".ios", ".android", ".web", ""],
     "strict": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,

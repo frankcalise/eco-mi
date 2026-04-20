@@ -9,7 +9,7 @@ import type { GameMode } from "@/hooks/useGameEngine"
 const PULSE_DURATION = 300
 
 type ModeItemProps = {
-  mode: { id: GameMode; label: string; icon: keyof typeof Ionicons.glyphMap }
+  mode: { id: GameMode; icon: keyof typeof Ionicons.glyphMap }
   isSelected: boolean
   isPulsing: boolean
   pulsePhase: "bright" | "dim"
