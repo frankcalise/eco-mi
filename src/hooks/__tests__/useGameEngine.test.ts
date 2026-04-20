@@ -214,6 +214,28 @@ describe("useGameEngine", () => {
     expect(result.current.activeButton).toBeNull()
   })
 
+  it("returns directly to idle when ending a zero-score game", () => {
+    const { result } = renderHook(() => useGameEngine())
+
+    act(() => {
+      result.current.startGame()
+    })
+
+    act(() => {
+      jest.advanceTimersByTime(500)
+    })
+
+    expect(result.current.gameState).toBe("showing")
+
+    act(() => {
+      result.current.endGame()
+    })
+
+    expect(result.current.gameState).toBe("idle")
+    expect(result.current.score).toBe(0)
+    expect(result.current.activeButton).toBeNull()
+  })
+
   it("cleans up timeouts on unmount", () => {
     const clearTimeoutSpy = jest.spyOn(globalThis, "clearTimeout")
 
@@ -350,6 +372,12 @@ describe("useGameEngine - continueGame", () => {
     })
 
     expect(result.current.gameState).toBe("showing")
+
+    act(() => {
+      jest.advanceTimersByTime(2500)
+    })
+
+    expect(result.current.gameState).toBe("waiting")
   })
 
   it("does nothing if called when not in gameover state", () => {
