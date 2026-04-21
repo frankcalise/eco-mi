@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle } from "react"
-import { View } from "react-native"
+import { View, StyleSheet } from "react-native"
 import { BottomSheet, Group, Host, RNHostView } from "@expo/ui/swift-ui"
 import {
   background,
@@ -44,10 +44,9 @@ export const CompactModePickerSheet = forwardRef<
               <View
                 style={[
                   styles.sheetPadding,
+                  iosStyles.content,
                   {
                     backgroundColor: theme.backgroundColor,
-                    paddingTop: 24,
-                    paddingBottom: 24,
                   },
                 ]}
               >
@@ -65,4 +64,11 @@ export const CompactModePickerSheet = forwardRef<
       </Host>
     </View>
   )
+})
+
+const iosStyles = StyleSheet.create({
+  content: {
+    paddingBottom: 24,
+    paddingTop: 24,
+  },
 })

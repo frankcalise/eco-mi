@@ -204,4 +204,49 @@ describe("useGameEngine — behavior guards", () => {
     expect(result.current.playerSequence).toEqual([])
     expect(result.current.continuedThisGame).toBe(true)
   })
+
+  // BUG: endGame does nothing when called during the `advancing` state
+  // After the player completes a sequence, the machine transitions waiting → advancing
+  // while it schedules the next round. The button stays visible (advancing maps to
+  // public "showing") but endGame() returned early because it only checked for
+  // "showing" | "waiting", causing a dead zone of ~1000ms where End Game is a no-op.
+  it("endGame triggers game-over when called during the advancing state", () => {
+    const { result } = renderHook(() => useGameEngine())
+
+    act(() => {
+      result.current.startGame()
+    })
+    // Let the starting → showing transition complete
+    act(() => {
+      jest.advanceTimersByTime(500)
+    })
+
+    // Wait for showing → waiting
+    act(() => {
+      jest.advanceTimersByTime(2000)
+    })
+
+    expect(result.current.gameState).toBe("waiting")
+
+    const correctColor = result.current.sequence[0]
+
+    // Complete the sequence — machine enters `advancing`
+    act(() => {
+      result.current.handleButtonTouch(correctColor)
+    })
+    act(() => {
+      jest.advanceTimersByTime(100)
+    })
+    act(() => {
+      result.current.handleButtonRelease(correctColor)
+    })
+
+    // Do NOT advance timers past the 1000ms advance delay — machine is in `advancing`
+    // Score is 10 (1 round completed), so endGame should trigger game-over
+    act(() => {
+      result.current.endGame()
+    })
+
+    expect(result.current.gameState).toBe("gameover")
+  })
 })

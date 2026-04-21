@@ -6,6 +6,20 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 
 ## [Unreleased]
 
+### Feat
+
+- **Tablet-optimized layout** — `supportsTablet: true` enabled. `src/utils/layoutBreakpoints.ts` helper (`isCompact`/`isTablet`) based on shortest screen side. `OrientationLockProvider` enforces portrait on phones, unlocks on tablets. `useGameBoardMetrics` hook computes board sizing from measured available space and freezes values during active play to prevent mid-round layout shifts. GameScreen refactored with distinct compact/tablet-portrait/tablet-landscape compositions. Secondary screens (achievements, stats, leaderboard, game-over, settings, AchievementToast, HighScoreTable) gained max-width centering and density tuning for tablet. Added `expo-screen-orientation` dependency.
+- **Mode selector migrated to `/mode-select` route** — platform-specific `CompactModePickerSheet` (iOS ActionSheet, Android dialog-style, web fallback). `pendingModeStore` Zustand store carries selection back to GameScreen. `GameModePickerContent` shared component for mode list. Extracted `gameModes.ts`, `modePickerTiming.ts`, `modePickerPulse.ts` config files. Mode picker content and `ModeItem` scale up on tablet.
+
+### Fix
+
+- **End Game unresponsive after completing a sequence** — pressing End Game in the ~1000ms window between completing a sequence and the next round starting (the `advancing` state) did nothing. The XState machine had no `END_GAME` transition for `advancing`, and `endGame()` returned early for any state outside `showing`/`waiting`. Fixed by adding the transition to the machine and expanding the guard. Regression test added covering `endGame` during `advancing`.
+
+### Fix
+
+- **Game board layout stability** — Reserved footer slots for status bar and streak banner so the board doesn't shift when transitioning from idle to active play. Footer slot heights tuned separately for compact vs. tablet-portrait. Sequence visual cancellation added to `useGameEngine` so pending highlights can't outlive `endGame`/`resetGame`/`continueGame` transitions. Zero-score manual end resets directly to idle instead of routing through game-over.
+- **Rewarded-ad continue** — Deterministic sequence replay after rewarded-ad continue path (was relying on stale state timing). Added reentrancy guard in `useAds` so landscape continue flows can't trigger duplicate rewarded modal presentations.
+
 ### Fix
 
 - **Game-over back gesture / Android back button** — `beforeRemove` listener in `/game-over` ensures any system-initiated back (swipe, hardware button) sets `pending_action = main_menu`, so GameScreen always returns to a valid idle state instead of freezing in gameover. GameScreen additionally calls `resetGame` on focus if it finds itself in gameover without a pending action.

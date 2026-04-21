@@ -486,7 +486,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
   function endGame() {
     const sv = state.value as string
-    if (sv !== "showing" && sv !== "waiting") return
+    if (sv !== "showing" && sv !== "waiting" && sv !== "advancing") return
     clearAllTimeouts()
     stopTimer()
     cancelVisualSequence()
