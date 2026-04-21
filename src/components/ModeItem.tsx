@@ -15,6 +15,7 @@ type ModeItemProps = {
   pulsePhase: "bright" | "dim"
   streak: number
   theme: GameTheme
+  isTablet?: boolean
   onPress: () => void
 }
 
@@ -25,6 +26,7 @@ export function ModeItem({
   pulsePhase,
   streak,
   theme,
+  isTablet = false,
   onPress,
 }: ModeItemProps) {
   const { t } = useTranslation()
@@ -47,15 +49,31 @@ export function ModeItem({
         transition={{
           default: { type: "timing", duration: PULSE_DURATION, easing: "easeOut" },
         }}
-        style={[styles.modeItem, { borderColor: showGreen ? accent : theme.borderColor }]}
+        style={[
+          styles.modeItem,
+          isTablet && styles.modeItemTablet,
+          { borderColor: showGreen ? accent : theme.borderColor },
+        ]}
       >
-        <Ionicons name={m.icon} size={22} color={showGreen ? accent : theme.secondaryTextColor} />
+        <Ionicons
+          name={m.icon}
+          size={isTablet ? 28 : 22}
+          color={showGreen ? accent : theme.secondaryTextColor}
+        />
         <View style={styles.modeItemText}>
-          <Text style={[styles.modeItemLabel, { color: showGreen ? accent : theme.textColor }]}>
+          <Text
+            style={[
+              styles.modeItemLabel,
+              isTablet && styles.modeItemLabelTablet,
+              { color: showGreen ? accent : theme.textColor },
+            ]}
+          >
             {t(`game:modes.${m.id}`)}
             {m.id === "daily" && streak > 0 ? ` (${streak}d)` : ""}
           </Text>
-          <Text style={[styles.modeItemDesc, { color: theme.secondaryTextColor }]}>
+          <Text
+            style={[styles.modeItemDesc, isTablet && styles.modeItemDescTablet, { color: theme.secondaryTextColor }]}
+          >
             {t(`game:modeDescriptions.${m.id}`)}
           </Text>
         </View>
@@ -63,7 +81,7 @@ export function ModeItem({
           animate={{ opacity: isSelected ? 1 : 0, scale: isSelected ? 1 : 0.5 }}
           transition={{ default: { type: "spring", stiffness: 400, damping: 15 } }}
         >
-          <Ionicons name="checkmark-circle" size={22} color={accent} />
+          <Ionicons name="checkmark-circle" size={isTablet ? 28 : 22} color={accent} />
         </EaseView>
       </EaseView>
     </Pressable>
@@ -86,9 +104,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
+  modeItemDescTablet: {
+    fontSize: 15,
+    marginTop: 4,
+  },
   modeItemLabel: {
     fontFamily: "Oxanium-SemiBold",
     fontSize: 15,
+  },
+  modeItemLabelTablet: {
+    fontSize: 18,
+  },
+  modeItemTablet: {
+    borderRadius: 12,
+    gap: 14,
+    marginBottom: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
   },
   modeItemText: {
     flex: 1,
