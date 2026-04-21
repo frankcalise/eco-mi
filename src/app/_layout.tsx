@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react"
 import { StyleSheet, View } from "react-native"
-import i18n from "i18next"
 import { registerDevMenuItems } from "expo-dev-menu"
 import AppMetrics from "expo-eas-observe"
 import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import * as Sentry from "@sentry/react-native"
+import i18n from "i18next"
 import { PostHogProvider } from "posthog-react-native"
 import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context"
 
 import { AnalyticsBootstrap } from "@/components/AnalyticsBootstrap"
+import { OrientationLockProvider } from "@/components/OrientationLockProvider"
 import { RouteTracker } from "@/components/RouteTracker"
 import { SETTINGS_SELECTED_THEME } from "@/config/storageKeys"
 import { getThemeById } from "@/config/themes"
@@ -43,6 +44,11 @@ if (SENTRY_DSN) {
 }
 
 SplashScreen.preventAutoHideAsync()
+
+/** Keeps index under modal routes for correct deep-link / back stack behavior. */
+export const unstable_settings = {
+  anchor: "index",
+}
 
 const POSTHOG_KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY ?? ""
 
@@ -102,11 +108,20 @@ function Root() {
         }}
       />
       <Stack.Screen name="tracking" options={{ animation: "fade" }} />
-      <Stack.Screen name="achievements" options={secondaryStackScreenOptions} />
-      <Stack.Screen name="stats" options={secondaryStackScreenOptions} />
-      <Stack.Screen name="leaderboard" options={secondaryStackScreenOptions} />
-      <Stack.Screen name="settings" options={secondaryStackScreenOptions} />
+      <Stack.Screen name="achievements" options={secondaryStackScreenOptions as any} />
+      <Stack.Screen name="stats" options={secondaryStackScreenOptions as any} />
+      <Stack.Screen name="leaderboard" options={secondaryStackScreenOptions as any} />
+      <Stack.Screen name="settings" options={secondaryStackScreenOptions as any} />
       <Stack.Screen name="game-over" options={{ animation: "fade", gestureEnabled: false }} />
+      <Stack.Screen
+        name="mode-select"
+        options={{
+          presentation: "transparentModal",
+          headerShown: false,
+          animation: "fade",
+          contentStyle: { backgroundColor: "transparent" },
+        }}
+      />
     </Stack>
   )
 
@@ -127,7 +142,9 @@ function Root() {
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <View style={[styles.splashBg, { backgroundColor: themeBg }]}>
-        <ThemeProvider>{inner}</ThemeProvider>
+        <ThemeProvider>
+          <OrientationLockProvider>{inner}</OrientationLockProvider>
+        </ThemeProvider>
       </View>
     </SafeAreaProvider>
   )

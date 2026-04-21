@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react"
-import { View, Text, Pressable, StyleSheet, useWindowDimensions, Modal } from "react-native"
+import type { LayoutChangeEvent } from "react-native"
+import { Platform, StyleSheet, Text, useWindowDimensions, View } from "react-native"
 import * as Haptics from "expo-haptics"
-import { useRouter, useFocusEffect } from "expo-router"
+import { useFocusEffect, useRouter } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
@@ -10,21 +11,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { AnimatedCountdown } from "@/components/AnimatedCountdown"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
+import { CompactModePickerSheet } from "@/components/CompactModePickerSheet"
+import type { CompactModePickerSheetHandle } from "@/components/CompactModePickerSheet.types"
 import { GameButton } from "@/components/GameButton"
 import { GameHeader } from "@/components/GameHeader"
 import { GameStatusBar } from "@/components/GameStatusBar"
-import { ModeItem } from "@/components/ModeItem"
 import { OnboardingTooltip } from "@/components/OnboardingTooltip"
 import { PressableScale } from "@/components/PressableScale"
 import { StreakBanner } from "@/components/StreakBanner"
 import { TimerRing } from "@/components/TimerRing"
-import {
-  DAILY_CURRENT_STREAK,
-  INITIALS_SKIPPED,
-  ONBOARDING_COMPLETED,
-  SAVED_INITIALS,
-} from "@/config/storageKeys"
+import { INITIALS_SKIPPED, ONBOARDING_COMPLETED, SAVED_INITIALS } from "@/config/storageKeys"
 import { useAds } from "@/hooks/useAds"
+import { useGameBoardMetrics } from "@/hooks/useGameBoardMetrics"
 import { useGameEngine, type GameMode } from "@/hooks/useGameEngine"
 import { useHighScores } from "@/hooks/useHighScores"
 import { useNotifications, shouldShowNotificationPrompt } from "@/hooks/useNotifications"
@@ -33,30 +31,24 @@ import { useSoundPack } from "@/hooks/useSoundPack"
 import { useTheme } from "@/hooks/useTheme"
 import { useGameOverStore } from "@/stores/gameOverStore"
 import { usePendingActionStore } from "@/stores/pendingActionStore"
+import { usePendingModeStore } from "@/stores/pendingModeStore"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { UI_COLORS } from "@/theme/uiColors"
 import { useAnalytics } from "@/utils/analytics"
+import { useBreakpoints } from "@/utils/layoutBreakpoints"
+import { scheduleModePickerPulseSequence } from "@/utils/modePickerPulse"
 import { loadString, saveString } from "@/utils/storage"
-
-const GAME_MODES: { id: GameMode; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { id: "classic", label: "Classic", icon: "game-controller" },
-  { id: "daily", label: "Daily", icon: "calendar" },
-  { id: "timed", label: "Timed", icon: "timer" },
-  { id: "reverse", label: "Reverse", icon: "swap-horizontal" },
-  { id: "chaos", label: "Chaos", icon: "shuffle" },
-]
-
-const PULSE_DURATION = 150
-const PULSE_COUNT = 2
-const DISMISS_DELAY = 200
 
 export function GameScreen() {
   const { t } = useTranslation()
   const router = useRouter()
   const { width, height } = useWindowDimensions()
+  const { isTablet } = useBreakpoints()
+  /** Expo UI sheets are iOS/Android-only; other platforms use /mode-select. */
+  const compactNativeSheetsAvailable = Platform.OS === "ios" || Platform.OS === "android"
+  const isTabletLandscape = isTablet && width > height
+  const isTabletPortrait = isTablet && !isTabletLandscape
   const insets = useSafeAreaInsets()
-  const gameSize = Math.min(width * 0.8, height * 0.5)
-  const buttonSize = gameSize * 0.4
 
   const { soundPack } = useSoundPack()
   const { activeTheme } = useTheme()
@@ -101,9 +93,6 @@ export function GameScreen() {
 
   useFocusEffect(() => {
     syncSoundState()
-    if (gameState === "gameover") {
-      resetGame()
-    }
   })
 
   const pendingAction = usePendingActionStore((s) => s.action)
@@ -112,10 +101,22 @@ export function GameScreen() {
   useEffect(() => {
     if (!pendingAction) return
     clearPendingAction()
-    if (pendingAction === "play_again") handleStartGame()
-    else if (pendingAction === "continue") handleContinue()
+    if (pendingAction === "play_again") {
+      queuedAutoStart.current = true
+      resetGame()
+    } else if (pendingAction === "continue") handleContinue()
     else if (pendingAction === "main_menu") resetGame()
   }, [pendingAction])
+
+  const pendingMode = usePendingModeStore((s) => s.pendingMode)
+  const clearPendingMode = usePendingModeStore((s) => s.clear)
+
+  useEffect(() => {
+    if (!pendingMode) return
+    const next = pendingMode
+    clearPendingMode()
+    setMode(next)
+  }, [pendingMode, clearPendingMode, setMode])
 
   const {
     showInterstitial,
@@ -129,12 +130,18 @@ export function GameScreen() {
   const { isHighScore: checkIsHighScore, addHighScore, getRank } = useHighScores()
   const { rescheduleAfterGameOver } = useNotifications()
   const sessionCounted = useRef(false)
-  const [modeModalVisible, setModeModalVisible] = useState(false)
+  const continueInFlight = useRef(false)
+  const queuedAutoStart = useRef(false)
+  const [compactModeSheetVisible, setCompactModeSheetVisible] = useState(false)
+  const compactModePickerRef = useRef<CompactModePickerSheetHandle>(null)
   const previousHighScoreRef = useRef(highScore)
   const [pulsingMode, setPulsingMode] = useState<GameMode | null>(null)
   const [pulsePhase, setPulsePhase] = useState<"bright" | "dim">("bright")
   const pulseTimers = useRef<ReturnType<typeof setTimeout>[]>([])
   const isIdle = gameState === "idle"
+  const showResetButton = gameState === "showing" || gameState === "waiting"
+  const shouldShowBoardHighlights = gameState === "showing" || gameState === "waiting"
+  const [boardArea, setBoardArea] = useState({ width: 0, height: 0 })
   const [onboardingDone, setOnboardingDone] = useState(
     () => loadString(ONBOARDING_COMPLETED) === "true",
   )
@@ -147,12 +154,23 @@ export function GameScreen() {
     }
   }, [playerSequence.length, onboardingDone, wrongFlash])
 
-  function handleModeSelect(id: GameMode) {
+  function openModePicker() {
+    if (isTablet || !compactNativeSheetsAvailable) {
+      router.push({ pathname: "/mode-select", params: { currentMode: mode } })
+      return
+    }
+    setCompactModeSheetVisible(true)
+  }
+
+  /**
+   * Compact path only: setMode runs immediately; tablet path uses /mode-select + pendingModeStore
+   * so the engine updates after pulse (see mode-select.tsx).
+   */
+  function handleCompactModeSelect(id: GameMode) {
     if (id === mode) return
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 
-    // Clear any in-flight pulse timers
     pulseTimers.current.forEach(clearTimeout)
     pulseTimers.current = []
 
@@ -160,35 +178,19 @@ export function GameScreen() {
     setPulsingMode(id)
     setPulsePhase("bright")
 
-    // Schedule pulse sequence: bright→dim→bright→dim→bright→dim then dismiss
-    let delay = 0
-    for (let i = 0; i < PULSE_COUNT; i++) {
-      // dim phase
-      pulseTimers.current.push(setTimeout(() => setPulsePhase("dim"), delay + PULSE_DURATION))
-      // bright phase (except after last pulse)
-      if (i < PULSE_COUNT - 1) {
-        pulseTimers.current.push(
-          setTimeout(() => setPulsePhase("bright"), delay + PULSE_DURATION * 2),
-        )
-      }
-      delay += PULSE_DURATION * 2
-    }
-
-    // After pulses finish, clean up and dismiss
-    pulseTimers.current.push(
-      setTimeout(() => {
+    scheduleModePickerPulseSequence(pulseTimers, setPulsePhase, () => {
+      void (async () => {
         setPulsingMode(null)
-        setModeModalVisible(false)
-      }, delay + DISMISS_DELAY),
-    )
+        await compactModePickerRef.current?.hideIfNeeded()
+        setCompactModeSheetVisible(false)
+      })()
+    })
   }
 
-  // Clean up pulse timers on unmount
   useEffect(() => {
     return () => pulseTimers.current.forEach(clearTimeout)
   }, [])
 
-  // Count session on first mount
   useEffect(() => {
     if (!sessionCounted.current) {
       incrementSessionCount()
@@ -196,7 +198,6 @@ export function GameScreen() {
     }
   }, [])
 
-  // Play idle jingle on initial mount
   const mountJingleFired = useRef(false)
   useEffect(() => {
     if (!mountJingleFired.current && gameState === "idle") {
@@ -205,7 +206,6 @@ export function GameScreen() {
     }
   }, [])
 
-  // Track game over and idle-entry jingle
   const prevGameState = useRef(gameState)
   useEffect(() => {
     if (prevGameState.current !== "gameover" && gameState === "gameover") {
@@ -223,38 +223,34 @@ export function GameScreen() {
 
       rescheduleAfterGameOver()
 
-      if (score === 0) {
-        resetGame()
-      } else {
-        const qualifies = checkIsHighScore(score, mode)
-        const savedInitials = loadString(SAVED_INITIALS)
-        const initialsSkipped = loadString(INITIALS_SKIPPED) === "true"
+      const qualifies = checkIsHighScore(score, mode)
+      const savedInitials = loadString(SAVED_INITIALS)
+      const initialsSkipped = loadString(INITIALS_SKIPPED) === "true"
 
-        if (qualifies && savedInitials) {
-          const updated = addHighScore({
-            initials: savedInitials,
-            score,
-            level,
-            date: new Date().toISOString(),
-            mode,
-          })
-          const rank = updated.findIndex((e) => e.score === score)
-          navigateToGameOver(false, rank >= 0 ? rank : null)
-        } else if (qualifies && initialsSkipped) {
-          const updated = addHighScore({
-            initials: "---",
-            score,
-            level,
-            date: new Date().toISOString(),
-            mode,
-          })
-          const rank = updated.findIndex((e) => e.score === score)
-          navigateToGameOver(false, rank >= 0 ? rank : null)
-        } else if (qualifies) {
-          navigateToGameOver(true, getRank(score, mode))
-        } else {
-          navigateToGameOver(false, null)
-        }
+      if (qualifies && savedInitials) {
+        const updated = addHighScore({
+          initials: savedInitials,
+          score,
+          level,
+          date: new Date().toISOString(),
+          mode,
+        })
+        const rank = updated.findIndex((entry) => entry.score === score)
+        navigateToGameOver(false, rank >= 0 ? rank : null)
+      } else if (qualifies && initialsSkipped) {
+        const updated = addHighScore({
+          initials: "---",
+          score,
+          level,
+          date: new Date().toISOString(),
+          mode,
+        })
+        const rank = updated.findIndex((entry) => entry.score === score)
+        navigateToGameOver(false, rank >= 0 ? rank : null)
+      } else if (qualifies) {
+        navigateToGameOver(true, getRank(score, mode))
+      } else {
+        navigateToGameOver(false, null)
       }
     }
 
@@ -265,7 +261,7 @@ export function GameScreen() {
     }
 
     prevGameState.current = gameState
-  }, [gameState])
+  }, [gameState, getSessionTime, isNewHighScore, level, mode, score])
 
   async function handleStartGame() {
     previousHighScoreRef.current = highScore
@@ -296,27 +292,373 @@ export function GameScreen() {
   }
 
   async function handleContinue() {
+    if (continueInFlight.current) return
+    continueInFlight.current = true
     const shown = await showRewarded()
     if (shown) {
       analytics.trackAdRewardedWatched("continue")
       continueGame()
     } else {
-      // Ad not earned — return to game-over so user can try again or quit
       navigateToGameOver()
+    }
+    continueInFlight.current = false
+  }
+
+  function handleBoardAreaLayout(event: LayoutChangeEvent) {
+    const { width: nextWidth, height: nextHeight } = event.nativeEvent.layout
+    setBoardArea((current) =>
+      current.width === nextWidth && current.height === nextHeight
+        ? current
+        : { width: nextWidth, height: nextHeight },
+    )
+
+    if (queuedAutoStart.current && gameState === "idle") {
+      queuedAutoStart.current = false
+      void handleStartGame()
     }
   }
 
+  const fallbackBoardWidth = isTablet ? width * 0.52 : width - 40
+  const fallbackBoardHeight = isTablet ? height * 0.48 : height * 0.38
+  const availableBoardWidth = boardArea.width > 0 ? boardArea.width : fallbackBoardWidth
+  const availableBoardHeight = boardArea.height > 0 ? boardArea.height : fallbackBoardHeight
+  const {
+    gameSize,
+    buttonSize,
+    centerDiameter,
+    centerDiameterNoRing,
+    ringSize,
+    borderWidth,
+    centerTranslateOffset,
+    slotInset,
+  } = useGameBoardMetrics({
+    availableWidth: availableBoardWidth,
+    availableHeight: availableBoardHeight,
+    freeze: !isIdle,
+  })
+  const centerTimerStyle = {
+    fontFamily: "Oxanium-Bold" as const,
+    fontSize: Math.round(centerDiameter * 0.3),
+  }
   const showTimerRing = mode === "timed" && timeRemaining !== null && gameState !== "idle"
+  const centerModeFontSize = isTablet
+    ? Math.max(12, Math.round(centerDiameter * 0.18))
+    : Math.max(9, Math.min(14, Math.round(centerDiameter * 0.13)))
+  const centerModeLetterSpacing = isTablet
+    ? Math.max(1, Math.round(centerDiameter * 0.02))
+    : Math.max(0.5, Math.round(centerDiameter * 0.01))
 
   const gameContainerStyle = {
     backgroundColor: "rgba(0, 0, 0, 0.5)" as const,
     borderColor: "rgba(255, 255, 255, 0.2)" as const,
     borderRadius: gameSize / 2,
-    borderWidth: 4,
+    borderWidth,
     height: gameSize,
     position: "relative" as const,
     width: gameSize,
   }
+
+  const scoreBoxes = (
+    <View
+      style={[
+        styles.scoreContainer,
+        isTabletLandscape
+          ? styles.scoreContainerTabletLandscape
+          : isTablet
+            ? styles.scoreContainerTabletPortrait
+            : styles.scoreContainerCompact,
+      ]}
+    >
+      <View
+        style={[
+          styles.scoreBox,
+          isTabletLandscape && styles.scoreBoxTabletLandscape,
+          isTablet && !isTabletLandscape && styles.scoreBoxTabletPortrait,
+          { backgroundColor: activeTheme.surfaceColor },
+        ]}
+      >
+        <Text
+          style={[
+            styles.scoreLabel,
+            isTabletLandscape && styles.scoreLabelTabletLandscape,
+            { color: activeTheme.secondaryTextColor },
+          ]}
+        >
+          {t("game:level")}
+        </Text>
+        <AnimatedNumber
+          testID="text-level"
+          accessibilityLabel={t("game:level")}
+          value={level}
+          style={[
+            styles.scoreValue,
+            isTablet && styles.scoreValueTablet,
+            { color: activeTheme.textColor },
+          ]}
+        />
+      </View>
+      <View
+        style={[
+          styles.scoreBox,
+          isTabletLandscape && styles.scoreBoxTabletLandscape,
+          isTablet && !isTabletLandscape && styles.scoreBoxTabletPortrait,
+          { backgroundColor: activeTheme.surfaceColor },
+        ]}
+      >
+        <Text
+          style={[
+            styles.scoreLabel,
+            isTabletLandscape && styles.scoreLabelTabletLandscape,
+            { color: activeTheme.secondaryTextColor },
+          ]}
+        >
+          {t("game:score")}
+        </Text>
+        <AnimatedNumber
+          testID="text-score"
+          accessibilityLabel={t("game:score")}
+          value={score}
+          style={[
+            styles.scoreValue,
+            isTablet && styles.scoreValueTablet,
+            { color: activeTheme.textColor },
+          ]}
+        />
+      </View>
+      <View
+        style={[
+          styles.scoreBox,
+          isTabletLandscape && styles.scoreBoxTabletLandscape,
+          isTablet && !isTabletLandscape && styles.scoreBoxTabletPortrait,
+          { backgroundColor: activeTheme.surfaceColor },
+        ]}
+      >
+        <Text
+          style={[
+            styles.scoreLabel,
+            isTabletLandscape && styles.scoreLabelTabletLandscape,
+            { color: activeTheme.secondaryTextColor },
+          ]}
+        >
+          {t("game:best")}
+        </Text>
+        <AnimatedNumber
+          testID="text-high-score"
+          accessibilityLabel={t("game:best")}
+          value={highScore}
+          style={[
+            styles.scoreValue,
+            isTablet && styles.scoreValueTablet,
+            { color: activeTheme.textColor },
+          ]}
+        />
+      </View>
+    </View>
+  )
+
+  const board = (
+    <View style={styles.gameBoard}>
+      {wrongFlash && (
+        <EaseView
+          style={[styles.wrongFlashOverlay, { borderRadius: gameSize / 2 }]}
+          initialAnimate={{ opacity: 0 }}
+          animate={{ opacity: 0.25 }}
+          transition={{ default: { type: "timing", duration: 100 } }}
+        />
+      )}
+      <View style={gameContainerStyle}>
+        {buttonPositions.map((color, index) => (
+          <GameButton
+            key={color}
+            color={color}
+            index={index}
+            isActive={shouldShowBoardHighlights && activeButton === color}
+            disabled={gameState !== "waiting" || isShuffling}
+            buttonSize={buttonSize}
+            gameSize={gameSize}
+            slotInset={slotInset}
+            isShuffling={isShuffling}
+            onPressIn={() => handleButtonTouch(color)}
+            onPressOut={() => handleButtonRelease(color)}
+            themeColor={activeTheme.buttonColors[color].color}
+            themeActiveColor={activeTheme.buttonColors[color].activeColor}
+          />
+        ))}
+
+        <View
+          style={[
+            styles.centerCircleWrapper,
+            {
+              height: ringSize,
+              width: ringSize,
+              transform: [
+                { translateX: -centerTranslateOffset },
+                { translateY: -centerTranslateOffset },
+              ],
+            },
+          ]}
+        >
+          {showTimerRing && (
+            <View style={styles.timerRingContainer}>
+              <TimerRing
+                progress={timeRemaining! / 60}
+                size={ringSize}
+                strokeWidth={borderWidth}
+                theme={activeTheme}
+              />
+            </View>
+          )}
+          <View
+            style={[
+              styles.centerCircle,
+              {
+                backgroundColor: activeTheme.backgroundColor,
+                borderColor: activeTheme.borderColor,
+                borderRadius: centerDiameter / 2,
+                borderWidth,
+                height: centerDiameter,
+                width: centerDiameter,
+              },
+              showTimerRing && styles.centerCircleNoBorder,
+              showTimerRing && {
+                borderRadius: centerDiameterNoRing / 2,
+                height: centerDiameterNoRing,
+                width: centerDiameterNoRing,
+              },
+            ]}
+          >
+            {mode === "timed" && timeRemaining !== null && gameState !== "idle" ? (
+              <AnimatedCountdown
+                value={Math.ceil(timeRemaining)}
+                color={timeRemaining <= 10 ? "#ef4444" : activeTheme.textColor}
+                style={centerTimerStyle}
+              />
+            ) : inputTimeRemaining !== null ? (
+              <AnimatedCountdown
+                value={inputTimeRemaining}
+                color={inputTimeRemaining <= 3 ? "#ef4444" : "#fbbf24"}
+                style={centerTimerStyle}
+              />
+            ) : (
+              <Text
+                style={[
+                  styles.centerText,
+                  {
+                    color: activeTheme.secondaryTextColor,
+                    fontSize: centerModeFontSize,
+                    letterSpacing: centerModeLetterSpacing,
+                    lineHeight: Math.round(centerModeFontSize * 1.05),
+                    maxWidth: centerDiameterNoRing * 0.72,
+                  },
+                ]}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+                numberOfLines={1}
+              >
+                {t(`game:modes.${mode}`)}
+              </Text>
+            )}
+          </View>
+        </View>
+      </View>
+    </View>
+  )
+
+  const statusBarNode = (
+    <GameStatusBar
+      gameState={gameState}
+      sequence={sequence}
+      playerSequence={playerSequence}
+      theme={activeTheme}
+      timerDelta={mode === "timed" ? timerDelta : null}
+    />
+  )
+
+  const idleActionsNode = (
+    <View style={[styles.idleActions, isTabletPortrait && styles.idleActionsTabletPortrait]}>
+      <PressableScale
+        testID="btn-leaderboard"
+        accessibilityLabel={t("a11y:leaderboard")}
+        accessibilityRole="button"
+        style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+          router.push({ pathname: "/leaderboard", params: { mode } })
+        }}
+      >
+        <Ionicons name="trophy" size={20} color={activeTheme.warningColor} />
+      </PressableScale>
+      <PressableScale
+        testID="btn-stats"
+        accessibilityLabel={t("a11y:stats")}
+        accessibilityRole="button"
+        style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+          router.push("/stats")
+        }}
+      >
+        <Ionicons name="stats-chart" size={20} color={activeTheme.secondaryTextColor} />
+      </PressableScale>
+      <PressableScale
+        testID="btn-achievements"
+        accessibilityLabel={t("a11y:achievements")}
+        accessibilityRole="button"
+        style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+          router.push("/achievements")
+        }}
+      >
+        <Ionicons name="ribbon" size={20} color={activeTheme.secondaryTextColor} />
+      </PressableScale>
+    </View>
+  )
+
+  const startButtonNode = (
+    <EaseView
+      animate={{ scale: 1.02 }}
+      transition={{
+        default: {
+          type: "timing",
+          duration: 1200,
+          easing: "easeInOut",
+          loop: "reverse",
+        },
+      }}
+      style={[
+        styles.startButtonWrapper,
+        isTabletPortrait && styles.startButtonWrapperTabletPortrait,
+      ]}
+    >
+      <PressableScale
+        testID="btn-start"
+        accessibilityLabel={t("a11y:startGame")}
+        accessibilityRole="button"
+        style={[styles.startButton, { backgroundColor: activeTheme.accentColor }]}
+        onPress={handleStartGame}
+      >
+        <Ionicons name="play" size={24} color="white" />
+        <Text style={styles.startButtonText}>{t("game:startGame")}</Text>
+      </PressableScale>
+    </EaseView>
+  )
+
+  const resetButtonNode = showResetButton ? (
+    <PressableScale
+      testID="btn-reset"
+      accessibilityLabel={t("a11y:endGame")}
+      accessibilityRole="button"
+      style={styles.resetButton}
+      onPress={endGame}
+    >
+      <Ionicons name="stop" size={24} color="white" />
+      <Text style={styles.buttonText}>{t("game:endGame")}</Text>
+    </PressableScale>
+  ) : null
 
   return (
     <GameThemeProvider value={activeTheme}>
@@ -325,7 +667,7 @@ export function GameScreen() {
           styles.container,
           {
             backgroundColor: activeTheme.backgroundColor,
-            paddingTop: 16 + insets.top + 16,
+            paddingTop: insets.top + 32,
             paddingBottom: insets.bottom + 16,
           },
         ]}
@@ -338,261 +680,197 @@ export function GameScreen() {
         <GameHeader
           isIdle={isIdle}
           theme={activeTheme}
-          onModePress={() => setModeModalVisible(true)}
+          onModePress={openModePicker}
           onSettingsPress={() => router.push("/settings")}
         />
 
-        {/* Score Display */}
-        <View style={styles.scoreContainer}>
-          <View style={[styles.scoreBox, { backgroundColor: activeTheme.surfaceColor }]}>
-            <Text style={[styles.scoreLabel, { color: activeTheme.secondaryTextColor }]}>
-              {t("game:level")}
-            </Text>
-            <AnimatedNumber
-              testID="text-level"
-              accessibilityLabel={t("game:level")}
-              value={level}
-              style={[styles.scoreValue, { color: activeTheme.textColor }]}
-            />
-          </View>
-          <View style={[styles.scoreBox, { backgroundColor: activeTheme.surfaceColor }]}>
-            <Text style={[styles.scoreLabel, { color: activeTheme.secondaryTextColor }]}>
-              {t("game:score")}
-            </Text>
-            <AnimatedNumber
-              testID="text-score"
-              accessibilityLabel={t("game:score")}
-              value={score}
-              style={[styles.scoreValue, { color: activeTheme.textColor }]}
-            />
-          </View>
-          <View style={[styles.scoreBox, { backgroundColor: activeTheme.surfaceColor }]}>
-            <Text style={[styles.scoreLabel, { color: activeTheme.secondaryTextColor }]}>
-              {t("game:best")}
-            </Text>
-            <AnimatedNumber
-              testID="text-high-score"
-              accessibilityLabel={t("game:best")}
-              value={highScore}
-              style={[styles.scoreValue, { color: activeTheme.textColor }]}
-            />
-          </View>
-        </View>
+        {isTabletLandscape ? (
+          <View style={styles.mainAreaTablet}>
+            <View style={styles.boardColumn}>
+              <View style={styles.onboardingSlot}>
+                <OnboardingTooltip visible={showOnboardingTooltip} theme={activeTheme} />
+              </View>
+              <View style={styles.boardMeasureArea} onLayout={handleBoardAreaLayout}>
+                {board}
+              </View>
+            </View>
 
-        {/* Reserved space prevents layout shift when tooltip appears on first run */}
-        <View style={styles.onboardingSlot}>
-          <OnboardingTooltip visible={showOnboardingTooltip} theme={activeTheme} />
-        </View>
+            <View style={styles.secondaryColumn}>
+              <View style={styles.secondaryTop}>
+                {scoreBoxes}
+                {isIdle && <StreakBanner theme={activeTheme} style={styles.streakBannerTablet} />}
+              </View>
 
-        {/* Game Board */}
-        <View style={styles.gameBoardFill}>
-          <View style={styles.gameBoard}>
-            {wrongFlash && (
-              <EaseView
-                style={styles.wrongFlashOverlay}
-                initialAnimate={{ opacity: 0 }}
-                animate={{ opacity: 0.25 }}
-                transition={{ default: { type: "timing", duration: 100 } }}
-              />
-            )}
-            <View style={gameContainerStyle}>
-              {buttonPositions.map((color, index) => (
-                <GameButton
-                  key={color}
-                  color={color}
-                  index={index}
-                  isActive={activeButton === color}
-                  disabled={gameState !== "waiting" || isShuffling}
-                  buttonSize={buttonSize}
-                  gameSize={gameSize}
-                  isShuffling={isShuffling}
-                  onPressIn={() => handleButtonTouch(color)}
-                  onPressOut={() => handleButtonRelease(color)}
-                  themeColor={activeTheme.buttonColors[color].color}
-                  themeActiveColor={activeTheme.buttonColors[color].activeColor}
-                />
-              ))}
+              <View style={styles.secondaryMiddle}>{!isIdle && statusBarNode}</View>
 
-              {/* Center Circle */}
-              <View style={styles.centerCircleWrapper}>
-                {showTimerRing && (
-                  <View style={styles.timerRingContainer}>
-                    <TimerRing
-                      progress={timeRemaining! / 60}
-                      size={80}
-                      strokeWidth={4}
-                      theme={activeTheme}
-                    />
-                  </View>
+              <View style={styles.secondaryBottom}>
+                {isIdle ? (
+                  <>
+                    <EaseView
+                      animate={{ scale: 1.02 }}
+                      transition={{
+                        default: {
+                          type: "timing",
+                          duration: 1200,
+                          easing: "easeInOut",
+                          loop: "reverse",
+                        },
+                      }}
+                      style={styles.startButtonWrapperTablet}
+                    >
+                      <PressableScale
+                        testID="btn-start"
+                        accessibilityLabel={t("a11y:startGame")}
+                        accessibilityRole="button"
+                        style={[styles.startButton, { backgroundColor: activeTheme.accentColor }]}
+                        onPress={handleStartGame}
+                      >
+                        <Ionicons name="play" size={24} color="white" />
+                        <Text style={styles.startButtonText}>{t("game:startGame")}</Text>
+                      </PressableScale>
+                    </EaseView>
+                    <View style={styles.idleActions}>
+                      <PressableScale
+                        testID="btn-leaderboard"
+                        accessibilityLabel={t("a11y:leaderboard")}
+                        accessibilityRole="button"
+                        style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                          router.push({ pathname: "/leaderboard", params: { mode } })
+                        }}
+                      >
+                        <Ionicons name="trophy" size={20} color={activeTheme.warningColor} />
+                      </PressableScale>
+                      <PressableScale
+                        testID="btn-stats"
+                        accessibilityLabel={t("a11y:stats")}
+                        accessibilityRole="button"
+                        style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                          router.push("/stats")
+                        }}
+                      >
+                        <Ionicons
+                          name="stats-chart"
+                          size={20}
+                          color={activeTheme.secondaryTextColor}
+                        />
+                      </PressableScale>
+                      <PressableScale
+                        testID="btn-achievements"
+                        accessibilityLabel={t("a11y:achievements")}
+                        accessibilityRole="button"
+                        style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                          router.push("/achievements")
+                        }}
+                      >
+                        <Ionicons name="ribbon" size={20} color={activeTheme.secondaryTextColor} />
+                      </PressableScale>
+                    </View>
+                  </>
+                ) : (
+                  showResetButton && (
+                    <PressableScale
+                      testID="btn-reset"
+                      accessibilityLabel={t("a11y:endGame")}
+                      accessibilityRole="button"
+                      style={styles.resetButton}
+                      onPress={endGame}
+                    >
+                      <Ionicons name="stop" size={24} color="white" />
+                      <Text style={styles.buttonText}>{t("game:endGame")}</Text>
+                    </PressableScale>
+                  )
                 )}
-                <View
-                  style={[
-                    styles.centerCircle,
-                    {
-                      backgroundColor: activeTheme.backgroundColor,
-                      borderColor: activeTheme.borderColor,
-                    },
-                    showTimerRing && styles.centerCircleNoRing,
-                  ]}
-                >
-                  {mode === "timed" && timeRemaining !== null && gameState !== "idle" ? (
-                    <AnimatedCountdown
-                      value={Math.ceil(timeRemaining)}
-                      color={timeRemaining <= 10 ? "#ef4444" : activeTheme.textColor}
-                      style={styles.centerTimer}
-                    />
-                  ) : inputTimeRemaining !== null ? (
-                    <AnimatedCountdown
-                      value={inputTimeRemaining}
-                      color={inputTimeRemaining <= 3 ? "#ef4444" : "#fbbf24"}
-                      style={styles.centerTimer}
-                    />
-                  ) : (
-                    <Text style={[styles.centerText, { color: activeTheme.secondaryTextColor }]}>
-                      {t(`game:modes.${mode}`)}
-                    </Text>
-                  )}
-                </View>
               </View>
             </View>
           </View>
-        </View>
+        ) : (
+          <>
+            {scoreBoxes}
+            <View style={styles.onboardingSlot}>
+              <OnboardingTooltip visible={showOnboardingTooltip} theme={activeTheme} />
+            </View>
+            <View style={styles.boardMeasureAreaCompact} onLayout={handleBoardAreaLayout}>
+              {board}
+            </View>
 
-        {/* Controls */}
-        <View style={styles.controlsContainer}>
-          {gameState === "idle" && (
-            <>
-              <StreakBanner theme={activeTheme} />
-              <EaseView
-                animate={{ scale: 1.02 }}
-                transition={{
-                  default: { type: "timing", duration: 1200, easing: "easeInOut", loop: "reverse" },
-                }}
-                style={styles.startButtonWrapper}
+            <View
+              style={[
+                styles.compactBottomPanel,
+                isTabletPortrait && styles.compactBottomPanelTabletPortrait,
+              ]}
+            >
+              <View
+                style={[
+                  styles.compactTopInfoSlot,
+                  isTabletPortrait && styles.compactTopInfoSlotTabletPortrait,
+                ]}
               >
-                <PressableScale
-                  testID="btn-start"
-                  accessibilityLabel={t("a11y:startGame")}
-                  accessibilityRole="button"
-                  style={[styles.startButton, { backgroundColor: activeTheme.accentColor }]}
-                  onPress={handleStartGame}
-                >
-                  <Ionicons name="play" size={24} color="white" />
-                  <Text style={styles.startButtonText}>{t("game:startGame")}</Text>
-                </PressableScale>
-              </EaseView>
-              <View style={styles.idleActions}>
-                <PressableScale
-                  testID="btn-leaderboard"
-                  accessibilityLabel={t("a11y:leaderboard")}
-                  accessibilityRole="button"
-                  style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                    router.push({ pathname: "/leaderboard", params: { mode } })
-                  }}
-                >
-                  <Ionicons name="trophy" size={20} color={activeTheme.warningColor} />
-                </PressableScale>
-                <PressableScale
-                  testID="btn-stats"
-                  accessibilityLabel={t("a11y:stats")}
-                  accessibilityRole="button"
-                  style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                    router.push("/stats")
-                  }}
-                >
-                  <Ionicons name="stats-chart" size={20} color={activeTheme.secondaryTextColor} />
-                </PressableScale>
-                <PressableScale
-                  testID="btn-achievements"
-                  accessibilityLabel={t("a11y:achievements")}
-                  accessibilityRole="button"
-                  style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                    router.push("/achievements")
-                  }}
-                >
-                  <Ionicons name="ribbon" size={20} color={activeTheme.secondaryTextColor} />
-                </PressableScale>
+                {isIdle ? <StreakBanner theme={activeTheme} /> : statusBarNode}
               </View>
-            </>
-          )}
+              <View
+                style={[
+                  styles.compactPrimarySlot,
+                  isTabletPortrait && styles.compactPrimarySlotTabletPortrait,
+                ]}
+              >
+                {isIdle ? startButtonNode : resetButtonNode}
+              </View>
+              <View
+                style={[
+                  styles.compactActionsSlot,
+                  isTabletPortrait && styles.compactActionsSlotTabletPortrait,
+                ]}
+              >
+                {isIdle ? idleActionsNode : null}
+              </View>
+            </View>
+          </>
+        )}
 
-          {(gameState === "showing" || gameState === "waiting") && (
-            <PressableScale
-              testID="btn-reset"
-              accessibilityLabel={t("a11y:endGame")}
-              accessibilityRole="button"
-              style={styles.resetButton}
-              onPress={endGame}
-            >
-              <Ionicons name="stop" size={24} color="white" />
-              <Text style={styles.buttonText}>{t("game:endGame")}</Text>
-            </PressableScale>
-          )}
-        </View>
-
-        <GameStatusBar
-          gameState={gameState}
-          sequence={sequence}
-          playerSequence={playerSequence}
-          theme={activeTheme}
-          timerDelta={mode === "timed" ? timerDelta : null}
-        />
-
-        {/* Mode Selector Modal */}
-        <Modal
-          visible={modeModalVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => {
-            if (!pulsingMode) setModeModalVisible(false)
-          }}
-        >
-          <Pressable
-            style={styles.modalBackdrop}
-            onPress={() => {
-              if (!pulsingMode) setModeModalVisible(false)
+        {compactNativeSheetsAvailable && !isTablet ? (
+          <CompactModePickerSheet
+            ref={compactModePickerRef}
+            visible={compactModeSheetVisible}
+            onVisibleChange={(visible) => {
+              if (!visible && !pulsingMode) setCompactModeSheetVisible(false)
             }}
-          >
-            <Pressable
-              style={[styles.modalContent, { backgroundColor: activeTheme.backgroundColor }]}
-            >
-              <Text style={[styles.modalTitle, { color: activeTheme.textColor }]}>
-                {t("game:modeSelect")}
-              </Text>
-              {GAME_MODES.map((m) => {
-                const streak =
-                  m.id === "daily" ? parseInt(loadString(DAILY_CURRENT_STREAK) ?? "0", 10) : 0
-                return (
-                  <ModeItem
-                    key={m.id}
-                    mode={m}
-                    isSelected={mode === m.id}
-                    isPulsing={pulsingMode === m.id}
-                    pulsePhase={pulsePhase}
-                    streak={streak}
-                    theme={activeTheme}
-                    onPress={() => handleModeSelect(m.id)}
-                  />
-                )
-              })}
-            </Pressable>
-          </Pressable>
-        </Modal>
+            pulsingMode={pulsingMode}
+            selectedMode={mode}
+            pulsePhase={pulsePhase}
+            theme={activeTheme}
+            onSelectMode={handleCompactModeSelect}
+          />
+        ) : null}
       </View>
     </GameThemeProvider>
   )
 }
 
 const styles = StyleSheet.create({
+  boardColumn: {
+    flex: 6,
+  },
+  boardMeasureArea: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+  },
+  boardMeasureAreaCompact: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+    paddingBottom: 24,
+    width: "100%",
+  },
   buttonText: {
     color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
@@ -601,61 +879,71 @@ const styles = StyleSheet.create({
   },
   centerCircle: {
     alignItems: "center",
-    borderRadius: 40,
-    borderWidth: 4,
-    height: 80,
     justifyContent: "center",
-    width: 80,
   },
-  centerCircleNoRing: {
-    borderRadius: 36,
+  centerCircleNoBorder: {
     borderWidth: 0,
-    height: 72,
-    width: 72,
   },
   centerCircleWrapper: {
     alignItems: "center",
-    height: 80,
     justifyContent: "center",
     left: "50%",
     position: "absolute",
     top: "50%",
-    transform: [{ translateX: -40 }, { translateY: -40 }],
-    width: 80,
   },
   centerText: {
     color: UI_COLORS.white,
     fontFamily: "Oxanium-Medium",
-    fontSize: 11,
-    letterSpacing: 2,
+    textAlign: "center",
     textTransform: "uppercase",
   },
-  centerTimer: {
-    fontFamily: "Oxanium-Bold",
-    fontSize: 24,
+  compactActionsSlot: {
+    alignItems: "center",
+    justifyContent: "flex-start",
+    minHeight: 48,
+    width: "100%",
+  },
+  compactActionsSlotTabletPortrait: {
+    minHeight: 60,
+    width: "100%",
+  },
+  compactBottomPanel: {
+    marginBottom: 12,
+    paddingHorizontal: 20,
+    width: "100%",
+  },
+  compactBottomPanelTabletPortrait: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  compactPrimarySlot: {
+    alignItems: "center",
+    justifyContent: "flex-start",
+    minHeight: 64,
+    width: "100%",
+  },
+  compactPrimarySlotTabletPortrait: {
+    minHeight: 78,
+    width: "100%",
+  },
+  compactTopInfoSlot: {
+    alignItems: "center",
+    justifyContent: "flex-start",
+    minHeight: 62,
+    width: "100%",
+  },
+  compactTopInfoSlotTabletPortrait: {
+    minHeight: 72,
+    width: "100%",
   },
   container: {
     alignItems: "center",
     backgroundColor: UI_COLORS.classicBackground,
     flex: 1,
   },
-  controlsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    justifyContent: "center",
-    marginBottom: 20,
-    paddingHorizontal: 20,
-  },
   gameBoard: {
     alignItems: "center",
     justifyContent: "center",
-  },
-  gameBoardFill: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingBottom: 24,
-    width: "100%",
   },
   idleActionButton: {
     alignItems: "center",
@@ -668,26 +956,18 @@ const styles = StyleSheet.create({
   idleActions: {
     flexDirection: "row",
     gap: 12,
-    marginTop: 16,
-  },
-  modalBackdrop: {
-    alignItems: "center",
-    backgroundColor: UI_COLORS.backdropModal,
-    flex: 1,
     justifyContent: "center",
-    padding: 24,
+    marginTop: 8,
   },
-  modalContent: {
-    borderRadius: 16,
-    maxWidth: 380,
-    padding: 20,
-    width: "85%",
+  idleActionsTabletPortrait: {
+    marginTop: 0,
   },
-  modalTitle: {
-    fontFamily: "Oxanium-Bold",
-    fontSize: 20,
-    marginBottom: 16,
-    textAlign: "center",
+  mainAreaTablet: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 20,
+    paddingHorizontal: 20,
+    width: "100%",
   },
   onboardingSlot: {
     alignItems: "center",
@@ -710,11 +990,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
+  scoreBoxTabletLandscape: {
+    minWidth: 120,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+  },
+  scoreBoxTabletPortrait: {
+    minWidth: 120,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+  },
   scoreContainer: {
+    width: "100%",
+  },
+  scoreContainerCompact: {
     flexDirection: "row",
     justifyContent: "space-around",
     marginBottom: 30,
     width: "80%",
+  },
+  scoreContainerTabletLandscape: {
+    alignSelf: "center",
+    flexDirection: "row",
+    gap: 16,
+    justifyContent: "center",
+    marginBottom: 24,
+    width: "100%",
+  },
+  scoreContainerTabletPortrait: {
+    alignSelf: "center",
+    flexDirection: "row",
+    gap: 16,
+    justifyContent: "center",
+    marginBottom: 36,
+    width: "88%",
   },
   scoreLabel: {
     color: UI_COLORS.classicSurfaceDim,
@@ -722,10 +1031,37 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 5,
   },
+  scoreLabelTabletLandscape: {
+    marginBottom: 8,
+  },
   scoreValue: {
     color: UI_COLORS.white,
     fontFamily: "Oxanium-Bold",
     fontSize: 24,
+  },
+  scoreValueTablet: {
+    fontSize: 28,
+  },
+  secondaryBottom: {
+    alignItems: "center",
+    width: "100%",
+  },
+  secondaryColumn: {
+    flex: 4,
+    justifyContent: "space-between",
+    paddingBottom: 24,
+    paddingTop: 56,
+  },
+  secondaryMiddle: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 8,
+  },
+  secondaryTop: {
+    alignItems: "center",
+    gap: 16,
+    width: "100%",
   },
   startButton: {
     alignItems: "center",
@@ -749,6 +1085,16 @@ const styles = StyleSheet.create({
   startButtonWrapper: {
     width: "70%",
   },
+  startButtonWrapperTablet: {
+    width: "100%",
+  },
+  startButtonWrapperTabletPortrait: {
+    width: "74%",
+  },
+  streakBannerTablet: {
+    marginBottom: 0,
+    width: "100%",
+  },
   timerRingContainer: {
     left: 0,
     position: "absolute",
@@ -757,7 +1103,6 @@ const styles = StyleSheet.create({
   wrongFlashOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: UI_COLORS.red500,
-    borderRadius: 999,
     zIndex: 10,
   },
 })

@@ -229,6 +229,10 @@ export const gameEngineMachine = setup({
           target: "showing",
           actions: "setAdvancedSequence",
         },
+        END_GAME: {
+          target: "gameover",
+          actions: "markGameOver",
+        },
       },
     },
     gameover: {

@@ -539,8 +539,8 @@
 - [x] **Add missing testIDs for Maestro flows**
       Added `testID="btn-settings"`, `testID="btn-mode-selector"`, `testID="btn-reset"`. Also added accessibility labels on back buttons (stats, achievements).
 
-- [~] **Migrate modals to Expo Router modal routes**
-  Shipped as standard routes (not modal presentation): `/settings`, `/leaderboard`, `/game-over`. Mode selector intentionally stays as a `<Modal>` (quick contextual picker, not a destination). Mode selector could still be migrated to `presentation: "modal"` for native sheet feel — defer until we need it.
+- [x] **Migrate modals to Expo Router modal routes**
+  Shipped as standard routes: `/settings`, `/leaderboard`, `/game-over`. Mode selector migrated to `/mode-select` route with platform-specific `CompactModePickerSheet` (iOS ActionSheet, Android dialog-style, web fallback). `pendingModeStore` Zustand store carries selection back to GameScreen.
 
 ### 1.6 Build & Submit
 
@@ -733,17 +733,9 @@ These are where v1.1 earns its keep. Ship on top of Phase B foundation.
 - [x] **Arcade high score table with three-initial entry**
       Top 10 local leaderboard stored in MMKV (`ecomi:highScores` key) as `{ initials: string, score: number, level: number, date: string, mode: GameMode }[]` sorted by score descending, capped at 10. When a player's score qualifies for the top 10, show a three-letter initial input modal (standard keyboard input for v1). Display the leaderboard on the idle screen or as a dedicated view accessible from the header. Retro arcade cabinet aesthetic — monospaced, numbered rows, blinking cursor on entry. Coexists cleanly with future global leaderboards (Phase 5) as a "This Device" tab.
 
-- [ ] **Tablet-optimized layout (iPad / Android tablets)**
-      Current layout uses `useWindowDimensions()` and scales the game board relative to screen size, but the UI is phone-optimized. On tablets the game board floats in the center with excessive empty space, text is undersized, and modals feel small. Adapt for larger screens:
-  - Scale the game board to fill more of the available space while keeping it centered
-  - Increase font sizes and touch targets proportionally
-  - Widen modals (settings, mode selector, game over overlay, initial entry) — consider max-width constraints rather than full-width
-  - Leaderboard table: use wider columns, larger text, more comfortable row spacing
-  - Consider landscape support — the Simon board is square so it works naturally in both orientations
-  - Stats and achievements screens: multi-column grid layout on wider screens
-  - Test on iPad Mini, iPad Air, iPad Pro, and common Android tablet sizes
-  - Enable `supportsTablet: true` in `app.config.ts` once layout is ready
-  - Add iPad screenshots to App Store listing (required for iPad-supported apps)
+- [x] **Tablet-optimized layout (iPad / Android tablets)**
+      `supportsTablet: true` enabled in `app.config.ts`. `layoutBreakpoints.ts` helper exposes `isCompact`/`isTablet` based on shortest screen side. `OrientationLockProvider` enforces portrait on phones, unlocks on tablets. `useGameBoardMetrics` hook computes board sizing from measured available space and freezes it during active play to prevent mid-round shifts. GameScreen refactored with distinct compact/tablet-portrait/tablet-landscape compositions. Secondary screens (achievements, stats, leaderboard, game-over, settings, AchievementToast, HighScoreTable) gained max-width centering and density tuning for tablet.
+  - Remaining non-code: Test on iPad Mini, iPad Air, iPad Pro, and common Android tablet sizes; add iPad screenshots to App Store listing
 
 - [x] **Localize App Store listings (ES, PT)**
       Translate subtitle, description, and keywords for Spanish and Portuguese in App Store Connect and Google Play Console.

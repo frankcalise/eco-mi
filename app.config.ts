@@ -16,7 +16,7 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
     slug: "EcoMi",
     scheme: "ecomi",
     version: "1.1.0",
-    orientation: "portrait",
+    orientation: "default",
     userInterfaceStyle: "automatic",
     icon: "./assets/images/app-icon-ios.png",
     updates: {

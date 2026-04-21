@@ -172,6 +172,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const buttonPressStartTime = useRef<number | null>(null)
   const inputLocked = useRef(false)
   const continueLocked = useRef(false)
+  const visualSequenceTokenRef = useRef(0)
   const timerBonusRef = useRef(0)
   const wrongCountRef = useRef(0)
   const lastHapticSecond = useRef(-1)
@@ -338,6 +339,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   }
 
   function showSequence(seq: Color[], currentLevel: number) {
+    const token = visualSequenceTokenRef.current
     const toneDuration = getToneDuration(currentLevel)
     const interval = getSequenceInterval(currentLevel)
     const flashDuration = Math.min(toneDuration, interval - 80)
@@ -349,9 +351,11 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     seq.forEach((color, index) => {
       addTimeout(
         () => {
+          if (token !== visualSequenceTokenRef.current) return
           flashButton(color, flashDuration)
           if (index === seq.length - 1) {
             addTimeout(() => {
+              if (token !== visualSequenceTokenRef.current) return
               send({ type: "SEQUENCE_DONE" })
               if (mode !== "timed") {
                 const totalMs = getInputTimeout(seq.length)
@@ -429,11 +433,17 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     prevStateValueRef.current = sv
   }, [state.value])
 
+  function cancelVisualSequence() {
+    visualSequenceTokenRef.current += 1
+    setActiveButton(null)
+  }
+
   // --- Public actions ---
 
   function startGame() {
     clearAllTimeouts()
     stopTimer()
+    cancelVisualSequence()
     inputLocked.current = false
     timerBonusRef.current = 0
     wrongCountRef.current = 0
@@ -443,7 +453,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     setTimerDelta(null)
     sessionStartTimeRef.current = Date.now()
     setSessionTime(0)
-    setActiveButton(null)
+    setWrongFlash(false)
     setButtonPositions([...colors])
     setIsShuffling(false)
 
@@ -466,8 +476,9 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   function resetGame() {
     clearAllTimeouts()
     stopTimer()
+    cancelVisualSequence()
     inputLocked.current = false
-    setActiveButton(null)
+    setWrongFlash(false)
     setButtonPositions([...colors])
     setIsShuffling(false)
     send({ type: "RESET" })
@@ -475,12 +486,19 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
   function endGame() {
     const sv = state.value as string
-    if (sv !== "showing" && sv !== "waiting") return
+    if (sv !== "showing" && sv !== "waiting" && sv !== "advancing") return
     clearAllTimeouts()
     stopTimer()
+    cancelVisualSequence()
     silenceAll()
     inputLocked.current = false
-    setActiveButton(null)
+    setWrongFlash(false)
+    if (ctx.score === 0) {
+      setButtonPositions([...colors])
+      setIsShuffling(false)
+      send({ type: "RESET" })
+      return
+    }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
     setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error), 150)
     send({ type: "END_GAME" })
@@ -492,16 +510,19 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     if (continueLocked.current) return
     continueLocked.current = true
     clearAllTimeouts()
+    cancelVisualSequence()
     inputLocked.current = false
-    setActiveButton(null)
+    setWrongFlash(false)
+    const sequenceToReplay = [...ctx.sequence]
+    const levelToReplay = ctx.level
     send({ type: "CONTINUE" })
 
     addTimeout(() => {
-      continueLocked.current = false
-      // Replay existing sequence (preserved by setupContinue action)
-      showSequence(ctx.sequence, ctx.level)
-      // Machine transitions starting → showing via SET_INITIAL_SEQUENCE
-      send({ type: "SET_INITIAL_SEQUENCE", sequence: ctx.sequence })
+      send({ type: "SET_INITIAL_SEQUENCE", sequence: sequenceToReplay })
+      addTimeout(() => {
+        continueLocked.current = false
+        showSequence(sequenceToReplay, levelToReplay)
+      }, 0)
     }, 500)
   }
 
@@ -550,8 +571,11 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       silenceAll()
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
       setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error), 150)
-      setWrongFlash(true)
-      addTimeout(() => setWrongFlash(false), 300)
+      const shouldFlashWrongInput = mode === "timed" || ctx.score > 0
+      if (shouldFlashWrongInput) {
+        setWrongFlash(true)
+        addTimeout(() => setWrongFlash(false), 300)
+      }
       send({ type: "WRONG_INPUT" })
 
       if (mode === "timed") {

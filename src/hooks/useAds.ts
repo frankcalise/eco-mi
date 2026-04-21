@@ -63,6 +63,7 @@ export function useAds(): UseAdsReturn {
   const loadedRef = useRef(false)
   const rewardedLoadedRef = useRef(false)
   const gamesThisSessionRef = useRef(0)
+  const rewardedShowingRef = useRef(false)
 
   async function requestConsent() {
     try {
@@ -141,9 +142,11 @@ export function useAds(): UseAdsReturn {
 
   function showRewarded(): Promise<boolean> {
     if (!rewardedLoadedRef.current || !rewardedRef.current) return Promise.resolve(false)
+    if (rewardedShowingRef.current) return Promise.resolve(false)
 
     const rewarded = rewardedRef.current
     let earned = false
+    rewardedShowingRef.current = true
 
     return new Promise<boolean>((resolve) => {
       let settled = false
@@ -151,6 +154,7 @@ export function useAds(): UseAdsReturn {
       function settle(result: boolean) {
         if (settled) return
         settled = true
+        rewardedShowingRef.current = false
         unsubReward()
         unsubClose()
         unsubError()

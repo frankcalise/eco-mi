@@ -8,11 +8,13 @@ import { HighScoreTable } from "@/components/HighScoreTable"
 import type { GameMode } from "@/hooks/useGameEngine"
 import { useTheme } from "@/hooks/useTheme"
 import { stackHeaderOptionsFromTheme } from "@/navigation/secondaryStackHeader"
+import { useBreakpoints } from "@/utils/layoutBreakpoints"
 
 export default function LeaderboardScreen() {
   const { t, i18n } = useTranslation()
   const navigation = useNavigation()
   const { activeTheme } = useTheme()
+  const { isTablet } = useBreakpoints()
   const params = useLocalSearchParams<{
     mode?: string
     highlightIndex?: string
@@ -34,12 +36,15 @@ export default function LeaderboardScreen() {
   return (
     <View style={[styles.container, { backgroundColor: activeTheme.backgroundColor }]}>
       <StatusBar style={activeTheme.statusBarStyle} backgroundColor={activeTheme.backgroundColor} />
-      <HighScoreTable
-        initialMode={mode}
-        highlightIndex={highlightIndex}
-        highlightMode={highlightMode}
-        theme={activeTheme}
-      />
+      <View style={[styles.content, isTablet && styles.contentTablet]}>
+        <HighScoreTable
+          initialMode={mode}
+          highlightIndex={highlightIndex}
+          highlightMode={highlightMode}
+          isTablet={isTablet}
+          theme={activeTheme}
+        />
+      </View>
     </View>
   )
 }
@@ -48,5 +53,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
+  },
+  content: {
+    width: "100%",
+  },
+  contentTablet: {
+    alignSelf: "center",
+    maxWidth: 700,
   },
 })

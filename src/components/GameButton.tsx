@@ -14,6 +14,7 @@ type GameButtonProps = {
   disabled: boolean
   buttonSize: number
   gameSize: number
+  slotInset: number
   index: number
   isShuffling?: boolean
   onPressIn: () => void
@@ -26,17 +27,17 @@ function getSlotCoords(
   position: Position,
   buttonSize: number,
   gameSize: number,
+  slotInset: number,
 ): { top: number; left: number } {
-  const offset = gameSize * 0.05
-  const far = gameSize - buttonSize - offset
+  const far = gameSize - buttonSize - slotInset
 
   switch (position) {
     case "topLeft":
-      return { top: offset, left: offset }
+      return { top: slotInset, left: slotInset }
     case "topRight":
-      return { top: offset, left: far }
+      return { top: slotInset, left: far }
     case "bottomLeft":
-      return { top: far, left: offset }
+      return { top: far, left: slotInset }
     case "bottomRight":
       return { top: far, left: far }
   }
@@ -61,6 +62,7 @@ export function GameButton({
   disabled,
   buttonSize,
   gameSize,
+  slotInset,
   index,
   isShuffling,
   onPressIn,
@@ -81,8 +83,8 @@ export function GameButton({
   }
 
   // Use topLeft as the base position for all buttons, then translate to target slot
-  const baseCoords = getSlotCoords("topLeft", buttonSize, gameSize)
-  const targetCoords = getSlotCoords(position, buttonSize, gameSize)
+  const baseCoords = getSlotCoords("topLeft", buttonSize, gameSize, slotInset)
+  const targetCoords = getSlotCoords(position, buttonSize, gameSize, slotInset)
   const translateX = targetCoords.left - baseCoords.left
   const translateY = targetCoords.top - baseCoords.top
   const borderRadius = getBorderRadius(position, buttonSize)
