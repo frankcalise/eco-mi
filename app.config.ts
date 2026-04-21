@@ -38,7 +38,7 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
     },
     ios: {
       icon: "./assets/images/app-icon-ios.png",
-      supportsTablet: true,
+      supportsTablet: false,
       bundleIdentifier: "com.frankcalise.ecomi",
       privacyManifests: {
         NSPrivacyAccessedAPITypes: [
