@@ -72,7 +72,11 @@ export function ModeItem({
             {m.id === "daily" && streak > 0 ? ` (${streak}d)` : ""}
           </Text>
           <Text
-            style={[styles.modeItemDesc, isTablet && styles.modeItemDescTablet, { color: theme.secondaryTextColor }]}
+            style={[
+              styles.modeItemDesc,
+              isTablet && styles.modeItemDescTablet,
+              { color: theme.secondaryTextColor },
+            ]}
           >
             {t(`game:modeDescriptions.${m.id}`)}
           </Text>

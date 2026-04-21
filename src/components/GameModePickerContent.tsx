@@ -3,10 +3,10 @@ import { useTranslation } from "react-i18next"
 
 import { ModeItem } from "@/components/ModeItem"
 import { GAME_MODES } from "@/config/gameModes"
-import { useBreakpoints } from "@/utils/layoutBreakpoints"
 import { DAILY_CURRENT_STREAK } from "@/config/storageKeys"
 import type { GameTheme } from "@/config/themes"
 import type { GameMode } from "@/hooks/useGameEngine"
+import { useBreakpoints } from "@/utils/layoutBreakpoints"
 import { loadString } from "@/utils/storage"
 
 type GameModePickerContentProps = {

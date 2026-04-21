@@ -72,12 +72,20 @@ function StatPill({
       transition={{ default: { type: "spring", stiffness: 220, damping: 18, delay } }}
     >
       <View testID={testID} collapsable={false}>
-        <Text style={[styles.pillLabel, isTablet && styles.pillLabelTablet, { color: borderColor }]}>
+        <Text
+          style={[styles.pillLabel, isTablet && styles.pillLabelTablet, { color: borderColor }]}
+        >
           {label}
         </Text>
         <View style={[styles.pillRow, isTablet && styles.pillRowTablet]}>
           <Ionicons name={icon} size={isTablet ? 32 : 20} color={borderColor} />
-          <Text style={[styles.pillValue, isTablet && styles.pillValueTablet, { color: theme.textColor }]}>
+          <Text
+            style={[
+              styles.pillValue,
+              isTablet && styles.pillValueTablet,
+              { color: theme.textColor },
+            ]}
+          >
             {value}
           </Text>
         </View>
@@ -232,9 +240,9 @@ export default function GameOverScreen() {
   const pbDelta = isNewHighScore && previousHighScore > 0 ? score - previousHighScore : null
   const nearMiss =
     !isNewHighScore &&
-      highScore > 0 &&
-      highScore - score <= NEAR_MISS_THRESHOLD &&
-      highScore - score > 0
+    highScore > 0 &&
+    highScore - score <= NEAR_MISS_THRESHOLD &&
+    highScore - score > 0
       ? highScore - score
       : null
 
@@ -249,7 +257,7 @@ export default function GameOverScreen() {
       } else {
         await Share.share({ message })
       }
-    } catch { }
+    } catch {}
   }
 
   const setPendingAction = usePendingActionStore((s) => s.setAction)
@@ -765,10 +773,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     width: "100%",
   },
-  statsGridTablet: {
-    gap: 18,
-    marginTop: 24,
-  },
   statsGridRow: {
     flexDirection: "row",
     gap: 12,
@@ -776,6 +780,10 @@ const styles = StyleSheet.create({
   },
   statsGridRowTablet: {
     gap: 18,
+  },
+  statsGridTablet: {
+    gap: 18,
+    marginTop: 24,
   },
   title: {
     fontFamily: "Oxanium-Bold",

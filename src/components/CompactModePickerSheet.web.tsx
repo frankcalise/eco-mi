@@ -10,9 +10,13 @@ export const CompactModePickerSheet = forwardRef<
   CompactModePickerSheetHandle,
   CompactModePickerSheetProps
 >(function CompactModePickerSheet(_props, ref) {
-  useImperativeHandle(ref, () => ({
-    hideIfNeeded: async () => {},
-  }))
+  useImperativeHandle(
+    ref,
+    () => ({
+      hideIfNeeded: async () => {},
+    }),
+    [],
+  )
 
   return null
 })

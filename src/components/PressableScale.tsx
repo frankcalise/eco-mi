@@ -24,10 +24,6 @@ export function PressableScale({
 
   return (
     <EaseView
-      testID={testID}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityRole={accessibilityRole}
-      accessibilityHint={accessibilityHint}
       animate={{
         scale: pressed && !disabled ? scaleDown : 1,
         opacity: pressed && !disabled ? opacityDown : 1,
@@ -39,6 +35,10 @@ export function PressableScale({
       style={wrapperStyle}
     >
       <Pressable
+        testID={testID}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole={accessibilityRole}
+        accessibilityHint={accessibilityHint}
         disabled={disabled}
         onPressIn={(e) => {
           setPressed(true)

@@ -1,6 +1,5 @@
 import { forwardRef, useImperativeHandle, useRef } from "react"
 import { View } from "react-native"
-
 import {
   Host,
   ModalBottomSheet,
@@ -8,26 +7,18 @@ import {
   type ModalBottomSheetRef,
 } from "@expo/ui/jetpack-compose"
 
-import { GameModePickerContent } from "@/components/GameModePickerContent"
-import { compactModePickerSheetStyles as styles } from "@/components/compactModePickerSheetStyles"
 import type {
   CompactModePickerSheetHandle,
   CompactModePickerSheetProps,
 } from "@/components/CompactModePickerSheet.types"
+import { compactModePickerSheetStyles as styles } from "@/components/compactModePickerSheetStyles"
+import { GameModePickerContent } from "@/components/GameModePickerContent"
 
 export const CompactModePickerSheet = forwardRef<
   CompactModePickerSheetHandle,
   CompactModePickerSheetProps
 >(function CompactModePickerSheet(
-  {
-    visible,
-    onVisibleChange,
-    pulsingMode,
-    selectedMode,
-    pulsePhase,
-    theme,
-    onSelectMode,
-  },
+  { visible, onVisibleChange, pulsingMode, selectedMode, pulsePhase, theme, onSelectMode },
   ref,
 ) {
   const sheetRef = useRef<ModalBottomSheetRef>(null)
@@ -41,10 +32,7 @@ export const CompactModePickerSheet = forwardRef<
   const blockDismiss = Boolean(pulsingMode)
 
   return (
-    <View
-      style={styles.sheetHost}
-      pointerEvents={visible ? "box-none" : "none"}
-    >
+    <View style={styles.sheetHost} pointerEvents={visible ? "box-none" : "none"}>
       <Host matchContents style={styles.hostFill}>
         {visible ? (
           <ModalBottomSheet

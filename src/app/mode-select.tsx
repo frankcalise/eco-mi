@@ -2,19 +2,14 @@ import { useEffect, useRef, useState } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import * as Haptics from "expo-haptics"
 import { useLocalSearchParams, useRouter } from "expo-router"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { GameModePickerContent } from "@/components/GameModePickerContent"
 import { GAME_MODES } from "@/config/gameModes"
-import {
-  MODE_PICKER_DISMISS_DELAY_MS,
-  MODE_PICKER_PULSE_COUNT,
-  MODE_PICKER_PULSE_DURATION_MS,
-} from "@/config/modePickerTiming"
 import type { GameMode } from "@/hooks/useGameEngine"
 import { useTheme } from "@/hooks/useTheme"
 import { usePendingModeStore } from "@/stores/pendingModeStore"
 import { UI_COLORS } from "@/theme/uiColors"
+import { scheduleModePickerPulseSequence } from "@/utils/modePickerPulse"
 
 const ALLOWED_MODES = new Set(GAME_MODES.map((m) => m.id))
 
@@ -25,7 +20,6 @@ function parseCurrentMode(raw: string | undefined): GameMode {
 
 export default function ModeSelectScreen() {
   const router = useRouter()
-  const insets = useSafeAreaInsets()
   const { activeTheme } = useTheme()
   const setPendingMode = usePendingModeStore((s) => s.setPendingMode)
   const params = useLocalSearchParams<{ currentMode?: string }>()
@@ -59,27 +53,12 @@ export default function ModeSelectScreen() {
     setPulsingMode(id)
     setPulsePhase("bright")
 
-    let delay = 0
-    for (let i = 0; i < MODE_PICKER_PULSE_COUNT; i++) {
-      pulseTimers.current.push(
-        setTimeout(() => setPulsePhase("dim"), delay + MODE_PICKER_PULSE_DURATION_MS),
-      )
-      if (i < MODE_PICKER_PULSE_COUNT - 1) {
-        pulseTimers.current.push(
-          setTimeout(() => setPulsePhase("bright"), delay + MODE_PICKER_PULSE_DURATION_MS * 2),
-        )
-      }
-      delay += MODE_PICKER_PULSE_DURATION_MS * 2
-    }
-
-    pulseTimers.current.push(
-      setTimeout(() => {
-        setPendingMode(id)
-        router.back()
-        // Do not clear pulsingMode here — that would re-render with route currentMode
-        // and flash the old selection for a frame; screen unmounts on back.
-      }, delay + MODE_PICKER_DISMISS_DELAY_MS),
-    )
+    scheduleModePickerPulseSequence(pulseTimers, setPulsePhase, () => {
+      setPendingMode(id)
+      router.back()
+      // Do not clear pulsingMode here — that would re-render with route currentMode
+      // and flash the old selection for a frame; screen unmounts on back.
+    })
   }
 
   return (

@@ -20,16 +20,7 @@ import { OnboardingTooltip } from "@/components/OnboardingTooltip"
 import { PressableScale } from "@/components/PressableScale"
 import { StreakBanner } from "@/components/StreakBanner"
 import { TimerRing } from "@/components/TimerRing"
-import {
-  MODE_PICKER_DISMISS_DELAY_MS,
-  MODE_PICKER_PULSE_COUNT,
-  MODE_PICKER_PULSE_DURATION_MS,
-} from "@/config/modePickerTiming"
-import {
-  INITIALS_SKIPPED,
-  ONBOARDING_COMPLETED,
-  SAVED_INITIALS,
-} from "@/config/storageKeys"
+import { INITIALS_SKIPPED, ONBOARDING_COMPLETED, SAVED_INITIALS } from "@/config/storageKeys"
 import { useAds } from "@/hooks/useAds"
 import { useGameBoardMetrics } from "@/hooks/useGameBoardMetrics"
 import { useGameEngine, type GameMode } from "@/hooks/useGameEngine"
@@ -45,6 +36,7 @@ import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { UI_COLORS } from "@/theme/uiColors"
 import { useAnalytics } from "@/utils/analytics"
 import { useBreakpoints } from "@/utils/layoutBreakpoints"
+import { scheduleModePickerPulseSequence } from "@/utils/modePickerPulse"
 import { loadString, saveString } from "@/utils/storage"
 
 export function GameScreen() {
@@ -186,31 +178,13 @@ export function GameScreen() {
     setPulsingMode(id)
     setPulsePhase("bright")
 
-    let delay = 0
-    for (let i = 0; i < MODE_PICKER_PULSE_COUNT; i++) {
-      pulseTimers.current.push(
-        setTimeout(() => setPulsePhase("dim"), delay + MODE_PICKER_PULSE_DURATION_MS),
-      )
-      if (i < MODE_PICKER_PULSE_COUNT - 1) {
-        pulseTimers.current.push(
-          setTimeout(
-            () => setPulsePhase("bright"),
-            delay + MODE_PICKER_PULSE_DURATION_MS * 2,
-          ),
-        )
-      }
-      delay += MODE_PICKER_PULSE_DURATION_MS * 2
-    }
-
-    pulseTimers.current.push(
-      setTimeout(() => {
-        void (async () => {
-          setPulsingMode(null)
-          await compactModePickerRef.current?.hideIfNeeded()
-          setCompactModeSheetVisible(false)
-        })()
-      }, delay + MODE_PICKER_DISMISS_DELAY_MS),
-    )
+    scheduleModePickerPulseSequence(pulseTimers, setPulsePhase, () => {
+      void (async () => {
+        setPulsingMode(null)
+        await compactModePickerRef.current?.hideIfNeeded()
+        setCompactModeSheetVisible(false)
+      })()
+    })
   }
 
   useEffect(() => {
@@ -655,7 +629,10 @@ export function GameScreen() {
           loop: "reverse",
         },
       }}
-      style={[styles.startButtonWrapper, isTabletPortrait && styles.startButtonWrapperTabletPortrait]}
+      style={[
+        styles.startButtonWrapper,
+        isTabletPortrait && styles.startButtonWrapperTabletPortrait,
+      ]}
     >
       <PressableScale
         testID="btn-start"
@@ -920,11 +897,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     textTransform: "uppercase",
   },
-  container: {
-    alignItems: "center",
-    backgroundColor: UI_COLORS.classicBackground,
-    flex: 1,
-  },
   compactActionsSlot: {
     alignItems: "center",
     justifyContent: "flex-start",
@@ -963,6 +935,11 @@ const styles = StyleSheet.create({
   compactTopInfoSlotTabletPortrait: {
     minHeight: 72,
     width: "100%",
+  },
+  container: {
+    alignItems: "center",
+    backgroundColor: UI_COLORS.classicBackground,
+    flex: 1,
   },
   gameBoard: {
     alignItems: "center",
