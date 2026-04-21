@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import type { LayoutChangeEvent } from "react-native"
-import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native"
+import { Platform, StyleSheet, Text, useWindowDimensions, View } from "react-native"
 import * as Haptics from "expo-haptics"
 import { useFocusEffect, useRouter } from "expo-router"
 import { StatusBar } from "expo-status-bar"
