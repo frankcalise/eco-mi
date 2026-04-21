@@ -46,22 +46,41 @@ type StatPillProps = {
   borderColor: string
   theme: GameTheme
   delay: number
+  isTablet: boolean
   testID?: string
 }
 
-function StatPill({ label, value, icon, borderColor, theme, delay, testID }: StatPillProps) {
+function StatPill({
+  label,
+  value,
+  icon,
+  borderColor,
+  theme,
+  delay,
+  isTablet,
+  testID,
+}: StatPillProps) {
   return (
     <EaseView
-      testID={testID}
-      style={[styles.pill, { borderColor, backgroundColor: theme.surfaceColor }]}
+      style={[
+        styles.pill,
+        isTablet && styles.pillTablet,
+        { borderColor, backgroundColor: theme.surfaceColor },
+      ]}
       initialAnimate={{ opacity: 0, translateY: 12, scale: 0.95 }}
       animate={{ opacity: 1, translateY: 0, scale: 1 }}
       transition={{ default: { type: "spring", stiffness: 220, damping: 18, delay } }}
     >
-      <Text style={[styles.pillLabel, { color: borderColor }]}>{label}</Text>
-      <View style={styles.pillRow}>
-        <Ionicons name={icon} size={20} color={borderColor} />
-        <Text style={[styles.pillValue, { color: theme.textColor }]}>{value}</Text>
+      <View testID={testID} collapsable={false}>
+        <Text style={[styles.pillLabel, isTablet && styles.pillLabelTablet, { color: borderColor }]}>
+          {label}
+        </Text>
+        <View style={[styles.pillRow, isTablet && styles.pillRowTablet]}>
+          <Ionicons name={icon} size={isTablet ? 32 : 20} color={borderColor} />
+          <Text style={[styles.pillValue, isTablet && styles.pillValueTablet, { color: theme.textColor }]}>
+            {value}
+          </Text>
+        </View>
       </View>
     </EaseView>
   )
@@ -213,9 +232,9 @@ export default function GameOverScreen() {
   const pbDelta = isNewHighScore && previousHighScore > 0 ? score - previousHighScore : null
   const nearMiss =
     !isNewHighScore &&
-    highScore > 0 &&
-    highScore - score <= NEAR_MISS_THRESHOLD &&
-    highScore - score > 0
+      highScore > 0 &&
+      highScore - score <= NEAR_MISS_THRESHOLD &&
+      highScore - score > 0
       ? highScore - score
       : null
 
@@ -230,7 +249,7 @@ export default function GameOverScreen() {
       } else {
         await Share.share({ message })
       }
-    } catch {}
+    } catch { }
   }
 
   const setPendingAction = usePendingActionStore((s) => s.setAction)
@@ -307,6 +326,7 @@ export default function GameOverScreen() {
               <Text
                 style={[
                   styles.title,
+                  isTablet && styles.titleTablet,
                   {
                     color: isNewHighScore ? activeTheme.warningColor : activeTheme.destructiveColor,
                   },
@@ -332,7 +352,6 @@ export default function GameOverScreen() {
             {/* Inline initials — first qualifying game only */}
             {showInitialsInput && (
               <EaseView
-                testID="inline-initials"
                 initialAnimate={{ opacity: 0, translateY: 12 }}
                 animate={{ opacity: 1, translateY: 0 }}
                 transition={{
@@ -340,61 +359,63 @@ export default function GameOverScreen() {
                 }}
                 style={styles.initialsSection}
               >
-                <Text style={[styles.initialsPrompt, { color: activeTheme.secondaryTextColor }]}>
-                  {t("game:initialsPrompt")}
-                </Text>
-                <View style={styles.initialsRow}>
-                  {[0, 1, 2].map((i) => (
-                    <View
-                      key={i}
-                      style={[styles.initialsBox, { borderColor: activeTheme.accentColor }]}
+                <View testID="inline-initials" collapsable={false}>
+                  <Text style={[styles.initialsPrompt, { color: activeTheme.secondaryTextColor }]}>
+                    {t("game:initialsPrompt")}
+                  </Text>
+                  <View style={styles.initialsRow}>
+                    {[0, 1, 2].map((i) => (
+                      <View
+                        key={i}
+                        style={[styles.initialsBox, { borderColor: activeTheme.accentColor }]}
+                      >
+                        <TextInput
+                          ref={inputRefs[i]}
+                          testID={`input-initial-${i + 1}`}
+                          style={[styles.initialsText, { color: activeTheme.textColor }]}
+                          value={letters[i]}
+                          onChangeText={(text) => handleLetterChange(text, i)}
+                          onKeyPress={({ nativeEvent }) => handleLetterKeyPress(nativeEvent.key, i)}
+                          maxLength={1}
+                          autoCapitalize="characters"
+                          autoCorrect={false}
+                          textAlign="center"
+                          selectionColor={activeTheme.accentColor}
+                        />
+                      </View>
+                    ))}
+                  </View>
+                  <View style={styles.initialsActions}>
+                    <PressableScale
+                      testID="btn-save-initials"
+                      style={[
+                        styles.saveButton,
+                        {
+                          backgroundColor: allFilled
+                            ? activeTheme.accentColor
+                            : activeTheme.surfaceColor,
+                        },
+                      ]}
+                      onPress={handleSaveInitials}
+                      disabled={!allFilled}
                     >
-                      <TextInput
-                        ref={inputRefs[i]}
-                        testID={`input-initial-${i + 1}`}
-                        style={[styles.initialsText, { color: activeTheme.textColor }]}
-                        value={letters[i]}
-                        onChangeText={(text) => handleLetterChange(text, i)}
-                        onKeyPress={({ nativeEvent }) => handleLetterKeyPress(nativeEvent.key, i)}
-                        maxLength={1}
-                        autoCapitalize="characters"
-                        autoCorrect={false}
-                        textAlign="center"
-                        selectionColor={activeTheme.accentColor}
-                      />
-                    </View>
-                  ))}
-                </View>
-                <View style={styles.initialsActions}>
-                  <PressableScale
-                    testID="btn-save-initials"
-                    style={[
-                      styles.saveButton,
-                      {
-                        backgroundColor: allFilled
-                          ? activeTheme.accentColor
-                          : activeTheme.surfaceColor,
-                      },
-                    ]}
-                    onPress={handleSaveInitials}
-                    disabled={!allFilled}
-                  >
-                    <Text style={[styles.saveButtonText, { color: UI_COLORS.white }]}>
-                      {t("game:saveInitials")}
-                    </Text>
-                  </PressableScale>
-                  <PressableScale testID="btn-skip-initials" onPress={handleSkipInitials}>
-                    <Text style={[styles.skipText, { color: activeTheme.secondaryTextColor }]}>
-                      {t("game:skipInitials")}
-                    </Text>
-                  </PressableScale>
+                      <Text style={[styles.saveButtonText, { color: UI_COLORS.white }]}>
+                        {t("game:saveInitials")}
+                      </Text>
+                    </PressableScale>
+                    <PressableScale testID="btn-skip-initials" onPress={handleSkipInitials}>
+                      <Text style={[styles.skipText, { color: activeTheme.secondaryTextColor }]}>
+                        {t("game:skipInitials")}
+                      </Text>
+                    </PressableScale>
+                  </View>
                 </View>
               </EaseView>
             )}
 
             {/* Stat Pills — 2x2 grid mirrors the game pad layout (red/blue/green/yellow) */}
-            <View style={styles.statsGrid}>
-              <View style={styles.statsGridRow}>
+            <View style={[styles.statsGrid, isTablet && styles.statsGridTablet]}>
+              <View style={[styles.statsGridRow, isTablet && styles.statsGridRowTablet]}>
                 <StatPill
                   testID="pill-score"
                   label={t("game:score")}
@@ -403,6 +424,7 @@ export default function GameOverScreen() {
                   borderColor={activeTheme.buttonColors.red.color}
                   theme={activeTheme}
                   delay={250}
+                  isTablet={isTablet}
                 />
                 <StatPill
                   testID="pill-level"
@@ -412,9 +434,10 @@ export default function GameOverScreen() {
                   borderColor={activeTheme.buttonColors.blue.color}
                   theme={activeTheme}
                   delay={350}
+                  isTablet={isTablet}
                 />
               </View>
-              <View style={styles.statsGridRow}>
+              <View style={[styles.statsGridRow, isTablet && styles.statsGridRowTablet]}>
                 <StatPill
                   testID="pill-best"
                   label={t("game:best")}
@@ -423,6 +446,7 @@ export default function GameOverScreen() {
                   borderColor={activeTheme.buttonColors.green.color}
                   theme={activeTheme}
                   delay={450}
+                  isTablet={isTablet}
                 />
                 <StatPill
                   testID="pill-time"
@@ -432,6 +456,7 @@ export default function GameOverScreen() {
                   borderColor={activeTheme.buttonColors.yellow.color}
                   theme={activeTheme}
                   delay={550}
+                  isTablet={isTablet}
                 />
               </View>
             </View>
@@ -574,7 +599,7 @@ const styles = StyleSheet.create({
   },
   contentTablet: {
     alignSelf: "center",
-    maxWidth: 600,
+    maxWidth: 680,
   },
   continueButton: {
     alignItems: "center",
@@ -660,14 +685,31 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     textTransform: "uppercase",
   },
+  pillLabelTablet: {
+    fontSize: 15,
+    letterSpacing: 1,
+    marginBottom: 12,
+  },
   pillRow: {
     alignItems: "center",
     flexDirection: "row",
     gap: 8,
   },
+  pillRowTablet: {
+    gap: 12,
+  },
+  pillTablet: {
+    borderRadius: 16,
+    minHeight: 104,
+    paddingHorizontal: 20,
+    paddingVertical: 22,
+  },
   pillValue: {
     fontFamily: "Oxanium-Bold",
     fontSize: 24,
+  },
+  pillValueTablet: {
+    fontSize: 40,
   },
   playAgainButton: {
     alignItems: "center",
@@ -723,15 +765,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     width: "100%",
   },
+  statsGridTablet: {
+    gap: 18,
+    marginTop: 24,
+  },
   statsGridRow: {
     flexDirection: "row",
     gap: 12,
     width: "100%",
   },
+  statsGridRowTablet: {
+    gap: 18,
+  },
   title: {
     fontFamily: "Oxanium-Bold",
     fontSize: 32,
     textAlign: "center",
+  },
+  titleTablet: {
+    fontSize: 42,
   },
   topSection: {
     alignItems: "center",
