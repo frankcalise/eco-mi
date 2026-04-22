@@ -571,6 +571,11 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       silenceAll()
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
       setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error), 150)
+      // Drop pending sequence / chaos shuffle timers so nothing fires after gameover or reset.
+      if (mode !== "timed") {
+        clearAllTimeouts()
+        cancelVisualSequence()
+      }
       const shouldFlashWrongInput = mode === "timed" || ctx.score > 0
       if (shouldFlashWrongInput) {
         setWrongFlash(true)

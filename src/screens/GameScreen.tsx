@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import type { LayoutChangeEvent } from "react-native"
 import { Platform, StyleSheet, Text, useWindowDimensions, View } from "react-native"
 import * as Haptics from "expo-haptics"
@@ -91,9 +91,29 @@ export function GameScreen() {
     },
   })
 
+  const gameStateRef = useRef(gameState)
+  gameStateRef.current = gameState
+  const resetGameRef = useRef(resetGame)
+  resetGameRef.current = resetGame
+
   useFocusEffect(() => {
     syncSoundState()
   })
+
+  /**
+   * After /game-over pops, we should never stay on the main screen with the engine still in
+   * gameover — the bottom panel hides start + idle actions in that state. If returning from
+   * game-over without the pending-action effect running (timing / nav focus), reset here.
+   * Skip when the pending action is "continue"; continueGame() must run while still in gameover.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      if (usePendingActionStore.getState().action === "continue") return
+      if (gameStateRef.current === "gameover") {
+        resetGameRef.current()
+      }
+    }, []),
+  )
 
   const pendingAction = usePendingActionStore((s) => s.action)
   const clearPendingAction = usePendingActionStore((s) => s.clear)
