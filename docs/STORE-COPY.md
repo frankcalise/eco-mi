@@ -27,8 +27,10 @@ FIVE GAME MODES
 
 COMPETE & TRACK
 • Arcade-style high score leaderboard with retro initial entry
-• 15 achievements to unlock as you improve
+• 16 achievements to unlock as you improve
 • Stats dashboard tracking your progress over time
+• Share your score as a branded card
+• Daily reminders to protect your streak
 
 CUSTOMIZE
 • 4 color themes — 1 included free, 3 unlockable
@@ -70,8 +72,10 @@ CINCO MODOS DE JUEGO
 
 COMPITE Y MEJORA
 • Tabla de puntuaciones estilo arcade con entrada de iniciales retro
-• 15 logros que desbloquear mientras mejoras
+• 16 logros que desbloquear mientras mejoras
 • Panel de estadísticas para seguir tu progreso
+• Comparte tu puntuación como tarjeta personalizada
+• Recordatorios diarios para proteger tu racha
 
 PERSONALIZA
 • 4 temas de colores — 1 incluido gratis, 3 desbloqueables
@@ -113,8 +117,10 @@ CINCO MODOS DE JOGO
 
 COMPITA E MELHORE
 • Tabela de pontuações estilo arcade com entrada de iniciais retrô
-• 15 conquistas para desbloquear conforme você melhora
+• 16 conquistas para desbloquear conforme você melhora
 • Painel de estatísticas para acompanhar seu progresso
+• Compartilhe sua pontuação como um cartão personalizado
+• Lembretes diários para proteger sua sequência
 
 PERSONALIZE
 • 4 temas de cores — 1 incluído grátis, 3 desbloqueáveis
@@ -173,6 +179,57 @@ Bem-vindo ao Eco Mi! Uma versao moderna do classico jogo de memoria.
 - Disponivel em ingles, espanhol e portugues
 ```
 
+### v1.1.0 — EN
+
+```
+New in Eco Mi 1.1.0:
+
+- Redesigned game-over screen with stats, trophy, and share card
+- Fresh mode picker with native sheet UI
+- Full-screen Settings, Leaderboard, Achievements, and Stats
+- Difficulty curve extended past level 16
+- Rebuilt audio engine — smoother tones at every level
+- Timed mode: wrong-input penalty, correct-sequence bonus, countdown haptics
+- Daily reminders and streak-save notifications
+- First-launch onboarding tooltip
+- New achievement: Getting Serious (level 12)
+- Countless polish and bug fixes
+```
+
+### v1.1.0 — ES (es-419)
+
+```
+Novedades en Eco Mi 1.1.0:
+
+- Pantalla de fin de juego redisenada con estadisticas, trofeo y tarjeta para compartir
+- Nuevo selector de modos con interfaz nativa
+- Ajustes, Clasificacion, Logros y Estadisticas a pantalla completa
+- Curva de dificultad extendida mas alla del nivel 16
+- Motor de audio reconstruido — tonos mas suaves en todos los niveles
+- Contrarreloj: penalizacion por error, bonus por secuencia correcta, vibracion de cuenta atras
+- Recordatorios diarios y notificaciones para salvar tu racha
+- Tutorial de bienvenida en la primera partida
+- Nuevo logro: En Serio (nivel 12)
+- Muchos ajustes y correcciones
+```
+
+### v1.1.0 — PT (pt-BR)
+
+```
+Novidades no Eco Mi 1.1.0:
+
+- Tela de fim de jogo redesenhada com estatisticas, trofeu e cartao para compartilhar
+- Novo seletor de modos com interface nativa
+- Ajustes, Ranking, Conquistas e Estatisticas em tela cheia
+- Curva de dificuldade estendida alem do nivel 16
+- Motor de audio reconstruido — tons mais suaves em todos os niveis
+- Contrarrelogio: penalidade por erro, bonus por sequencia correta, vibracao de contagem regressiva
+- Lembretes diarios e notificacoes para salvar sua sequencia
+- Tutorial de boas-vindas na primeira partida
+- Nova conquista: Levando a Serio (nivel 12)
+- Muitos ajustes e correcoes
+```
+
 ---
 
 ## Screenshot Headlines
@@ -181,7 +238,8 @@ Bem-vindo ao Eco Mi! Uma versao moderna do classico jogo de memoria.
 | --- | ---------------------------- | -------------------------------- | --------------------------- |
 | 1   | PLAY / FIVE GAME MODES       | JUEGA / CINCO MODOS DE JUEGO     | JOGUE / CINCO MODOS DE JOGO |
 | 2   | CHALLENGE / YOUR MEMORY      | DESAFÍA / TU MEMORIA             | DESAFIE / SUA MEMÓRIA       |
-| 3   | COMPETE / ON THE LEADERBOARD | COMPITE / EN LA TABLA DE LÍDERES | COMPITA / NO RANKING        |
-| 4   | CUSTOMIZE / YOUR STYLE       | PERSONALIZA / TU ESTILO          | PERSONALIZE / SEU ESTILO    |
-| 5   | TRACK / YOUR PROGRESS        | SIGUE / TU PROGRESO              | ACOMPANHE / SEU PROGRESSO   |
-| 6   | UNLOCK / ACHIEVEMENTS        | DESBLOQUEA / LOGROS              | DESBLOQUEIE / CONQUISTAS    |
+| 3   | BEAT / YOUR BEST             | SUPERA / TU RÉCORD               | SUPERE / SEU RECORDE        |
+| 4   | COMPETE / ON THE LEADERBOARD | COMPITE / EN LA TABLA DE LÍDERES | COMPITA / NO RANKING        |
+| 5   | CUSTOMIZE / YOUR STYLE       | PERSONALIZA / TU ESTILO          | PERSONALIZE / SEU ESTILO    |
+| 6   | TRACK / YOUR PROGRESS        | SIGUE / TU PROGRESO              | ACOMPANHE / SEU PROGRESSO   |
+| 7   | UNLOCK / ACHIEVEMENTS        | DESBLOQUEA / LOGROS              | DESBLOQUEIE / CONQUISTAS    |
