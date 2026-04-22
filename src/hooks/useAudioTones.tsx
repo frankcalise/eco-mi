@@ -1,16 +1,23 @@
 import { useRef, useEffect } from "react"
-import { AppState } from "react-native"
+import { AppState, Platform } from "react-native"
 import { AudioContext, GainNode, OscillatorNode } from "react-native-audio-api"
 import type { OscillatorType } from "react-native-audio-api"
 
 import { SETTINGS_SOUND_VOLUME } from "@/config/storageKeys"
 import { loadString } from "@/utils/storage"
 
+// --- Debug logging (set EXPO_PUBLIC_DEBUG_AUDIO=1 to enable in release builds) ---
+const DEBUG_AUDIO = __DEV__ || process.env.EXPO_PUBLIC_DEBUG_AUDIO === "1"
+const alog = (...args: unknown[]) => {
+  if (DEBUG_AUDIO) console.log("[audio]", ...args)
+}
+
 // --- Envelope constants (linearRamp, no EPSILON needed) ---
 const ATTACK_S = 0.015 // 15ms — snappy, click-free with linearRamp
 const RELEASE_S = 0.15 // 150ms — smooth release tail (matches old fade feel)
 const SEQ_RELEASE_S = 0.03 // 30ms — shorter for sequence clarity
 const TARGET_GAIN = 0.25 // keeps 4-osc sum ≤ 1.0 (per-quantum normalization threshold)
+const LOOKAHEAD_S = 0.05 // cushion for audio render thread after cold-start resume
 
 export type Color = "red" | "blue" | "green" | "yellow"
 
@@ -63,8 +70,6 @@ const HIGHSCORE_NOTES = [
 ]
 const HIGHSCORE_NOTE_DURATION = 0.12
 
-const SUSPEND_DELAY = 5000
-
 // --- Pool types ---
 
 interface TonePool {
@@ -98,7 +103,7 @@ export function useAudioTones(
   const masterGainRef = useRef<GainNode | null>(null)
   const poolRef = useRef<TonePool | null>(null)
   const contextReadyRef = useRef(false)
-  const suspendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const countersRef = useRef({ recreates: 0, resumeFalseNegatives: 0, droppedNotes: 0 })
 
   // --- AppState listener: suspend on background, resume on foreground ---
 
@@ -107,12 +112,16 @@ export function useAudioTones(
       const ctx = audioContextRef.current
       if (!ctx) return
       if (state === "background") {
+        alog("appState: background → suspend")
         try {
           ctx.suspend()
-        } catch {}
+        } catch (e) {
+          alog("appState: suspend threw", String(e))
+        }
       } else if (state === "active" && contextReadyRef.current) {
-        if (!ensureResumed()) {
-          recreateContext()
+        alog("appState: active")
+        if (!ensureResumed("appState")) {
+          recreateContext("appState")
         }
       }
     })
@@ -177,33 +186,34 @@ export function useAudioTones(
     poolRef.current = null
   }
 
-  function ensureResumed(): boolean {
+  // Returns true if the context is usable. Only suspends via AppState (background);
+  // no idle-suspend timer — on Android/BT, suspending tears down the native audio
+  // stream, and reopening on A2DP can take 200–500ms, dropping notes.
+  function ensureResumed(caller: string = "unknown"): boolean {
     const ctx = audioContextRef.current
-    if (!ctx) return false
-    if (ctx.state === "closed") return false
+    if (!ctx) {
+      alog("ensureResumed: no ctx", { caller })
+      return false
+    }
+    if (ctx.state === "closed") {
+      alog("ensureResumed: state=closed", { caller })
+      return false
+    }
+    if (ctx.state === "running") return true
 
     try {
       // @ts-ignore — resume may not exist on all platforms
       ctx.resume?.()
-    } catch {
+    } catch (e) {
+      alog("ensureResumed: resume() threw", { caller, error: String(e) })
       return false
     }
-
-    if (ctx.state === "suspended") return false
-
-    if (suspendTimerRef.current) clearTimeout(suspendTimerRef.current)
-    suspendTimerRef.current = setTimeout(() => {
-      const c = audioContextRef.current
-      if (c) {
-        try {
-          c.suspend()
-        } catch {}
-      }
-    }, SUSPEND_DELAY)
     return true
   }
 
-  function recreateContext() {
+  function recreateContext(caller: string = "unknown") {
+    countersRef.current.recreates++
+    alog("recreateContext", { caller })
     destroyPool()
     const oldCtx = audioContextRef.current
     if (oldCtx) {
@@ -214,15 +224,6 @@ export function useAudioTones(
       masterGainRef.current = null
     }
     createFreshContext()
-    if (suspendTimerRef.current) clearTimeout(suspendTimerRef.current)
-    suspendTimerRef.current = setTimeout(() => {
-      const c = audioContextRef.current
-      if (c) {
-        try {
-          c.suspend()
-        } catch {}
-      }
-    }, SUSPEND_DELAY)
   }
 
   function syncVolume() {
@@ -246,17 +247,32 @@ export function useAudioTones(
   // --- Pool-based note control (game frequencies only) ---
 
   function noteOn(color: Color) {
-    if (!soundEnabled || !contextReadyRef.current) return
-    if (!ensureResumed()) {
-      recreateContext()
+    if (!soundEnabled || !contextReadyRef.current) {
+      alog("noteOn: skipped", {
+        color,
+        soundEnabled,
+        contextReady: contextReadyRef.current,
+      })
+      return
+    }
+    if (!ensureResumed("noteOn")) {
+      recreateContext("noteOn")
     }
     const ctx = audioContextRef.current
     const pool = poolRef.current
-    if (!ctx || !pool) return
+    if (!ctx || !pool) {
+      countersRef.current.droppedNotes++
+      alog("noteOn: dropped (no ctx/pool)", { color })
+      return
+    }
 
     const freq = colorMap[color].sound
     const gain = pool.gains.get(freq)
-    if (!gain) return
+    if (!gain) {
+      countersRef.current.droppedNotes++
+      alog("noteOn: dropped (no gain for freq)", { color, freq })
+      return
+    }
 
     const now = ctx.currentTime
     // Cancel ALL scheduled events (not just from now) to ensure no
@@ -297,27 +313,33 @@ export function useAudioTones(
   // --- Pre-scheduled sequence (audio-clock precise, zero JS jitter) ---
 
   function scheduleSequence(colors: Color[], intervalS: number, durationS: number) {
-    if (!soundEnabled || !contextReadyRef.current) return
-    if (!ensureResumed()) {
-      recreateContext()
+    if (!soundEnabled || !contextReadyRef.current) {
+      alog("scheduleSequence: skipped", {
+        soundEnabled,
+        contextReady: contextReadyRef.current,
+      })
+      return
+    }
+    if (!ensureResumed("scheduleSequence")) {
+      recreateContext("scheduleSequence")
     }
     const ctx = audioContextRef.current
     const pool = poolRef.current
-    if (!ctx || !pool) return
+    if (!ctx || !pool) {
+      alog("scheduleSequence: dropped (no ctx/pool)")
+      return
+    }
 
-    // Extend the suspend timer to cover the entire sequence duration + margin
-    const totalSequenceS = (colors.length + 1) * intervalS + durationS + 1
-    if (suspendTimerRef.current) clearTimeout(suspendTimerRef.current)
-    suspendTimerRef.current = setTimeout(() => {
-      const c = audioContextRef.current
-      if (c) {
-        try {
-          c.suspend()
-        } catch {}
-      }
-    }, totalSequenceS * 1000)
+    alog("scheduleSequence", {
+      state: ctx.state,
+      currentTime: ctx.currentTime.toFixed(3),
+      notes: colors.length,
+      intervalS,
+      durationS,
+      firstNoteAt: (ctx.currentTime + LOOKAHEAD_S + intervalS).toFixed(3),
+    })
 
-    const now = ctx.currentTime
+    const now = ctx.currentTime + LOOKAHEAD_S
 
     for (let i = 0; i < colors.length; i++) {
       const freq = colorMap[colors[i]].sound
@@ -382,15 +404,15 @@ export function useAudioTones(
     gainMultiplier: number,
   ) {
     if (!soundEnabled || !contextReadyRef.current) return
-    if (!ensureResumed()) {
-      recreateContext()
+    if (!ensureResumed("jingle")) {
+      recreateContext("jingle")
     }
     try {
       const ctx = audioContextRef.current
       const master = masterGainRef.current
       if (!ctx || !master) return
 
-      const now = ctx.currentTime
+      const now = ctx.currentTime + LOOKAHEAD_S
       for (const note of notes) {
         scheduleOneShot(
           ctx,
@@ -402,8 +424,9 @@ export function useAudioTones(
           TARGET_GAIN * gainMultiplier,
         )
       }
-    } catch {
-      recreateContext()
+    } catch (e) {
+      alog("playJingleNotes: threw → recreate", String(e))
+      recreateContext("jingle-catch")
     }
   }
 
@@ -411,8 +434,8 @@ export function useAudioTones(
 
   function playPreview(overrideType?: OscillatorType) {
     if (!soundEnabled || !contextReadyRef.current) return
-    if (!ensureResumed()) {
-      recreateContext()
+    if (!ensureResumed("preview")) {
+      recreateContext("preview")
     }
     try {
       const ctx = audioContextRef.current
@@ -420,7 +443,7 @@ export function useAudioTones(
       if (!ctx || !master) return
 
       const type = overrideType ?? oscillatorType
-      const now = ctx.currentTime
+      const now = ctx.currentTime + LOOKAHEAD_S
       for (const note of PREVIEW_NOTES) {
         scheduleOneShot(
           ctx,
@@ -432,8 +455,9 @@ export function useAudioTones(
           TARGET_GAIN * 0.8,
         )
       }
-    } catch {
-      recreateContext()
+    } catch (e) {
+      alog("playPreview: threw → recreate", String(e))
+      recreateContext("preview-catch")
     }
   }
 
@@ -452,20 +476,35 @@ export function useAudioTones(
   // --- Init / cleanup ---
 
   async function initialize() {
+    countersRef.current = { recreates: 0, resumeFalseNegatives: 0, droppedNotes: 0 }
+    const t0 = Date.now()
+    alog("initialize: begin", {
+      platform: Platform.OS,
+      version: Platform.Version,
+    })
     try {
       createFreshContext()
-      ensureResumed()
+      ensureResumed("initialize")
+      const ctx = audioContextRef.current
+      alog("initialize: ctx ready", {
+        ms: Date.now() - t0,
+        state: ctx?.state,
+        currentTime: ctx?.currentTime?.toFixed?.(3),
+      })
     } catch (error) {
       console.log("Audio initialization failed:", error)
+      alog("initialize: failed", String(error))
     }
   }
 
   async function cleanup() {
+    const c = countersRef.current
+    alog("cleanup: session summary", {
+      recreates: c.recreates,
+      resumeFalseNegatives: c.resumeFalseNegatives,
+      droppedNotes: c.droppedNotes,
+    })
     contextReadyRef.current = false
-    if (suspendTimerRef.current) {
-      clearTimeout(suspendTimerRef.current)
-      suspendTimerRef.current = null
-    }
     destroyPool()
     if (audioContextRef.current) {
       try {
