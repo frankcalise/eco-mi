@@ -65,6 +65,17 @@ Stop and leave a note in `CHANGELOG.md` if:
 - A verification command fails and you can't resolve it in 2 attempts
 - You hit a task marked **Blocked by** an incomplete dependency
 
+## Parallel Subagent Work
+
+When dispatching parallel subagents with `isolation: "worktree"` (e.g. multiple independent bug-fix tracks):
+
+- **Agents must branch off develop's tip, not the worktree HEAD.** Worktrees are often initialized on a stale commit; every brief must include "run `git checkout -b <branch> develop` before editing." Skipping this silently diverges the fix from current code.
+- **Agents never push, never merge.** They commit on their branch and return: branch name, commit SHAs, files touched, and any surprises. The orchestrator owns integration.
+- **Re-verify `tsc` + `test` after each merge in the main repo.** Agent-side verification is necessary but not sufficient — some errors only surface post-merge in the main repo's dependency tree (e.g. dual-package type mismatches where one copy of a package lives inside `node_modules/expo-router/node_modules/` with a nominally-distinct type from the top-level install).
+- **File independence is the parallelism constraint.** Map each track's file footprint before dispatching; zero cross-track overlap = safe parallel. Cross-cutting fixes (same file touched by multiple tracks) run *after* the parallel wave, sequentially.
+- **Use `it.failing()` for red→green test handoffs across tracks.** A failing test codifies the bug the next track will fix; `it.failing(...)` keeps CI green while the red→green transition is pending. The agent fixing the bug flips `.failing` → `it` as part of their commit — Jest will auto-flag the mismatch if they forget.
+- **Jest ignores `.claude/worktrees/`** (see `jest.config.js`). Without this, jest discovers test files in every worktree and multiplies counts by `worktree_count + 1`.
+
 ## File Structure
 
 ```
