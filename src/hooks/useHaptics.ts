@@ -1,7 +1,8 @@
 import { Platform } from "react-native"
 import * as Device from "expo-device"
-import * as Haptics from "expo-haptics"
+import { Presets, usePatternComposer } from "react-native-pulsar"
 
+import { SPIRAL_PATTERN, VICTORY_PATTERN } from "@/config/hapticPatterns"
 import { usePreferencesStore } from "@/stores/preferencesStore"
 
 export type HapticEvent =
@@ -19,40 +20,29 @@ type PlayOptions = {
   urgency?: CountdownUrgency
 }
 
-const ERROR_DOUBLE_PULSE_MS = 150
-
-function fireEvent(event: HapticEvent, opts?: PlayOptions): void {
+function firePresetEvent(event: HapticEvent, opts?: PlayOptions): void {
   switch (event) {
     case "buttonPress":
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      Presets.System.impactMedium()
       return
     case "menuTap":
     case "sequenceFlash":
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      Presets.System.impactLight()
       return
     case "countdownTick": {
       const urgency = opts?.urgency ?? "low"
-      const style =
-        urgency === "high"
-          ? Haptics.ImpactFeedbackStyle.Heavy
-          : urgency === "medium"
-            ? Haptics.ImpactFeedbackStyle.Medium
-            : Haptics.ImpactFeedbackStyle.Light
-      Haptics.impactAsync(style)
+      if (urgency === "high") Presets.System.impactHeavy()
+      else if (urgency === "medium") Presets.System.impactMedium()
+      else Presets.System.impactLight()
       return
     }
     case "wrongButton":
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-      setTimeout(
-        () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
-        ERROR_DOUBLE_PULSE_MS,
-      )
+      // Pulsar's notificationError is a native multi-tap pattern.
+      Presets.System.notificationError()
       return
     case "newHighScore":
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-      return
     case "gameOver":
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+      // Handled by the pattern composers in useHaptics — never reached here.
       return
   }
 }
@@ -60,7 +50,11 @@ function fireEvent(event: HapticEvent, opts?: PlayOptions): void {
 /**
  * Event-based haptics hook. Callers describe *what happened* (e.g.
  * `play('newHighScore')`) rather than picking an impact style — the hook
- * owns the mapping so future engine swaps (e.g. Pulsar) are one-file changes.
+ * owns the mapping to the current haptics engine (react-native-pulsar).
+ *
+ * `newHighScore` and `gameOver` play authored Pattern objects synced to
+ * the audio jingles (see src/config/hapticPatterns.ts). Everything else
+ * delegates to Pulsar's Presets.System.* primitives.
  *
  * Respects the user's haptics preference via preferencesStore (reactive).
  * No-ops on web. On simulators in dev, logs `[haptics] <event>` instead of
@@ -68,6 +62,8 @@ function fireEvent(event: HapticEvent, opts?: PlayOptions): void {
  */
 export function useHaptics() {
   const enabled = usePreferencesStore((s) => s.hapticsEnabled)
+  const victoryComposer = usePatternComposer(VICTORY_PATTERN)
+  const spiralComposer = usePatternComposer(SPIRAL_PATTERN)
 
   function play(event: HapticEvent, opts?: PlayOptions) {
     if (!enabled) return
@@ -76,7 +72,15 @@ export function useHaptics() {
       console.log(`[haptics] ${event}${opts?.urgency ? ` (${opts.urgency})` : ""}`)
       return
     }
-    fireEvent(event, opts)
+    if (event === "newHighScore") {
+      victoryComposer.play()
+      return
+    }
+    if (event === "gameOver") {
+      spiralComposer.play()
+      return
+    }
+    firePresetEvent(event, opts)
   }
 
   return { play }

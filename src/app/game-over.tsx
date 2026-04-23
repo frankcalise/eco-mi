@@ -195,13 +195,13 @@ export default function GameOverScreen() {
 
   const triggeredRef = useRef(false)
 
-  // Trigger review/postPB checks + achievement check on mount
+  // Trigger review/postPB checks + achievement check on mount.
+  // The celebration haptic (VICTORY_PATTERN / SPIRAL_PATTERN) fires on
+  // GameScreen alongside the jingle — firing again here would stack 720ms
+  // patterns awkwardly ~400ms into the first one.
   useEffect(() => {
     if (triggeredRef.current) return
     triggeredRef.current = true
-
-    // Emotional beat: one haptic on mount that matches the outcome.
-    haptics.play(isNewHighScore ? "newHighScore" : "gameOver")
 
     const gamesPlayed = parseInt(loadString(STATS_GAMES_PLAYED) ?? "0", 10)
     const currentStreak = parseInt(loadString(DAILY_CURRENT_STREAK) ?? "0", 10)

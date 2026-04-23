@@ -18,11 +18,22 @@ jest.mock("@/hooks/useAudioTones", () => ({
   }),
 }))
 
-jest.mock("expo-haptics", () => ({
-  impactAsync: jest.fn(),
-  notificationAsync: jest.fn(),
-  ImpactFeedbackStyle: { Light: "light", Medium: "medium" },
-  NotificationFeedbackType: { Error: "error" },
+jest.mock("react-native-pulsar", () => ({
+  Presets: {
+    System: {
+      impactLight: jest.fn(),
+      impactMedium: jest.fn(),
+      impactHeavy: jest.fn(),
+      notificationSuccess: jest.fn(),
+      notificationError: jest.fn(),
+    },
+  },
+  usePatternComposer: () => ({
+    play: jest.fn(),
+    stop: jest.fn(),
+    parse: jest.fn(),
+    isParsed: jest.fn(() => true),
+  }),
 }))
 
 jest.mock("@/hooks/useStats", () => ({

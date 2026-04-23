@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { StyleSheet, View } from "react-native"
 import { registerDevMenuItems } from "expo-dev-menu"
 import AppMetrics from "expo-eas-observe"
-import { Stack } from "expo-router"
+import { router, Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import * as Sentry from "@sentry/react-native"
 import i18n from "i18next"
@@ -27,6 +27,11 @@ if (__DEV__) {
     {
       name: "Seed Screenshot Data",
       callback: () => seedScreenshotData(),
+      shouldCollapse: true,
+    },
+    {
+      name: "Haptics Lab",
+      callback: () => router.push("/haptics-lab"),
       shouldCollapse: true,
     },
   ])

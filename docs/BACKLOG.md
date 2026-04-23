@@ -18,6 +18,14 @@
 - [ ] **Leaderboard mode tab label wraps in Spanish ("CONTRARRELOJ")**
       The timed mode label in Spanish is "Contrarreloj" — too long to fit on one line in the mode tab button on the leaderboard screen, causing it to wrap across two lines ("CONTRARRE / LOJ"). Fix options: shorten the Spanish translation to an abbreviation ("C.RELOJ" or "TIEMPO"), reduce the tab font size for long labels, or allow the tab row to scroll horizontally. Check PT for the same issue ("CRONOMETRADO"). Ref: leaderboard mode tabs in `src/app/leaderboard.tsx`.
 
+- [ ] **Watch-ad-to-continue in daily mode may leave audio playing on main menu**
+      Repro: play daily mode → hit game over → tap "Watch ad to continue" → dismiss / finish ad → back out to main menu. Observed: tones audibly replay on the idle/main menu screen (sequence audio keeps playing even though there's no active game). Suspected causes to investigate:
+  - `showContinue` path in daily mode may skip a sequence/audio cleanup step that the "play again" and "main menu" paths do hit.
+  - `usePendingActionStore` flow for `continue` → if the user backs out _after_ the ad but _before_ GameScreen consumes the action, the sequence may resume on idle.
+  - Rewarded-ad resume race: `useAudioTones` playback might be restarted on ad dismiss (audio session resume) while the game engine has already transitioned to idle.
+  - Check whether this reproes in classic/timed/reverse/chaos or only daily — daily has unique streak-preservation logic around continue that may diverge from other modes.
+  - When fixing, verify the oscillator pool is drained + all scheduled `stopTone` timers cleared on transition to idle, regardless of which path (play_again, continue, main_menu, back gesture) got us there.
+
 - [x] **Audio pops/clicks when tapping game buttons**
       Audible pop artifact on button press, especially on quick taps. Likely related to the oscillator start/stop envelope in `src/hooks/useAudioTones.tsx`. The attack ramp (`ATTACK_S = 0.01`) may be too short on some devices, or the continuous sound start/stop cycle creates a discontinuity when rapidly re-triggering. Investigate:
   - Whether the gain node value is non-zero when a new oscillator starts (creating a click)
@@ -158,20 +166,22 @@
 - [x] **Settle all Settings prefs into the store**
       Final sweep to make the entire Settings screen state-reactive: `notifyDaily`, `notifyStreak`, `notifyWinback` joined `hapticsEnabled` / `soundEnabled` / `volume` in `preferencesStore`. Internalized `soundEnabled` inside `useAudioTones` (read via selector, not passed as a positional arg) — removes the asymmetry where `volume` was internal but `soundEnabled` flowed through as a prop. `useAudioTones` signature collapsed from `(colorMap, soundEnabled, oscillatorType, onRecycle)` to `(colorMap, oscillatorType, onRecycle)`. `useGameEngine` no longer exposes `soundEnabled` in its return (no production consumer; redundant store test deleted). `useNotifications` continues reading notify flags directly from MMKV at scheduling time — store writes through to MMKV, so source of truth is consistent.
 
-- [ ] **Haptics overhaul: migrate from expo-haptics to Pulsar**
-      Replace `expo-haptics` across the app with [Pulsar](https://github.com/software-mansion/pulsar) for richer, more nuanced haptic feedback. Pulsar's pattern composer enables custom haptic sequences per game event (button press, round complete, game over, high score) and its realtime composer could drive gesture-driven feedback. Evaluate:
-  - Custom patterns for each game button color (different amplitude/frequency per color)
-  - Escalating intensity patterns for streak combos
-  - Distinct game-over vs high-score celebration haptics (see dedicated entry below for pattern direction)
-  - Whether worklet integration improves responsiveness during animations
-  - Backward compatibility — ensure Android API 24+ coverage is acceptable
+- [x] **Haptics overhaul: migrate from expo-haptics to Pulsar**
+      Swapped `expo-haptics` for `react-native-pulsar` 1.3.0. `useHaptics.ts`'s `fireEvent` now dispatches to `Presets.System.*` primitives (`impactLight/Medium/Heavy`, `notificationSuccess/Error`) for event parity. Pulsar's `notificationError` is a native multi-tap, so the manual 150ms setTimeout double-pulse in `wrongButton` was dropped. `expo-haptics` removed from `package.json`. Worklets peer-dep resolved cleanly (Pulsar accepts `*`, our tree's 0.8.1 from audio-api 0.12.0 was fine). Android API 24+ confirmed OK — Pulsar inherits the app's minSdk and no-ops gracefully on pre-Core-Haptics iPhones and single-motor Android devices. Native dirs regenerated via `expo prebuild --clean`; stay gitignored per CNG.
 
-- [ ] **Signature haptic patterns: New High Score + Game Over**
-      Pair the existing jingles with purpose-built haptic patterns for the two highest-emotion moments. Likely lands as part of the Pulsar migration (expo-haptics is too coarse for this), but the design direction stands regardless of engine.
-  - **New High Score — "victory"**: Duolingo-lesson-complete energy. Ascending staircase of 3–4 taps (light → medium → medium → heavy) timed to the jingle's rising motif, finishing with a held sustain + sparkle roll-off. Should _feel_ like confetti + a trophy plunk, not just "buzz."
-  - **Game Over — "spiral + kaput"**: Looney Tunes falling-whistle descent. Rapid descending tremolo (high-frequency → low-frequency taper over ~700ms) simulating the spiral-down whistle, then a single hard **thud** impact on impact with the ground, and optionally a tiny stuttered bounce-and-settle (2 decaying micro-pulses). Cartoon physics in haptics.
-  - Sync tightly to the jingle envelopes so the haptic feels authored, not bolted on. Prototype in Pulsar's pattern composer, A/B against the current `notificationAsync(Success|Error)` on device (simulator haptics are useless).
-  - Respect the existing haptics settings toggle; never fire if muted.
+- [x] **Signature haptic patterns: New High Score + Game Over**
+      Two authored `Pattern` objects live in `src/config/hapticPatterns.ts`, wired through `usePatternComposer` inside `useHaptics`:
+  - **`VICTORY_PATTERN`** (newHighScore) — four-tap staircase at 0/240/480/600ms climbing amplitude 0.3 → 1.0 and frequency 0.3 → 1.0, landing on the 1st/3rd/5th/6th notes of the 720ms ascending jingle. Continuous amplitude envelope adds a Duolingo-style sparkle lift that sustains 180ms past the jingle end.
+  - **`SPIRAL_PATTERN`** (gameOver) — four rapid descending taps (spiral), hard thud at 600ms aligned to the final 440Hz note, then two decaying bounces at 720/820ms. Continuous frequency envelope drops 1.0 → 0.1 under the spiral; amplitude silences right after the thud so bounces feel crisp.
+  - Patterns fire from `GameScreen` next to the jingle call so they ride the audio envelope. The redundant `/game-over` mount-effect haptic that used to double-fire was removed as part of the migration.
+  - Dev-only `/haptics-lab` route (gated behind `__DEV__`, accessible via the Expo dev menu) lets you hand-edit the pattern JSON + fire the jingle alongside to validate sync without rebuilding.
+
+- [ ] **Extend signature Pulsar patterns beyond newHighScore / gameOver**
+      Follow-up to the Pulsar migration. The high-emotion moments got custom patterns; the remaining events (`buttonPress`, `menuTap`, `sequenceFlash`, `countdownTick`, `wrongButton`) still use `Presets.System.*` for parity with the pre-migration feel. Candidates for bespoke patterns:
+  - **`wrongButton`** — an authored "error thud" with more weight than the stock `notificationError` (two sharp beats + low rumble underneath, ~300ms total).
+  - **`countdownTick`** with rising urgency — at 10s remaining a light fade-in, at 5s a steady medium, under 3s a heavy tap with rising frequency each tick (heart-racing crescendo into the final second).
+  - **`buttonPress`** per-color texture — different frequency/amplitude profile for red/blue/green/yellow so each button has a subtle tactile signature. Optional; might cross into "overdone" territory since button presses are high-frequency events during gameplay.
+  - Keep using the `/haptics-lab` dev route for authoring; same workflow as Victory/Spiral.
 
 - [x] **Theme-aware navigation transition background**
       `_layout.tsx` currently hardcodes the stack `contentStyle.backgroundColor` and the root wrapper View to `#1a1a2e` (Classic theme). Users on other themes (Neon, Retro, Pastel) see a momentary flash to that classic dark color during slide transitions. To fix: lift the theme context up to `_layout.tsx` so the root View and stack contentStyle use `activeTheme.backgroundColor` dynamically. Particularly noticeable on Pastel (light theme) where the flash goes from light → dark → light.

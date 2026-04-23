@@ -235,6 +235,7 @@ export function GameScreen() {
         analytics.trackGameCompleted(score, level, true, elapsed)
       } else {
         playGameOverJingle()
+        haptics.play("gameOver")
       }
 
       rescheduleAfterGameOver()
