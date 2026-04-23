@@ -9,7 +9,6 @@ import { PressableScale } from "@/components/PressableScale"
 import { useStats } from "@/hooks/useStats"
 import { useTheme } from "@/hooks/useTheme"
 import { stackHeaderOptionsFromTheme } from "@/navigation/secondaryStackHeader"
-import { UI_COLORS } from "@/theme/uiColors"
 import { useBreakpoints } from "@/utils/layoutBreakpoints"
 
 export default function StatsScreen() {
@@ -54,7 +53,7 @@ export default function StatsScreen() {
             style={[
               styles.emptyState,
               isTablet && styles.emptyStateTablet,
-              isTablet && {
+              {
                 backgroundColor: activeTheme.surfaceColor,
                 borderColor: activeTheme.borderColor,
               },
@@ -79,8 +78,10 @@ export default function StatsScreen() {
               ]}
               onPress={() => router.back()}
             >
-              <Ionicons name="play" size={18} color="white" />
-              <Text style={styles.playNowText}>{t("stats:playNow")}</Text>
+              <Ionicons name="play" size={18} color={activeTheme.primaryForegroundColor} />
+              <Text style={[styles.playNowText, { color: activeTheme.primaryForegroundColor }]}>
+                {t("stats:playNow")}
+              </Text>
             </PressableScale>
           </View>
         ) : (
@@ -88,7 +89,13 @@ export default function StatsScreen() {
             {statItems.map((item) => (
               <View
                 key={item.label}
-                style={[styles.statCard, { backgroundColor: activeTheme.surfaceColor }]}
+                style={[
+                  styles.statCard,
+                  {
+                    backgroundColor: activeTheme.surfaceColor,
+                    borderColor: activeTheme.borderColor,
+                  },
+                ]}
               >
                 <Text style={[styles.statValue, { color: activeTheme.textColor }]}>
                   {item.value}
@@ -128,6 +135,7 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     alignItems: "center",
+    borderWidth: 1,
     borderRadius: 20,
     flex: 1,
     gap: 8,
@@ -168,12 +176,12 @@ const styles = StyleSheet.create({
     minWidth: 220,
   },
   playNowText: {
-    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
   },
   statCard: {
     alignItems: "center",
+    borderWidth: 1,
     borderRadius: 12,
     minWidth: "45%",
     paddingHorizontal: 16,

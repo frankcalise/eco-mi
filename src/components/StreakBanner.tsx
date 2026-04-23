@@ -22,6 +22,7 @@ export function StreakBanner({ theme, style }: StreakBannerProps) {
   const streak = parseInt(loadString(DAILY_CURRENT_STREAK) ?? "0", 10)
   const lastPlayed = loadString(DAILY_LAST_PLAYED) ?? ""
   const today = getTodayKey()
+  const isLightTheme = theme.statusBarStyle === "dark"
 
   if (streak <= 0 || lastPlayed === today) return null
 
@@ -31,13 +32,13 @@ export function StreakBanner({ theme, style }: StreakBannerProps) {
         styles.banner,
         style,
         {
-          borderWidth: StyleSheet.hairlineWidth,
+          borderWidth: isLightTheme ? 1 : StyleSheet.hairlineWidth,
           borderColor: theme.warningColor,
-          backgroundColor: `${theme.warningColor}20`,
+          backgroundColor: isLightTheme ? `${theme.warningColor}2E` : `${theme.warningColor}20`,
         },
       ]}
     >
-      <Text style={[styles.bannerText, { color: theme.warningColor }]}>
+      <Text style={[styles.bannerText, { color: isLightTheme ? theme.textColor : theme.warningColor }]}>
         {t("game:streakAtRisk", { count: streak })}
       </Text>
     </View>
@@ -49,7 +50,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 8,
     marginBottom: 12,
-    paddingHorizontal: 10,
+    paddingHorizontal: 14,
     paddingVertical: 10,
   },
   bannerText: {

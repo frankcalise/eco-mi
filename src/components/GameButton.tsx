@@ -22,6 +22,7 @@ type GameButtonProps = {
   onPressOut: () => void
   themeColor?: string
   themeActiveColor?: string
+  themeGlowColor?: string
 }
 
 function getSlotCoords(
@@ -70,12 +71,14 @@ export function GameButton({
   onPressOut,
   themeColor,
   themeActiveColor,
+  themeGlowColor,
 }: GameButtonProps) {
   const info = colorMap[color]
   const position = POSITIONS[index]
 
   const displayColor = themeColor ?? info.color
   const displayActiveColor = themeActiveColor ?? info.activeColor
+  const displayGlowColor = themeGlowColor ?? displayActiveColor
 
   const buttonStyle = {
     backgroundColor: isActive ? displayActiveColor : displayColor,
@@ -110,12 +113,7 @@ export function GameButton({
         { top: baseCoords.top, left: baseCoords.left, width: buttonSize, height: buttonSize },
       ]}
     >
-      <PadGlow
-        color={displayActiveColor}
-        isActive={isActive}
-        buttonSize={buttonSize}
-        padId={color}
-      />
+      <PadGlow color={displayGlowColor} isActive={isActive} buttonSize={buttonSize} padId={color} />
       <View
         testID={`btn-${color}${isActive ? "-active" : ""}`}
         style={[
@@ -127,7 +125,7 @@ export function GameButton({
           // separate halo layer needed. Android ignores shadowColor and falls
           // back to the grey elevation; accepted tradeoff vs. the visual cost
           // of a solid overlay's right-angle corners into the cross-gap.
-          { shadowColor: isActive ? displayActiveColor : UI_COLORS.shadowBlack },
+          { shadowColor: isActive ? displayGlowColor : UI_COLORS.shadowBlack },
           isActive && styles.pressableActive,
         ]}
         accessible

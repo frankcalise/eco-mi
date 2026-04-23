@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { PressableScale } from "@/components/PressableScale"
 import { NOTIFICATIONS_PERMISSION_ASKED } from "@/config/storageKeys"
-import { UI_COLORS } from "@/theme/uiColors"
+import { useTheme } from "@/hooks/useTheme"
 import { saveString } from "@/utils/storage"
 
 function markAsked() {
@@ -18,6 +18,7 @@ export default function NotificationsScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { t } = useTranslation()
+  const { activeTheme } = useTheme()
 
   async function handleEnable() {
     markAsked()
@@ -31,26 +32,51 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: activeTheme.backgroundColor,
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+        },
+      ]}
+    >
       <View style={styles.content}>
-        <View style={styles.iconCircle}>
-          <Ionicons name="notifications-outline" size={64} color={UI_COLORS.amber400} />
+        <View
+          style={[
+            styles.iconCircle,
+            { backgroundColor: activeTheme.surfaceColor, borderColor: activeTheme.borderColor },
+          ]}
+        >
+          <Ionicons name="notifications-outline" size={64} color={activeTheme.warningColor} />
         </View>
 
-        <Text style={styles.title}>{t("notifications:prePromptTitle")}</Text>
-        <Text style={styles.subtitle}>{t("notifications:prePromptBody")}</Text>
+        <Text style={[styles.title, { color: activeTheme.textColor }]}>
+          {t("notifications:prePromptTitle")}
+        </Text>
+        <Text style={[styles.subtitle, { color: activeTheme.secondaryTextColor }]}>
+          {t("notifications:prePromptBody")}
+        </Text>
       </View>
 
       <View style={styles.buttons}>
-        <PressableScale style={styles.enableBtn} onPress={handleEnable}>
-          <Text style={styles.enableBtnText}>{t("notifications:enableReminders")}</Text>
+        <PressableScale
+          style={[styles.enableBtn, { backgroundColor: activeTheme.accentColor }]}
+          onPress={handleEnable}
+        >
+          <Text style={[styles.enableBtnText, { color: activeTheme.primaryForegroundColor }]}>
+            {t("notifications:enableReminders")}
+          </Text>
         </PressableScale>
         <PressableScale
           style={styles.skipBtn}
           onPress={handleNotNow}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.skipBtnText}>{t("notifications:maybeLater")}</Text>
+          <Text style={[styles.skipBtnText, { color: activeTheme.secondaryTextColor }]}>
+            {t("notifications:maybeLater")}
+          </Text>
         </PressableScale>
       </View>
     </View>
@@ -65,7 +91,6 @@ const styles = StyleSheet.create({
   },
   container: {
     alignItems: "center",
-    backgroundColor: UI_COLORS.classicBackground,
     flex: 1,
     justifyContent: "space-between",
     paddingBottom: 48,
@@ -78,19 +103,17 @@ const styles = StyleSheet.create({
   },
   enableBtn: {
     alignItems: "center",
-    backgroundColor: UI_COLORS.amber400,
     borderRadius: 12,
     paddingVertical: 16,
     width: "100%",
   },
   enableBtnText: {
-    color: UI_COLORS.classicBackground,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
   },
   iconCircle: {
     alignItems: "center",
-    backgroundColor: UI_COLORS.amberTint10,
+    borderWidth: 1,
     borderRadius: 60,
     height: 120,
     justifyContent: "center",
@@ -103,19 +126,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   skipBtnText: {
-    color: UI_COLORS.whiteMuted,
     fontFamily: "Oxanium-Regular",
     fontSize: 14,
   },
   subtitle: {
-    color: UI_COLORS.whiteMuted,
     fontFamily: "Oxanium-Regular",
     fontSize: 15,
     lineHeight: 22,
     textAlign: "center",
   },
   title: {
-    color: UI_COLORS.white,
     fontFamily: "Oxanium-Bold",
     fontSize: 24,
     marginBottom: 12,

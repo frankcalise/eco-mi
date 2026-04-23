@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { PressableScale } from "@/components/PressableScale"
 import { TRACKING_ASKED } from "@/config/storageKeys"
-import { UI_COLORS } from "@/theme/uiColors"
+import { useTheme } from "@/hooks/useTheme"
 import { saveString } from "@/utils/storage"
 
 function markAsked() {
@@ -18,6 +18,7 @@ export default function TrackingScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { t } = useTranslation()
+  const { activeTheme } = useTheme()
 
   async function handleContinue() {
     await requestTrackingPermissionsAsync().catch(() => {})
@@ -26,21 +27,46 @@ export default function TrackingScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: activeTheme.backgroundColor,
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+        },
+      ]}
+    >
       <View style={styles.content}>
         {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
         <Image source={require("../../assets/images/app-icon-ios.png")} style={styles.appIcon} />
-        <View style={styles.iconCircle}>
-          <Ionicons name="shield-checkmark-outline" size={64} color={UI_COLORS.green500} />
+        <View
+          style={[
+            styles.iconCircle,
+            { backgroundColor: activeTheme.surfaceColor, borderColor: activeTheme.borderColor },
+          ]}
+        >
+          <Ionicons
+            name="shield-checkmark-outline"
+            size={64}
+            color={activeTheme.accentColor}
+          />
         </View>
 
-        <Text style={styles.title}>{t("tracking:title")}</Text>
-        <Text style={styles.subtitle}>{t("tracking:subtitle")}</Text>
+        <Text style={[styles.title, { color: activeTheme.textColor }]}>{t("tracking:title")}</Text>
+        <Text style={[styles.subtitle, { color: activeTheme.secondaryTextColor }]}>
+          {t("tracking:subtitle")}
+        </Text>
       </View>
 
       <View style={styles.buttons}>
-        <PressableScale style={styles.shareBtn} onPress={handleContinue}>
-          <Text style={styles.shareBtnText}>{t("tracking:continueButton")}</Text>
+        <PressableScale
+          style={[styles.shareBtn, { backgroundColor: activeTheme.accentColor }]}
+          onPress={handleContinue}
+        >
+          <Text style={[styles.shareBtnText, { color: activeTheme.primaryForegroundColor }]}>
+            {t("tracking:continueButton")}
+          </Text>
         </PressableScale>
       </View>
     </View>
@@ -61,7 +87,6 @@ const styles = StyleSheet.create({
   },
   container: {
     alignItems: "center",
-    backgroundColor: UI_COLORS.classicBackground,
     flex: 1,
     justifyContent: "space-between",
     paddingBottom: 48,
@@ -74,7 +99,7 @@ const styles = StyleSheet.create({
   },
   iconCircle: {
     alignItems: "center",
-    backgroundColor: UI_COLORS.greenTint10,
+    borderWidth: 1,
     borderRadius: 60,
     height: 120,
     justifyContent: "center",
@@ -83,24 +108,20 @@ const styles = StyleSheet.create({
   },
   shareBtn: {
     alignItems: "center",
-    backgroundColor: UI_COLORS.green500,
     borderRadius: 12,
     paddingVertical: 16,
   },
   shareBtnText: {
-    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
   },
   subtitle: {
-    color: UI_COLORS.whiteMuted,
     fontFamily: "Oxanium-Regular",
     fontSize: 15,
     lineHeight: 22,
     textAlign: "center",
   },
   title: {
-    color: UI_COLORS.white,
     fontFamily: "Oxanium-Bold",
     fontSize: 24,
     marginBottom: 12,

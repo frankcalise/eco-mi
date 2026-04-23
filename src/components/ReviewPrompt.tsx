@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next"
 import { ModalOverlay } from "@/components/ModalOverlay"
 import { PressableScale } from "@/components/PressableScale"
 import type { GameTheme } from "@/config/themes"
-import { UI_COLORS } from "@/theme/uiColors"
 
 type ReviewPromptProps = {
   visible: boolean
@@ -44,14 +43,21 @@ export function ReviewPrompt({ visible, theme, onDismiss, onResponse }: ReviewPr
           style={[styles.loveItButton, { backgroundColor: theme.accentColor }]}
           onPress={handleLoveIt}
         >
-          <Text style={styles.loveItText}>{t("review:loveIt")}</Text>
+          <Text style={[styles.loveItText, { color: theme.primaryForegroundColor }]}>
+            {t("review:loveIt")}
+          </Text>
         </PressableScale>
         <PressableScale
           testID="review-not-really"
-          style={styles.notReallyButton}
+          style={[
+            styles.notReallyButton,
+            { backgroundColor: theme.surfaceColor, borderColor: theme.borderColor },
+          ]}
           onPress={handleNotReally}
         >
-          <Text style={styles.notReallyText}>{t("review:notReally")}</Text>
+          <Text style={[styles.notReallyText, { color: theme.textColor }]}>
+            {t("review:notReally")}
+          </Text>
         </PressableScale>
       </View>
       <PressableScale
@@ -85,7 +91,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   loveItText: {
-    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
   },
@@ -98,13 +103,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   notReallyButton: {
-    backgroundColor: UI_COLORS.neutralTint30,
     borderRadius: 8,
+    borderWidth: 1,
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
   notReallyText: {
-    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
   },

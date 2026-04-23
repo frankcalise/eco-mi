@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next"
 import { EaseView } from "react-native-ease"
 
 import type { GameTheme } from "@/config/themes"
-import { UI_COLORS } from "@/theme/uiColors"
 
 type OnboardingTooltipProps = {
   visible: boolean
@@ -23,7 +22,9 @@ export function OnboardingTooltip({ visible, theme }: OnboardingTooltipProps) {
       transition={{ default: { type: "spring", stiffness: 300, damping: 20 } }}
     >
       <View style={[styles.tooltip, { backgroundColor: theme.accentColor }]}>
-        <Text style={styles.text}>{t("onboarding:tapHint")}</Text>
+        <Text style={[styles.text, { color: theme.primaryForegroundColor }]}>
+          {t("onboarding:tapHint")}
+        </Text>
       </View>
     </EaseView>
   )
@@ -35,7 +36,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   text: {
-    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 15,
     textAlign: "center",

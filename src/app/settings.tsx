@@ -272,14 +272,17 @@ export default function SettingsScreen() {
                     style={[
                       styles.selectorButton,
                       {
+                        backgroundColor: isSelected
+                          ? `${activeTheme.accentColor}1A`
+                          : isPreviewing
+                            ? `${activeTheme.warningColor}1A`
+                            : activeTheme.surfaceColor,
                         borderColor: isSelected
                           ? activeTheme.accentColor
                           : isPreviewing
                             ? activeTheme.warningColor
                             : activeTheme.borderColor,
                       },
-                      isSelected && styles.selectorButtonActive,
-                      isPreviewing && styles.selectorButtonPreviewing,
                     ]}
                   >
                     <View style={styles.selectorButtonInner}>
@@ -360,8 +363,8 @@ export default function SettingsScreen() {
                     style={[
                       styles.themeCircle,
                       { backgroundColor: gameThemes[id].buttonColors.red.color },
-                      isSelected && styles.themeCircleSelected,
-                      isPreviewing && styles.themeCirclePreviewing,
+                      isSelected && { borderColor: activeTheme.accentColor, borderWidth: 2 },
+                      isPreviewing && { borderColor: activeTheme.warningColor, borderWidth: 2 },
                     ]}
                   >
                     {!isOwned && (
@@ -579,16 +582,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  selectorButtonActive: {
-    backgroundColor: UI_COLORS.greenTint10,
-  },
   selectorButtonInner: {
     alignItems: "center",
     flexDirection: "row",
     gap: 4,
-  },
-  selectorButtonPreviewing: {
-    backgroundColor: UI_COLORS.orangeTint10,
   },
   soundPackName: {
     fontFamily: "Oxanium-Regular",
@@ -611,14 +608,6 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: "center",
     width: 40,
-  },
-  themeCirclePreviewing: {
-    borderColor: UI_COLORS.amber500,
-    borderWidth: 2,
-  },
-  themeCircleSelected: {
-    borderColor: UI_COLORS.green500,
-    borderWidth: 2,
   },
   unlockBtn: {
     alignItems: "center",

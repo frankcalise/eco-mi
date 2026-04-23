@@ -334,7 +334,7 @@
 
       Files: `src/app/settings.tsx` (theme row render, ~line 325–365), `src/config/themes.ts` (already has `name` field on each theme — reuse it). New i18n keys under a `themes` namespace if localizing.
 
-- [ ] **Full theme-chrome audit across Pastel + Neon + Retro (non-Classic themes)**
+- [x] **Full theme-chrome audit across Pastel + Neon + Retro (non-Classic themes)**
       The game was visually designed around Classic (dark navy bg) and several surfaces/borders/CTAs were hardcoded with `rgba(0, 0, 0, X)` / `rgba(255, 255, 255, X)` values that assume a dark backdrop. On Pastel (light bg) and Neon (black bg with vivid accents) those assumptions break in specific, painful ways:
 
   **Pastel observations (2026-04-23 device review, Pixel 9 Pro):**
@@ -357,7 +357,7 @@
   3. Capture screenshots on all 4 themes × all major screens (idle, gameplay, /game-over, /settings, /leaderboard, /stats, /achievements) and diff visually against Classic as the reference.
   4. For the pad glow specifically, consider a per-theme "glow intensity" or "glow color" override in `src/config/themes.ts` so Pastel can boost + Neon can stay punchy without global tuning.
 
-  Scope is non-trivial — expect this to be its own session. Don't bundle with other polish work.
+  Completed as its own session. Added semantic theme-chrome tokens (`panelColor`, `panelBorderColor`, `primaryForegroundColor`, per-pad `glowColor`, `titleCycleColors`) and moved the main gameplay chrome, game-over CTAs, prompts, tracking/notification screens, stats cards, title treatment, streak banner, and idle secondary-page buttons onto those tokens. Verified visually across Neon, Retro, and Pastel on idle + secondary screens.
 
 - [ ] **Colorblind mode: shape/glyph overlay on pads**
       Simon-style play depends entirely on distinguishing 4 colors + position. ~4–8% of males have red-green color deficiency, and on the retro theme both red (`#c0392b`) and green (`#27ae60`) desaturate to near-identical mid-greys for deuteranopes/protanopes. Add a user-toggleable "Colorblind patterns" setting that renders a unique glyph on each pad — circle / square / triangle / diamond, or numerals 1-4 — at ~24% opacity in the pad's contrast color. Also serves players in bright sunlight or on cheap displays. WCAG 1.4.1 (Use of Color). New setting in `settings.tsx` under "Accessibility" section, plumbed through theme context to `GameButton`.

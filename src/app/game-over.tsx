@@ -32,7 +32,6 @@ import { useTheme } from "@/hooks/useTheme"
 import { useGameOverStore } from "@/stores/gameOverStore"
 import { usePendingActionStore } from "@/stores/pendingActionStore"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
-import { UI_COLORS } from "@/theme/uiColors"
 import { useAnalytics } from "@/utils/analytics"
 import { formatDuration } from "@/utils/formatTime"
 import { useBreakpoints } from "@/utils/layoutBreakpoints"
@@ -255,6 +254,7 @@ export default function GameOverScreen() {
     highScore - score > 0
       ? highScore - score
       : null
+  const primaryButtonForeground = activeTheme.primaryForegroundColor
 
   async function handleShare() {
     haptics.play("menuTap")
@@ -429,12 +429,22 @@ export default function GameOverScreen() {
                           backgroundColor: allFilled
                             ? activeTheme.accentColor
                             : activeTheme.surfaceColor,
+                          borderColor: allFilled ? activeTheme.accentColor : activeTheme.borderColor,
                         },
                       ]}
                       onPress={handleSaveInitials}
                       disabled={!allFilled}
                     >
-                      <Text style={[styles.saveButtonText, { color: UI_COLORS.white }]}>
+                      <Text
+                        style={[
+                          styles.saveButtonText,
+                          {
+                            color: allFilled
+                              ? activeTheme.primaryForegroundColor
+                              : activeTheme.secondaryTextColor,
+                          },
+                        ]}
+                      >
                         {t("game:saveInitials")}
                       </Text>
                     </PressableScale>
@@ -456,7 +466,9 @@ export default function GameOverScreen() {
                   label={t("game:score")}
                   value={score}
                   icon="flash"
-                  borderColor={activeTheme.buttonColors.red.color}
+                  borderColor={
+                    activeTheme.buttonColors.red.glowColor ?? activeTheme.buttonColors.red.color
+                  }
                   theme={activeTheme}
                   delay={250}
                   isTablet={isTablet}
@@ -466,7 +478,9 @@ export default function GameOverScreen() {
                   label={t("game:level")}
                   value={level}
                   icon="trending-up"
-                  borderColor={activeTheme.buttonColors.blue.color}
+                  borderColor={
+                    activeTheme.buttonColors.blue.glowColor ?? activeTheme.buttonColors.blue.color
+                  }
                   theme={activeTheme}
                   delay={350}
                   isTablet={isTablet}
@@ -478,7 +492,10 @@ export default function GameOverScreen() {
                   label={t("game:best")}
                   value={highScore}
                   icon="trophy"
-                  borderColor={activeTheme.buttonColors.green.color}
+                  borderColor={
+                    activeTheme.buttonColors.green.glowColor ??
+                    activeTheme.buttonColors.green.color
+                  }
                   theme={activeTheme}
                   delay={450}
                   isTablet={isTablet}
@@ -488,7 +505,10 @@ export default function GameOverScreen() {
                   label={t("game:time")}
                   value={formatDuration(sessionTime)}
                   icon="time"
-                  borderColor={activeTheme.buttonColors.yellow.color}
+                  borderColor={
+                    activeTheme.buttonColors.yellow.glowColor ??
+                    activeTheme.buttonColors.yellow.color
+                  }
                   theme={activeTheme}
                   delay={550}
                   isTablet={isTablet}
@@ -513,7 +533,13 @@ export default function GameOverScreen() {
             {showContinue && (
               <PressableScale
                 testID="btn-continue"
-                style={[styles.continueButton, { borderColor: activeTheme.borderColor }]}
+                style={[
+                  styles.continueButton,
+                  {
+                    backgroundColor: activeTheme.surfaceColor,
+                    borderColor: activeTheme.borderColor,
+                  },
+                ]}
                 onPress={handleContinue}
               >
                 <Ionicons name="play-forward" size={18} color={activeTheme.textColor} />
@@ -530,14 +556,22 @@ export default function GameOverScreen() {
               accessibilityLabel={t("game:playAgain")}
               accessibilityRole="button"
             >
-              <Ionicons name="refresh" size={20} color="white" />
-              <Text style={styles.playAgainText}>{t("game:playAgain")}</Text>
+              <Ionicons name="refresh" size={20} color={primaryButtonForeground} />
+              <Text style={[styles.playAgainText, { color: primaryButtonForeground }]}>
+                {t("game:playAgain")}
+              </Text>
             </PressableScale>
 
             <View style={styles.bottomRow}>
               <PressableScale
                 testID="btn-share"
-                style={[styles.shareButton, { borderColor: activeTheme.borderColor }]}
+                style={[
+                  styles.shareButton,
+                  {
+                    backgroundColor: activeTheme.surfaceColor,
+                    borderColor: activeTheme.borderColor,
+                  },
+                ]}
                 onPress={handleShare}
                 accessibilityLabel={t("game:share")}
                 accessibilityRole="button"
@@ -756,7 +790,6 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   playAgainText: {
-    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
   },
@@ -773,6 +806,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     borderRadius: 10,
+    borderWidth: 1,
     paddingHorizontal: 32,
     paddingVertical: 12,
   },

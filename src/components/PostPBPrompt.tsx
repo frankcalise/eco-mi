@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next"
 import { ModalOverlay } from "@/components/ModalOverlay"
 import { PressableScale } from "@/components/PressableScale"
 import type { GameTheme } from "@/config/themes"
-import { UI_COLORS } from "@/theme/uiColors"
 
 type PostPBPromptProps = {
   visible: boolean
@@ -27,8 +26,10 @@ export function PostPBPrompt({ visible, theme, onRemoveAds, onDismiss }: PostPBP
           style={[styles.removeAdsButton, { backgroundColor: theme.accentColor }]}
           onPress={onRemoveAds}
         >
-          <Ionicons name="shield-checkmark" size={18} color="white" />
-          <Text style={styles.removeAdsText}>{t("game:removeAds")}</Text>
+          <Ionicons name="shield-checkmark" size={18} color={theme.primaryForegroundColor} />
+          <Text style={[styles.removeAdsText, { color: theme.primaryForegroundColor }]}>
+            {t("game:removeAds")}
+          </Text>
         </PressableScale>
         <PressableScale
           style={styles.dismissButton}
@@ -79,7 +80,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   removeAdsText: {
-    color: UI_COLORS.white,
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
   },

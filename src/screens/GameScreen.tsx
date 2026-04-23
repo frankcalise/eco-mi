@@ -462,14 +462,15 @@ export function GameScreen() {
     : Math.max(0.5, Math.round(centerDiameter * 0.01))
 
   const gameContainerStyle = {
-    backgroundColor: "rgba(0, 0, 0, 0.5)" as const,
-    borderColor: "rgba(255, 255, 255, 0.2)" as const,
+    backgroundColor: activeTheme.panelColor,
+    borderColor: activeTheme.panelBorderColor,
     borderRadius: gameSize / 2,
     borderWidth,
     height: gameSize,
     position: "relative" as const,
     width: gameSize,
   }
+  const primaryButtonForeground = activeTheme.primaryForegroundColor
 
   const scoreBoxes = (
     <View
@@ -487,7 +488,10 @@ export function GameScreen() {
           styles.scoreBox,
           isTabletLandscape && styles.scoreBoxTabletLandscape,
           isTablet && !isTabletLandscape && styles.scoreBoxTabletPortrait,
-          { backgroundColor: activeTheme.surfaceColor },
+          {
+            backgroundColor: activeTheme.surfaceColor,
+            borderColor: activeTheme.borderColor,
+          },
         ]}
       >
         <Text
@@ -515,7 +519,10 @@ export function GameScreen() {
           styles.scoreBox,
           isTabletLandscape && styles.scoreBoxTabletLandscape,
           isTablet && !isTabletLandscape && styles.scoreBoxTabletPortrait,
-          { backgroundColor: activeTheme.surfaceColor },
+          {
+            backgroundColor: activeTheme.surfaceColor,
+            borderColor: activeTheme.borderColor,
+          },
         ]}
       >
         <Text
@@ -543,7 +550,10 @@ export function GameScreen() {
           styles.scoreBox,
           isTabletLandscape && styles.scoreBoxTabletLandscape,
           isTablet && !isTabletLandscape && styles.scoreBoxTabletPortrait,
-          { backgroundColor: activeTheme.surfaceColor },
+          {
+            backgroundColor: activeTheme.surfaceColor,
+            borderColor: activeTheme.borderColor,
+          },
         ]}
       >
         <Text
@@ -596,6 +606,7 @@ export function GameScreen() {
             }
             themeColor={activeTheme.buttonColors[color].color}
             themeActiveColor={activeTheme.buttonColors[color].activeColor}
+            themeGlowColor={activeTheme.buttonColors[color].glowColor}
           />
         ))}
 
@@ -688,47 +699,75 @@ export function GameScreen() {
     />
   )
 
+  const isLightTheme = activeTheme.statusBarStyle === "dark"
+  const idleActionConfigs = [
+    {
+      key: "leaderboard",
+      testID: "btn-leaderboard",
+      accessibilityLabel: t("a11y:leaderboard"),
+      icon: "trophy" as const,
+      tone: activeTheme.warningColor,
+      onPress: () => {
+        haptics.play("menuTap")
+        router.push({ pathname: "/leaderboard", params: { mode } })
+      },
+    },
+    {
+      key: "stats",
+      testID: "btn-stats",
+      accessibilityLabel: t("a11y:stats"),
+      icon: "stats-chart" as const,
+      tone: activeTheme.buttonColors.blue.glowColor ?? activeTheme.buttonColors.blue.color,
+      onPress: () => {
+        haptics.play("menuTap")
+        router.push("/stats")
+      },
+    },
+    {
+      key: "achievements",
+      testID: "btn-achievements",
+      accessibilityLabel: t("a11y:achievements"),
+      icon: "ribbon" as const,
+      tone: activeTheme.accentColor,
+      onPress: () => {
+        haptics.play("menuTap")
+        router.push("/achievements")
+      },
+    },
+  ]
+
+  function renderIdleActionButtons() {
+    return idleActionConfigs.map((action) => {
+      const isRetroStats = activeTheme.id === "retro" && action.key === "stats"
+      const backgroundAlpha = isLightTheme ? "22" : isRetroStats ? "24" : "18"
+      const borderAlpha = isLightTheme ? "66" : isRetroStats ? "5C" : "40"
+      const backgroundColor = `${action.tone}${backgroundAlpha}`
+      const borderColor = `${action.tone}${borderAlpha}`
+      const iconColor = isLightTheme
+        ? activeTheme.textColor
+        : isRetroStats
+          ? activeTheme.buttonColors.blue.activeColor
+          : action.tone
+
+      return (
+        <PressableScale
+          key={action.key}
+          testID={action.testID}
+          accessibilityLabel={action.accessibilityLabel}
+          accessibilityRole="button"
+          style={[styles.idleActionButton, { backgroundColor, borderColor }]}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          onPress={action.onPress}
+        >
+          <Ionicons name={action.icon} size={20} color={iconColor} />
+        </PressableScale>
+      )
+    })
+  }
+
   const idleActionsNode = (
     <View style={[styles.idleActions, isTabletPortrait && styles.idleActionsTabletPortrait]}>
-      <PressableScale
-        testID="btn-leaderboard"
-        accessibilityLabel={t("a11y:leaderboard")}
-        accessibilityRole="button"
-        style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        onPress={() => {
-          haptics.play("menuTap")
-          router.push({ pathname: "/leaderboard", params: { mode } })
-        }}
-      >
-        <Ionicons name="trophy" size={20} color={activeTheme.warningColor} />
-      </PressableScale>
-      <PressableScale
-        testID="btn-stats"
-        accessibilityLabel={t("a11y:stats")}
-        accessibilityRole="button"
-        style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        onPress={() => {
-          haptics.play("menuTap")
-          router.push("/stats")
-        }}
-      >
-        <Ionicons name="stats-chart" size={20} color={activeTheme.secondaryTextColor} />
-      </PressableScale>
-      <PressableScale
-        testID="btn-achievements"
-        accessibilityLabel={t("a11y:achievements")}
-        accessibilityRole="button"
-        style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        onPress={() => {
-          haptics.play("menuTap")
-          router.push("/achievements")
-        }}
-      >
-        <Ionicons name="ribbon" size={20} color={activeTheme.secondaryTextColor} />
-      </PressableScale>
+      {renderIdleActionButtons()}
     </View>
   )
 
@@ -755,8 +794,10 @@ export function GameScreen() {
         style={[styles.startButton, { backgroundColor: activeTheme.accentColor }]}
         onPress={handleStartGame}
       >
-        <Ionicons name="play" size={24} color="white" />
-        <Text style={styles.startButtonText}>{t("game:startGame")}</Text>
+        <Ionicons name="play" size={24} color={primaryButtonForeground} />
+        <Text style={[styles.startButtonText, { color: primaryButtonForeground }]}>
+          {t("game:startGame")}
+        </Text>
       </PressableScale>
     </EaseView>
   )
@@ -839,55 +880,13 @@ export function GameScreen() {
                         style={[styles.startButton, { backgroundColor: activeTheme.accentColor }]}
                         onPress={handleStartGame}
                       >
-                        <Ionicons name="play" size={24} color="white" />
-                        <Text style={styles.startButtonText}>{t("game:startGame")}</Text>
+                        <Ionicons name="play" size={24} color={primaryButtonForeground} />
+                        <Text style={[styles.startButtonText, { color: primaryButtonForeground }]}>
+                          {t("game:startGame")}
+                        </Text>
                       </PressableScale>
                     </EaseView>
-                    <View style={styles.idleActions}>
-                      <PressableScale
-                        testID="btn-leaderboard"
-                        accessibilityLabel={t("a11y:leaderboard")}
-                        accessibilityRole="button"
-                        style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        onPress={() => {
-                          haptics.play("menuTap")
-                          router.push({ pathname: "/leaderboard", params: { mode } })
-                        }}
-                      >
-                        <Ionicons name="trophy" size={20} color={activeTheme.warningColor} />
-                      </PressableScale>
-                      <PressableScale
-                        testID="btn-stats"
-                        accessibilityLabel={t("a11y:stats")}
-                        accessibilityRole="button"
-                        style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        onPress={() => {
-                          haptics.play("menuTap")
-                          router.push("/stats")
-                        }}
-                      >
-                        <Ionicons
-                          name="stats-chart"
-                          size={20}
-                          color={activeTheme.secondaryTextColor}
-                        />
-                      </PressableScale>
-                      <PressableScale
-                        testID="btn-achievements"
-                        accessibilityLabel={t("a11y:achievements")}
-                        accessibilityRole="button"
-                        style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        onPress={() => {
-                          haptics.play("menuTap")
-                          router.push("/achievements")
-                        }}
-                      >
-                        <Ionicons name="ribbon" size={20} color={activeTheme.secondaryTextColor} />
-                      </PressableScale>
-                    </View>
+                    <View style={styles.idleActions}>{renderIdleActionButtons()}</View>
                   </>
                 ) : (
                   showResetButton && (
@@ -1100,6 +1099,7 @@ const styles = StyleSheet.create({
   scoreBox: {
     alignItems: "center",
     borderRadius: 10,
+    borderWidth: 1,
     minWidth: 80,
     paddingHorizontal: 20,
     paddingVertical: 10,

@@ -7,9 +7,6 @@ import { EaseView } from "react-native-ease"
 import { PressableScale } from "@/components/PressableScale"
 import type { GameTheme } from "@/config/themes"
 import { useHaptics } from "@/hooks/useHaptics"
-import { UI_COLORS } from "@/theme/uiColors"
-
-const NEON_COLOR_ORDER = ["red", "blue", "green"] as const
 
 type GameHeaderProps = {
   isIdle: boolean
@@ -21,6 +18,7 @@ type GameHeaderProps = {
 export function GameHeader({ isIdle, theme, onModePress, onSettingsPress }: GameHeaderProps) {
   const { t } = useTranslation()
   const haptics = useHaptics()
+  const neonColors = theme.titleCycleColors
 
   const [neonColorIndex, setNeonColorIndex] = useState(0)
   const neonIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -29,7 +27,7 @@ export function GameHeader({ isIdle, theme, onModePress, onSettingsPress }: Game
     if (isIdle) {
       setNeonColorIndex(0)
       neonIntervalRef.current = setInterval(() => {
-        setNeonColorIndex((prev) => (prev + 1) % NEON_COLOR_ORDER.length)
+        setNeonColorIndex((prev) => (prev + 1) % neonColors.length)
       }, 2000)
     } else {
       if (neonIntervalRef.current) {
@@ -43,9 +41,10 @@ export function GameHeader({ isIdle, theme, onModePress, onSettingsPress }: Game
         neonIntervalRef.current = null
       }
     }
-  }, [isIdle])
-
-  const neonColors = NEON_COLOR_ORDER.map((c) => theme.buttonColors[c].color)
+  }, [isIdle, neonColors.length])
+  const titleBaseColor = theme.statusBarStyle === "dark" ? `${theme.textColor}B8` : `${theme.textColor}66`
+  const titleGhostColor =
+    theme.statusBarStyle === "dark" ? `${theme.backgroundColor}55` : `${theme.backgroundColor}33`
 
   return (
     <View style={styles.header}>
@@ -77,18 +76,35 @@ export function GameHeader({ isIdle, theme, onModePress, onSettingsPress }: Game
       >
         <View style={styles.titleStack}>
           {isIdle ? (
-            neonColors.map((color, i) => (
-              <EaseView
-                key={i}
-                animate={{ opacity: neonColorIndex === i ? 1 : 0 }}
-                transition={{ default: { type: "timing", duration: 600, easing: "easeInOut" } }}
-                style={i > 0 ? styles.titleLayerAbsolute : undefined}
+            <>
+              <Text
+                style={[
+                  styles.title,
+                  styles.titleGhost,
+                  {
+                    color: titleGhostColor,
+                    textShadowColor: titleGhostColor,
+                  },
+                ]}
               >
-                <Text style={[styles.title, styles.titleNeon, { color, textShadowColor: color }]}>
-                  {t("game:title")}
-                </Text>
-              </EaseView>
-            ))
+                {t("game:title")}
+              </Text>
+              <Text style={[styles.title, styles.titleLayerAbsolute, { color: titleBaseColor }]}>
+                {t("game:title")}
+              </Text>
+              {neonColors.map((color, i) => (
+                <EaseView
+                  key={i}
+                  animate={{ opacity: neonColorIndex === i ? 1 : 0 }}
+                  transition={{ default: { type: "timing", duration: 600, easing: "easeInOut" } }}
+                  style={styles.titleLayerAbsolute}
+                >
+                  <Text style={[styles.title, styles.titleNeon, { color, textShadowColor: color }]}>
+                    {t("game:title")}
+                  </Text>
+                </EaseView>
+              ))}
+            </>
           ) : (
             <Text style={[styles.title, { color: theme.textColor }]}>{t("game:title")}</Text>
           )}
@@ -139,17 +155,21 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   title: {
-    color: UI_COLORS.white,
     fontFamily: "Oxanium-Bold",
     fontSize: 36,
     letterSpacing: 4,
+  },
+  titleGhost: {
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 6,
+    transform: [{ translateX: 1 }, { translateY: 1 }],
   },
   titleLayerAbsolute: {
     position: "absolute",
   },
   titleNeon: {
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 12,
+    textShadowRadius: 10,
   },
   titleStack: {
     alignItems: "center",
