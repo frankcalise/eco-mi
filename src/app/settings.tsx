@@ -10,11 +10,6 @@ import { EaseView } from "react-native-ease"
 import { NativeToggle } from "@/components/NativeToggle"
 import { PressableScale } from "@/components/PressableScale"
 import { SOUND_PACKS } from "@/config/soundPacks"
-import {
-  SETTINGS_NOTIFY_DAILY,
-  SETTINGS_NOTIFY_STREAK,
-  SETTINGS_NOTIFY_WINBACK,
-} from "@/config/storageKeys"
 import { themeIds, gameThemes } from "@/config/themes"
 import { useAudioTones, type ColorMap } from "@/hooks/useAudioTones"
 import { useHaptics } from "@/hooks/useHaptics"
@@ -25,7 +20,6 @@ import { stackHeaderOptionsFromTheme } from "@/navigation/secondaryStackHeader"
 import { usePreferencesStore } from "@/stores/preferencesStore"
 import { UI_COLORS } from "@/theme/uiColors"
 import { useAnalytics } from "@/utils/analytics"
-import { loadString, saveString } from "@/utils/storage"
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { Host, Slider: NativeSlider } =
@@ -90,15 +84,12 @@ export default function SettingsScreen() {
   const setVolume = usePreferencesStore((s) => s.setVolume)
   const hapticsEnabled = usePreferencesStore((s) => s.hapticsEnabled)
   const setHapticsEnabled = usePreferencesStore((s) => s.setHapticsEnabled)
-  const [notifyDaily, setNotifyDaily] = useState(
-    () => loadString(SETTINGS_NOTIFY_DAILY) !== "false",
-  )
-  const [notifyStreak, setNotifyStreak] = useState(
-    () => loadString(SETTINGS_NOTIFY_STREAK) !== "false",
-  )
-  const [notifyWinback, setNotifyWinback] = useState(
-    () => loadString(SETTINGS_NOTIFY_WINBACK) !== "false",
-  )
+  const notifyDaily = usePreferencesStore((s) => s.notifyDaily)
+  const setNotifyDaily = usePreferencesStore((s) => s.setNotifyDaily)
+  const notifyStreak = usePreferencesStore((s) => s.notifyStreak)
+  const setNotifyStreak = usePreferencesStore((s) => s.setNotifyStreak)
+  const notifyWinback = usePreferencesStore((s) => s.notifyWinback)
+  const setNotifyWinback = usePreferencesStore((s) => s.setNotifyWinback)
 
   const [poppingSoundPack, setPoppingSoundPack] = useState<string | null>(null)
   const [soundHint, setSoundHint] = useState(false)
@@ -106,11 +97,7 @@ export default function SettingsScreen() {
   const [poppingTheme, setPoppingTheme] = useState<string | null>(null)
 
   const colorMap = buildColorMap(activeTheme)
-  const { playPreview, initialize, cleanup } = useAudioTones(
-    colorMap,
-    soundEnabled,
-    soundPack.oscillatorType,
-  )
+  const { playPreview, initialize, cleanup } = useAudioTones(colorMap, soundPack.oscillatorType)
 
   useEffect(() => {
     initialize()
@@ -153,21 +140,15 @@ export default function SettingsScreen() {
   }
 
   function toggleNotifyDaily() {
-    const next = !notifyDaily
-    setNotifyDaily(next)
-    saveString(SETTINGS_NOTIFY_DAILY, next ? "true" : "false")
+    setNotifyDaily(!notifyDaily)
   }
 
   function toggleNotifyStreak() {
-    const next = !notifyStreak
-    setNotifyStreak(next)
-    saveString(SETTINGS_NOTIFY_STREAK, next ? "true" : "false")
+    setNotifyStreak(!notifyStreak)
   }
 
   function toggleNotifyWinback() {
-    const next = !notifyWinback
-    setNotifyWinback(next)
-    saveString(SETTINGS_NOTIFY_WINBACK, next ? "true" : "false")
+    setNotifyWinback(!notifyWinback)
   }
 
   return (

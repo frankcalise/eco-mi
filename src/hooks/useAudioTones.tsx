@@ -93,7 +93,6 @@ interface AudioTonesHook {
 
 export function useAudioTones(
   colorMap: ColorMap,
-  soundEnabled: boolean,
   oscillatorType: OscillatorType = "sine",
   _onContextRecycle?: (nodeCount: number) => void,
 ): AudioTonesHook {
@@ -102,6 +101,7 @@ export function useAudioTones(
   const poolRef = useRef<TonePool | null>(null)
   const contextReadyRef = useRef(false)
   const countersRef = useRef({ recreates: 0, resumeFalseNegatives: 0, droppedNotes: 0 })
+  const soundEnabled = usePreferencesStore((s) => s.soundEnabled)
   const volume = usePreferencesStore((s) => s.volume)
 
   // --- AppState listener: suspend on background, resume on foreground ---

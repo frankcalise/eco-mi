@@ -15,7 +15,6 @@ import { type GameTheme, gameThemes } from "@/config/themes"
 import { useAudioTones } from "@/hooks/useAudioTones"
 import { useHaptics } from "@/hooks/useHaptics"
 import { recordGameResult } from "@/hooks/useStats"
-import { usePreferencesStore } from "@/stores/preferencesStore"
 import { saveString, loadString } from "@/utils/storage"
 
 import {
@@ -89,7 +88,6 @@ interface UseGameEngineReturn {
   level: number
   highScore: number
   activeButton: Color | null
-  soundEnabled: boolean
   sequence: Color[]
   playerSequence: Color[]
   isNewHighScore: boolean
@@ -155,7 +153,6 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
   // Local UI state
   const [activeButton, setActiveButton] = useState<Color | null>(null)
-  const soundEnabled = usePreferencesStore((s) => s.soundEnabled)
   const [wrongFlash, setWrongFlash] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [inputTimeRemaining, setInputTimeRemaining] = useState<number | null>(null)
@@ -203,12 +200,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     playJingle,
     playGameOverJingle,
     playHighScoreJingle,
-  } = useAudioTones(
-    activeColorMap,
-    soundEnabled,
-    options?.oscillatorType,
-    options?.onAudioContextRecycle,
-  )
+  } = useAudioTones(activeColorMap, options?.oscillatorType, options?.onAudioContextRecycle)
 
   const ctx = state.context
   const gameState = toPublicState(state.value as string)
@@ -633,7 +625,6 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     level: ctx.level,
     highScore: ctx.highScore,
     activeButton,
-    soundEnabled,
     sequence: ctx.sequence,
     playerSequence: ctx.playerSequence,
     isNewHighScore: ctx.isNewHighScore,

@@ -256,24 +256,6 @@ describe("useGameEngine", () => {
     expect(clearTimeoutSpy).toHaveBeenCalled()
     clearTimeoutSpy.mockRestore()
   })
-
-  it("reflects preferencesStore soundEnabled reactively", () => {
-    const { result } = renderHook(() => useGameEngine())
-
-    expect(result.current.soundEnabled).toBe(true)
-
-    act(() => {
-      usePreferencesStore.getState().setSoundEnabled(false)
-    })
-
-    expect(result.current.soundEnabled).toBe(false)
-
-    act(() => {
-      usePreferencesStore.getState().setSoundEnabled(true)
-    })
-
-    expect(result.current.soundEnabled).toBe(true)
-  })
 })
 
 describe("useGameEngine - seeded RNG", () => {

@@ -2,6 +2,9 @@ import { create } from "zustand"
 
 import {
   SETTINGS_HAPTICS_ENABLED,
+  SETTINGS_NOTIFY_DAILY,
+  SETTINGS_NOTIFY_STREAK,
+  SETTINGS_NOTIFY_WINBACK,
   SETTINGS_SOUND_ENABLED,
   SETTINGS_SOUND_VOLUME,
 } from "@/config/storageKeys"
@@ -14,6 +17,12 @@ type PreferencesState = {
   setSoundEnabled: (value: boolean) => void
   volume: number
   setVolume: (value: number) => void
+  notifyDaily: boolean
+  setNotifyDaily: (value: boolean) => void
+  notifyStreak: boolean
+  setNotifyStreak: (value: boolean) => void
+  notifyWinback: boolean
+  setNotifyWinback: (value: boolean) => void
 }
 
 // Defaults to true unless MMKV holds the literal string "false".
@@ -55,5 +64,20 @@ export const usePreferencesStore = create<PreferencesState>((set) => ({
     const clamped = clampVolume(value)
     saveString(SETTINGS_SOUND_VOLUME, String(clamped))
     set({ volume: clamped })
+  },
+  notifyDaily: loadBoolPref(SETTINGS_NOTIFY_DAILY),
+  setNotifyDaily: (value) => {
+    saveString(SETTINGS_NOTIFY_DAILY, value ? "true" : "false")
+    set({ notifyDaily: value })
+  },
+  notifyStreak: loadBoolPref(SETTINGS_NOTIFY_STREAK),
+  setNotifyStreak: (value) => {
+    saveString(SETTINGS_NOTIFY_STREAK, value ? "true" : "false")
+    set({ notifyStreak: value })
+  },
+  notifyWinback: loadBoolPref(SETTINGS_NOTIFY_WINBACK),
+  setNotifyWinback: (value) => {
+    saveString(SETTINGS_NOTIFY_WINBACK, value ? "true" : "false")
+    set({ notifyWinback: value })
   },
 }))
