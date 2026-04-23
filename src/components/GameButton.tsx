@@ -89,14 +89,6 @@ export function GameButton({
   const translateY = targetCoords.top - baseCoords.top
   const borderRadius = getBorderRadius(position, buttonSize)
 
-  // Glow halo — a colored bloom layered behind the pad that pops in when active.
-  // Kept tight (8% inflation) so the halo reads as a rim of light around the
-  // pad rather than bleeding into neighbors. Uses a snappier spring than the
-  // pad body so the glow feels like a sharp pop while the pad settles softer.
-  const glowInflate = buttonSize * 0.08
-  const glowSize = buttonSize + glowInflate * 2
-  const glowRadius = buttonSize / 2 + glowInflate
-
   return (
     <EaseView
       animate={{
@@ -117,36 +109,17 @@ export function GameButton({
         { top: baseCoords.top, left: baseCoords.left, width: buttonSize, height: buttonSize },
       ]}
     >
-      <EaseView
-        animate={{
-          opacity: isActive ? 0.4 : 0,
-          scale: isActive ? 1 : 0.92,
-        }}
-        transition={{
-          default: { type: "spring", stiffness: 500, damping: 22, mass: 0.5 },
-          opacity: { type: "timing", duration: 120, easing: "easeOut" },
-        }}
-        style={[
-          styles.glow,
-          getGlowBorderRadius(position, glowRadius),
-          {
-            backgroundColor: displayActiveColor,
-            width: glowSize,
-            height: glowSize,
-            top: -glowInflate,
-            left: -glowInflate,
-          },
-        ]}
-      />
       <View
         testID={`btn-${color}${isActive ? "-active" : ""}`}
         style={[
           styles.pressable,
           buttonStyle,
           borderRadius,
-          // iOS: colored shadow adds depth on the active pad. Android's elevation
-          // shadow is always grey so this only visibly affects iOS — harmless on
-          // Android (shadowColor is a no-op when elevation is set).
+          // iOS: colored shadow radiating from the pad's exact quadrant shape
+          // gives a soft feathered glow on all sides — no sharp edges, no
+          // separate halo layer needed. Android ignores shadowColor and falls
+          // back to the grey elevation; accepted tradeoff vs. the visual cost
+          // of a solid overlay's right-angle corners into the cross-gap.
           { shadowColor: isActive ? displayActiveColor : UI_COLORS.shadowBlack },
           isActive && styles.pressableActive,
         ]}
@@ -161,27 +134,8 @@ export function GameButton({
   )
 }
 
-function getGlowBorderRadius(position: Position, radius: number) {
-  // Match the pad's outer corner curvature so the glow traces the pad's outer
-  // edge rather than extending a square halo into the center.
-  switch (position) {
-    case "topLeft":
-      return { borderTopLeftRadius: radius }
-    case "topRight":
-      return { borderTopRightRadius: radius }
-    case "bottomLeft":
-      return { borderBottomLeftRadius: radius }
-    case "bottomRight":
-      return { borderBottomRightRadius: radius }
-  }
-}
-
 const styles = StyleSheet.create({
   button: {
-    position: "absolute",
-  },
-  glow: {
-    pointerEvents: "none",
     position: "absolute",
   },
   pressable: {
@@ -193,7 +147,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4.65,
   },
   pressableActive: {
-    shadowOpacity: 0.45,
-    shadowRadius: 8,
+    // shadowOffset intentionally unset here so the pad inherits the default
+    // {0,4} offset above for subtle downward depth. Active state boosts
+    // opacity + radius to emit a soft feathered glow around all four sides,
+    // shape-matched to the pad's quadrant.
+    shadowOpacity: 0.75,
+    shadowRadius: 16,
   },
 })
