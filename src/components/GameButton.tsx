@@ -90,11 +90,10 @@ export function GameButton({
   const borderRadius = getBorderRadius(position, buttonSize)
 
   // Glow halo — a colored bloom layered behind the pad that pops in when active.
-  // Sized 20% beyond the pad so it reads as an aura, not an outline. Uses a
-  // snappier spring than the pad body so the glow feels like a sharp pop while
-  // the pad itself settles more softly. When inactive it scales down + fades so
-  // it doesn't bleed into neighbors during the ~1s between rounds.
-  const glowInflate = buttonSize * 0.2
+  // Kept tight (8% inflation) so the halo reads as a rim of light around the
+  // pad rather than bleeding into neighbors. Uses a snappier spring than the
+  // pad body so the glow feels like a sharp pop while the pad settles softer.
+  const glowInflate = buttonSize * 0.08
   const glowSize = buttonSize + glowInflate * 2
   const glowRadius = buttonSize / 2 + glowInflate
 
@@ -120,8 +119,8 @@ export function GameButton({
     >
       <EaseView
         animate={{
-          opacity: isActive ? 0.65 : 0,
-          scale: isActive ? 1 : 0.9,
+          opacity: isActive ? 0.4 : 0,
+          scale: isActive ? 1 : 0.92,
         }}
         transition={{
           default: { type: "spring", stiffness: 500, damping: 22, mass: 0.5 },
@@ -194,7 +193,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4.65,
   },
   pressableActive: {
-    shadowOpacity: 0.6,
-    shadowRadius: 12,
+    shadowOpacity: 0.45,
+    shadowRadius: 8,
   },
 })
