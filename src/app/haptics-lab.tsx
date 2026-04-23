@@ -6,12 +6,12 @@
  *
  * Why this exists: iterating on VICTORY_PATTERN / SPIRAL_PATTERN amplitude
  * + frequency + timing values via hot reload means triggering a full game
- * flow each tweak. This screen fires the patterns directly and lets you
- * hand-edit the JSON before playing to feel variations without rebuilding
- * or replaying rounds. When satisfied, copy the edited JSON back into
- * src/config/hapticPatterns.ts.
+ * flow each tweak. This screen fires the patterns directly — optionally
+ * paired with the corresponding jingle so you can validate haptic/audio
+ * sync — and lets you hand-edit the JSON before playing. When satisfied,
+ * copy the JSON back into src/config/hapticPatterns.ts.
  */
-import { useLayoutEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useNavigation } from "expo-router"
 import { useTranslation } from "react-i18next"
@@ -20,14 +20,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { PressableScale } from "@/components/PressableScale"
 import { SPIRAL_PATTERN, VICTORY_PATTERN } from "@/config/hapticPatterns"
+import { useAudioTones } from "@/hooks/useAudioTones"
+import { getColorMapForTheme } from "@/hooks/useGameEngine"
+import { useSoundPack } from "@/hooks/useSoundPack"
 import { useTheme } from "@/hooks/useTheme"
 import { UI_COLORS } from "@/theme/uiColors"
 
 export default function HapticsLabScreen() {
-  const { t: _t } = useTranslation()
+  useTranslation()
   const navigation = useNavigation()
   const insets = useSafeAreaInsets()
   const { activeTheme } = useTheme()
+  const { soundPack } = useSoundPack()
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: "Haptics Lab" })
@@ -35,6 +39,18 @@ export default function HapticsLabScreen() {
 
   const victoryComposer = usePatternComposer(VICTORY_PATTERN)
   const spiralComposer = usePatternComposer(SPIRAL_PATTERN)
+
+  const { initialize, cleanup, playHighScoreJingle, playGameOverJingle } = useAudioTones(
+    getColorMapForTheme(activeTheme),
+    soundPack.oscillatorType,
+  )
+
+  useEffect(() => {
+    initialize()
+    return () => {
+      cleanup()
+    }
+  }, [cleanup, initialize])
 
   return (
     <ScrollView
@@ -45,8 +61,10 @@ export default function HapticsLabScreen() {
       ]}
     >
       <Text style={[styles.intro, { color: activeTheme.secondaryTextColor }]}>
-        Edit the JSON and tap &ldquo;Parse &amp; Play&rdquo; to feel the variation. Copy the final
-        values back into <Text style={styles.mono}>src/config/hapticPatterns.ts</Text> when done.
+        Edit the JSON and tap &ldquo;Parse &amp; Play&rdquo; to feel the variation. Toggle{" "}
+        <Text style={styles.mono}>+ audio</Text> to fire the jingle alongside so you can validate
+        sync. Audio respects the app&rsquo;s sound toggle in Settings. Copy final values back into{" "}
+        <Text style={styles.mono}>src/config/hapticPatterns.ts</Text>.
       </Text>
 
       <PatternEditor
@@ -55,6 +73,7 @@ export default function HapticsLabScreen() {
         composer={victoryComposer}
         source={VICTORY_PATTERN}
         theme={activeTheme}
+        playJingle={playHighScoreJingle}
       />
 
       <PatternEditor
@@ -63,6 +82,7 @@ export default function HapticsLabScreen() {
         composer={spiralComposer}
         source={SPIRAL_PATTERN}
         theme={activeTheme}
+        playJingle={playGameOverJingle}
       />
 
       <View style={styles.presetGroup}>
@@ -99,25 +119,40 @@ type PatternEditorProps = {
   composer: ReturnType<typeof usePatternComposer>
   source: Pattern
   theme: ReturnType<typeof useTheme>["activeTheme"]
+  playJingle: () => void
 }
 
-function PatternEditor({ title, subtitle, composer, source, theme }: PatternEditorProps) {
+function PatternEditor({
+  title,
+  subtitle,
+  composer,
+  source,
+  theme,
+  playJingle,
+}: PatternEditorProps) {
   const [jsonText, setJsonText] = useState(() => JSON.stringify(source, null, 2))
   const [error, setError] = useState<string | null>(null)
+  const [audioOn, setAudioOn] = useState(true)
   const lastPlayedRef = useRef<Pattern>(source)
 
-  function handlePlaySource() {
-    composer.parse(source)
-    lastPlayedRef.current = source
+  function fireHapticAndMaybeAudio(pattern: Pattern) {
+    composer.parse(pattern)
+    lastPlayedRef.current = pattern
+    // Fire both in the same JS tick so haptic and audio start together —
+    // same shape as GameScreen's `playHighScoreJingle(); haptics.play(...)`
+    // effect, so the lab feel matches production.
     composer.play()
+    if (audioOn) playJingle()
+  }
+
+  function handlePlaySource() {
+    fireHapticAndMaybeAudio(source)
   }
 
   function handleParseAndPlay() {
     try {
       const parsed = JSON.parse(jsonText) as Pattern
-      composer.parse(parsed)
-      lastPlayedRef.current = parsed
-      composer.play()
+      fireHapticAndMaybeAudio(parsed)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid JSON")
@@ -133,6 +168,28 @@ function PatternEditor({ title, subtitle, composer, source, theme }: PatternEdit
     <View style={[styles.patternBlock, { borderColor: theme.borderColor }]}>
       <Text style={[styles.patternTitle, { color: theme.textColor }]}>{title}</Text>
       <Text style={[styles.patternSubtitle, { color: theme.secondaryTextColor }]}>{subtitle}</Text>
+
+      <View style={styles.audioToggleRow}>
+        <PressableScale
+          onPress={() => setAudioOn((v) => !v)}
+          style={[
+            styles.audioToggle,
+            {
+              backgroundColor: audioOn ? theme.accentColor : theme.surfaceColor,
+              borderColor: theme.borderColor,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.audioToggleLabel,
+              { color: audioOn ? UI_COLORS.white : theme.secondaryTextColor },
+            ]}
+          >
+            {audioOn ? "+ audio: ON" : "+ audio: OFF"}
+          </Text>
+        </PressableScale>
+      </View>
 
       <View style={styles.buttonRow}>
         <PressableScale
@@ -180,6 +237,20 @@ function PatternEditor({ title, subtitle, composer, source, theme }: PatternEdit
 }
 
 const styles = StyleSheet.create({
+  audioToggle: {
+    borderRadius: 6,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  audioToggleLabel: {
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 12,
+  },
+  audioToggleRow: {
+    alignItems: "flex-start",
+    marginBottom: 8,
+  },
   buttonRow: {
     flexDirection: "row",
     flexWrap: "wrap",
