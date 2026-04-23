@@ -119,7 +119,6 @@ export function GameButton({
       ]}
     >
       <EaseView
-        pointerEvents="none"
         animate={{
           opacity: isActive ? 0.65 : 0,
           scale: isActive ? 1 : 0.9,
@@ -183,6 +182,7 @@ const styles = StyleSheet.create({
     position: "absolute",
   },
   glow: {
+    pointerEvents: "none",
     position: "absolute",
   },
   pressable: {

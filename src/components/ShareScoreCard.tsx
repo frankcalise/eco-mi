@@ -21,10 +21,36 @@ export const ShareScoreCard = forwardRef<ViewShot, ShareScoreCardProps>(function
 ) {
   const { t } = useTranslation()
 
+  // The 4 pad colors in their canonical screen positions (red=TL, blue=TR,
+  // green=BL, yellow=BR). Used for both the logo dots and the per-digit score
+  // split so the card reads as "Eco Mi" even at thumbnail size.
+  const padColors = [
+    theme.buttonColors.red.color,
+    theme.buttonColors.blue.color,
+    theme.buttonColors.green.color,
+    theme.buttonColors.yellow.color,
+  ]
+
+  const scoreDigits = String(score).split("")
+
   return (
     <ViewShot ref={ref} options={{ format: "png", quality: 1.0 }} style={styles.offscreen}>
       <View style={[styles.card, { backgroundColor: theme.backgroundColor }]}>
-        <Text style={[styles.appName, { color: theme.secondaryTextColor }]}>Eco Mi</Text>
+        <View style={styles.header}>
+          {/* 2×2 pad-dot mark pairs with "ECO MI" so the game's pad identity
+            is visible at feed-thumbnail scale even if the wordmark isn't. */}
+          <View style={styles.logoMark}>
+            <View style={styles.logoRow}>
+              <View style={[styles.logoDot, { backgroundColor: padColors[0] }]} />
+              <View style={[styles.logoDot, { backgroundColor: padColors[1] }]} />
+            </View>
+            <View style={styles.logoRow}>
+              <View style={[styles.logoDot, { backgroundColor: padColors[2] }]} />
+              <View style={[styles.logoDot, { backgroundColor: padColors[3] }]} />
+            </View>
+          </View>
+          <Text style={[styles.appName, { color: theme.secondaryTextColor }]}>Eco Mi</Text>
+        </View>
 
         {isNewHighScore && (
           <View style={styles.badge}>
@@ -35,7 +61,16 @@ export const ShareScoreCard = forwardRef<ViewShot, ShareScoreCardProps>(function
           </View>
         )}
 
-        <Text style={[styles.scoreValue, { color: theme.textColor }]}>{score}</Text>
+        {/* Per-digit pad-color split. Cycles red → blue → green → yellow on
+          scores longer than 4 digits so the palette signature survives at
+          any score length. */}
+        <Text style={[styles.scoreValue, { color: theme.textColor }]}>
+          {scoreDigits.map((digit, i) => (
+            <Text key={i} style={{ color: padColors[i % padColors.length] }}>
+              {digit}
+            </Text>
+          ))}
+        </Text>
         <Text style={[styles.scoreLabel, { color: theme.secondaryTextColor }]}>
           {t("game:score")}
         </Text>
@@ -71,7 +106,6 @@ const styles = StyleSheet.create({
     fontFamily: "Oxanium-Bold",
     fontSize: 14,
     letterSpacing: 2,
-    marginBottom: 8,
     textTransform: "uppercase",
   },
   badge: {
@@ -114,6 +148,24 @@ const styles = StyleSheet.create({
     height: 24,
     marginHorizontal: 16,
     width: 1,
+  },
+  header: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 8,
+  },
+  logoDot: {
+    borderRadius: 2,
+    height: 7,
+    width: 7,
+  },
+  logoMark: {
+    gap: 2,
+  },
+  logoRow: {
+    flexDirection: "row",
+    gap: 2,
   },
   offscreen: {
     left: -9999,

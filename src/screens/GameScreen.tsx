@@ -61,7 +61,6 @@ function WrongFlashOverlay({ gameSize }: { gameSize: number }) {
   const opacity = phase === 0 ? 0.45 : phase === 1 ? 0.1 : phase === 2 ? 0.45 : 0
   return (
     <EaseView
-      pointerEvents="none"
       style={[gameScreenStyles.wrongFlashOverlay, { borderRadius: gameSize / 2 }]}
       initialAnimate={{ opacity: 0 }}
       animate={{ opacity }}
@@ -74,6 +73,7 @@ const gameScreenStyles = StyleSheet.create({
   wrongFlashOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: UI_COLORS.red500,
+    pointerEvents: "none",
     zIndex: 10,
   },
 })
