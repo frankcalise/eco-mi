@@ -22,16 +22,14 @@ export const ShareScoreCard = forwardRef<ViewShot, ShareScoreCardProps>(function
   const { t } = useTranslation()
 
   // The 4 pad colors in their canonical screen positions (red=TL, blue=TR,
-  // green=BL, yellow=BR). Used for both the logo dots and the per-digit score
-  // split so the card reads as "Eco Mi" even at thumbnail size.
+  // green=BL, yellow=BR). Used for the 2×2 logo dots so the game's pad
+  // identity is visible at feed-thumbnail scale even when text is not.
   const padColors = [
     theme.buttonColors.red.color,
     theme.buttonColors.blue.color,
     theme.buttonColors.green.color,
     theme.buttonColors.yellow.color,
   ]
-
-  const scoreDigits = String(score).split("")
 
   return (
     <ViewShot ref={ref} options={{ format: "png", quality: 1.0 }} style={styles.offscreen}>
@@ -61,16 +59,7 @@ export const ShareScoreCard = forwardRef<ViewShot, ShareScoreCardProps>(function
           </View>
         )}
 
-        {/* Per-digit pad-color split. Cycles red → blue → green → yellow on
-          scores longer than 4 digits so the palette signature survives at
-          any score length. */}
-        <Text style={[styles.scoreValue, { color: theme.textColor }]}>
-          {scoreDigits.map((digit, i) => (
-            <Text key={i} style={{ color: padColors[i % padColors.length] }}>
-              {digit}
-            </Text>
-          ))}
-        </Text>
+        <Text style={[styles.scoreValue, { color: theme.textColor }]}>{score}</Text>
         <Text style={[styles.scoreLabel, { color: theme.secondaryTextColor }]}>
           {t("game:score")}
         </Text>
