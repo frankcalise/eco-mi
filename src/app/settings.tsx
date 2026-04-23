@@ -97,13 +97,25 @@ export default function SettingsScreen() {
   const [restoreMessage, setRestoreMessage] = useState<string | null>(null)
   const [poppingTheme, setPoppingTheme] = useState<string | null>(null)
 
+  const transientTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
+  function scheduleTransient(fn: () => void, ms: number) {
+    const id = setTimeout(() => {
+      transientTimersRef.current.delete(id)
+      fn()
+    }, ms)
+    transientTimersRef.current.add(id)
+  }
+
   const colorMap = buildColorMap(activeTheme)
   const { playPreview, initialize, cleanup } = useAudioTones(colorMap, soundPack.oscillatorType)
 
   useEffect(() => {
     initialize()
+    const timers = transientTimersRef.current
     return () => {
       cleanup()
+      for (const id of timers) clearTimeout(id)
+      timers.clear()
     }
   }, [])
 
@@ -242,11 +254,11 @@ export default function SettingsScreen() {
                     haptics.play("menuTap")
                     if (!soundEnabled) {
                       setSoundHint(true)
-                      setTimeout(() => setSoundHint(false), 2000)
+                      scheduleTransient(() => setSoundHint(false), 2000)
                     }
                     playPreview(pack.oscillatorType)
                     setPoppingSoundPack(pack.id)
-                    setTimeout(() => setPoppingSoundPack(null), 150)
+                    scheduleTransient(() => setPoppingSoundPack(null), 150)
                     if (isOwned) {
                       setSoundPack(pack.id)
                     } else {
@@ -334,7 +346,7 @@ export default function SettingsScreen() {
                     }
                     haptics.play("menuTap")
                     setPoppingTheme(id)
-                    setTimeout(() => setPoppingTheme(null), 150)
+                    scheduleTransient(() => setPoppingTheme(null), 150)
                     if (isOwned) {
                       setTheme(id)
                     } else {
@@ -472,7 +484,7 @@ export default function SettingsScreen() {
             onPress={async () => {
               const success = await restorePurchases()
               setRestoreMessage(success ? t("game:restoreSuccess") : t("game:restoreFailed"))
-              setTimeout(() => setRestoreMessage(null), 3000)
+              scheduleTransient(() => setRestoreMessage(null), 3000)
             }}
           >
             <Ionicons name="refresh" size={18} color={activeTheme.textColor} />

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { REVIEW_LAST_PROMPT_DATE, STATS_GAMES_PLAYED } from "@/config/storageKeys"
 import { loadString, saveString } from "@/utils/storage"
@@ -19,6 +19,12 @@ export function useStoreReview(): UseStoreReviewReturn {
   const [showReviewPrompt, setShowReviewPrompt] = useState(false)
   const [reviewTrigger, setReviewTrigger] = useState("")
   const delayTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (delayTimeout.current) clearTimeout(delayTimeout.current)
+    }
+  }, [])
 
   function isWithinCooldown(): boolean {
     const lastPrompt = loadString(REVIEW_LAST_PROMPT_DATE)

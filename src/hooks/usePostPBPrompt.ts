@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { POST_PB_LAST_PROMPT_DATE, STATS_GAMES_PLAYED } from "@/config/storageKeys"
 import { loadString, saveString } from "@/utils/storage"
@@ -16,6 +16,12 @@ type UsePostPBPromptReturn = {
 export function usePostPBPrompt(): UsePostPBPromptReturn {
   const [showPostPBPrompt, setShowPostPBPrompt] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
 
   function triggerPostPBCheck() {
     const gamesPlayed = parseInt(loadString(STATS_GAMES_PLAYED) ?? "0", 10)
