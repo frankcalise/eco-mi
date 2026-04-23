@@ -95,6 +95,8 @@ export function GameScreen() {
   gameStateRef.current = gameState
   const resetGameRef = useRef(resetGame)
   resetGameRef.current = resetGame
+  const handleContinueRef = useRef<() => Promise<void>>(() => Promise.resolve())
+  const clearPendingActionRef = useRef<() => void>(() => {})
 
   /**
    * After /game-over pops, we should never stay on the main screen with the engine still in
@@ -122,15 +124,22 @@ export function GameScreen() {
 
   const pendingAction = usePendingActionStore((s) => s.action)
   const clearPendingAction = usePendingActionStore((s) => s.clear)
+  handleContinueRef.current = handleContinue
+  clearPendingActionRef.current = clearPendingAction
 
+  // Mount-once semantics intentional: we react to pendingAction changes only, and deliberately
+  // call through refs so we always invoke the current render's resetGame / handleContinue /
+  // clearPendingAction. Capturing them directly would freeze the mount-time identities — e.g.
+  // resetGame from useGameEngine is recreated on each render, so a stale capture would reset
+  // a detached engine snapshot and leave the live one untouched.
   useEffect(() => {
     if (!pendingAction) return
-    clearPendingAction()
+    clearPendingActionRef.current()
     if (pendingAction === "play_again") {
       queuedAutoStart.current = true
-      resetGame()
-    } else if (pendingAction === "continue") handleContinue()
-    else if (pendingAction === "main_menu") resetGame()
+      resetGameRef.current()
+    } else if (pendingAction === "continue") void handleContinueRef.current()
+    else if (pendingAction === "main_menu") resetGameRef.current()
   }, [pendingAction])
 
   const pendingMode = usePendingModeStore((s) => s.pendingMode)
