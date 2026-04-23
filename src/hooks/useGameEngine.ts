@@ -533,7 +533,17 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   }
 
   function handleButtonRelease(color: Color) {
-    if (state.value !== "waiting") return
+    if (state.value !== "waiting") {
+      // State moved on between touch and release (backgrounding, INPUT_TIMEOUT, etc.).
+      // Release transient press state so the pad doesn't stay lit/audible/locked.
+      if (inputLocked.current) {
+        noteOff(color)
+        setActiveButton(null)
+        buttonPressStartTime.current = null
+        inputLocked.current = false
+      }
+      return
+    }
     const toneDuration = getToneDuration(ctx.level)
     const pressDuration = buttonPressStartTime.current
       ? Date.now() - buttonPressStartTime.current
