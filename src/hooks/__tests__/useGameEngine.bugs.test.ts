@@ -1,5 +1,8 @@
 import { renderHook, act } from "@testing-library/react-native"
 
+import { HIGH_SCORE_PREFIX } from "@/config/storageKeys"
+import { saveString } from "@/utils/storage"
+
 import { useGameEngine, colors } from "../useGameEngine"
 
 // Hoisted mock fns so regression tests below can assert call counts on
@@ -55,6 +58,7 @@ beforeEach(() => {
   jest.useFakeTimers()
   mockSilenceAll.mockClear()
   mockScheduleSequence.mockClear()
+  ;(saveString as jest.Mock).mockClear()
 })
 
 afterEach(() => {
@@ -380,5 +384,44 @@ describe("useGameEngine — rewarded continue replay", () => {
 
     expect(mockScheduleSequence).not.toHaveBeenCalled()
     expect(result.current.gameState).toBe("idle")
+  })
+})
+
+// Regression coverage for BACKLOG "handleGameOverSideEffects can double-fire
+// saveHighScore / saveDailyResult". The function is called from both endGame
+// and the non-timed wrong-input branch of handleButtonRelease. gameResultRecorded
+// guards the inner recordGameResult call inside the machine, but saveHighScore
+// and saveDailyResult write paths have no such guard. Today's code only reaches
+// the function once per game, but this test codifies the invariant so the
+// architectural refactor (single state-watching effect) can't regress it.
+describe("useGameEngine — high-score persistence guard", () => {
+  function countHighScoreWrites(): number {
+    return (saveString as jest.Mock).mock.calls.filter(([key]: [string]) =>
+      key.startsWith(HIGH_SCORE_PREFIX),
+    ).length
+  }
+
+  it("saveString(highScoreKey) fires at most once across a normal game-over flow", () => {
+    const { result } = startScoreAndLose()
+
+    expect(result.current.gameState).toBe("gameover")
+    expect(result.current.score).toBe(10)
+    // Score 10 beats the default highScore 0 → one write expected.
+    expect(countHighScoreWrites()).toBe(1)
+  })
+
+  it("does not re-persist the high score if endGame is called after game-over", () => {
+    const { result } = startScoreAndLose()
+
+    expect(result.current.gameState).toBe("gameover")
+    const writesAfterLoss = countHighScoreWrites()
+
+    // endGame guards at useGameEngine.ts:480 against states outside
+    // showing/waiting/advancing; invoking it in gameover should be a no-op.
+    act(() => {
+      result.current.endGame()
+    })
+
+    expect(countHighScoreWrites()).toBe(writesAfterLoss)
   })
 })

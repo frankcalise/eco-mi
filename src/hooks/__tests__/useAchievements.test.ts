@@ -1,5 +1,6 @@
 import { renderHook, act } from "@testing-library/react-native"
 
+import * as storageModule from "@/utils/storage"
 import { storage } from "@/utils/storage"
 
 import { useAchievements } from "../useAchievements"
@@ -149,5 +150,18 @@ describe("useAchievements", () => {
     rerender({})
 
     expect(result.current.isUnlocked("first_game")).toBe(true)
+  })
+
+  // NOTE: `.failing` — this test asserts the *fixed* behavior. Today the hook
+  // reads storage twice on mount (useState lazy init + redundant useEffect),
+  // so the assertion fails. When the redundant useEffect is removed, the test
+  // will start passing and Jest will flag `.failing` as wrong — at that point
+  // convert this back to a regular `it(...)`. Tracks BACKLOG "useAchievements
+  // runs initial load twice on mount".
+  it.failing("loads persisted achievements exactly once per mount", () => {
+    const loadSpy = jest.spyOn(storageModule, "load")
+    renderHook(() => useAchievements())
+    expect(loadSpy).toHaveBeenCalledTimes(1)
+    loadSpy.mockRestore()
   })
 })

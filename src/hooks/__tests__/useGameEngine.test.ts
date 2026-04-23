@@ -592,3 +592,144 @@ describe("useGameEngine - isNewHighScore", () => {
     expect(result.current.isNewHighScore).toBe(false)
   })
 })
+
+describe("useGameEngine - reverse mode", () => {
+  const originalEnv = process.env.EXPO_PUBLIC_TEST_SEED
+
+  beforeEach(() => {
+    // Seeded RNG so the sequence is deterministic across rounds.
+    // Seed chosen so round 2's two-item sequence has distinct first/last colors
+    // (needed by the "forward order fails in reverse" test below).
+    process.env.EXPO_PUBLIC_TEST_SEED = "42"
+  })
+
+  afterEach(() => {
+    if (originalEnv === undefined) delete process.env.EXPO_PUBLIC_TEST_SEED
+    else process.env.EXPO_PUBLIC_TEST_SEED = originalEnv
+  })
+
+  it("accepts input in reverse order for two consecutive rounds", () => {
+    const { result } = renderHook(() => useGameEngine())
+
+    act(() => {
+      result.current.setMode("reverse")
+    })
+    expect(result.current.mode).toBe("reverse")
+    act(() => {
+      result.current.startGame()
+    })
+    expect(result.current.mode).toBe("reverse")
+    act(() => {
+      jest.advanceTimersByTime(500)
+    })
+
+    // Round 1: sequence is [A]; reverse of 1-item sequence = same input.
+    const round1Seq = [...result.current.sequence]
+    expect(round1Seq).toHaveLength(1)
+
+    act(() => {
+      jest.advanceTimersByTime(2000)
+    })
+    expect(result.current.gameState).toBe("waiting")
+
+    act(() => {
+      result.current.handleButtonTouch(round1Seq[0])
+    })
+    act(() => {
+      jest.advanceTimersByTime(600)
+    })
+    act(() => {
+      result.current.handleButtonRelease(round1Seq[0])
+    })
+
+    expect(result.current.score).toBe(10)
+    expect(result.current.level).toBe(2)
+
+    // Round 2: sequence is [A, B]; reverse mode expects tap order B then A.
+    act(() => {
+      jest.advanceTimersByTime(3000)
+    })
+    const round2Seq = [...result.current.sequence]
+    expect(round2Seq).toHaveLength(2)
+
+    act(() => {
+      jest.advanceTimersByTime(3000)
+    })
+    expect(result.current.gameState).toBe("waiting")
+
+    const reversed = [...round2Seq].reverse()
+    for (const color of reversed) {
+      act(() => {
+        result.current.handleButtonTouch(color)
+      })
+      act(() => {
+        jest.advanceTimersByTime(600)
+      })
+      act(() => {
+        result.current.handleButtonRelease(color)
+      })
+    }
+
+    // Round 1 awarded 10 (1-item), round 2 awarded 20 (2-item) → total 30.
+    expect(result.current.score).toBe(30)
+    expect(result.current.level).toBe(3)
+    expect(result.current.gameState).not.toBe("gameover")
+  })
+
+  it("rejects input in forward order when mode is reverse (sequence length >= 2)", () => {
+    const { result } = renderHook(() => useGameEngine())
+
+    act(() => {
+      result.current.setMode("reverse")
+    })
+    act(() => {
+      result.current.startGame()
+    })
+    act(() => {
+      jest.advanceTimersByTime(500)
+    })
+
+    // Clear round 1 (1-item sequence; reverse == forward so ambiguous).
+    const round1Seq = [...result.current.sequence]
+    act(() => {
+      jest.advanceTimersByTime(2000)
+    })
+    act(() => {
+      result.current.handleButtonTouch(round1Seq[0])
+    })
+    act(() => {
+      jest.advanceTimersByTime(600)
+    })
+    act(() => {
+      result.current.handleButtonRelease(round1Seq[0])
+    })
+
+    // Round 2 has a 2-item sequence — tapping in FORWARD order must fail.
+    act(() => {
+      jest.advanceTimersByTime(3000)
+    })
+    const round2Seq = [...result.current.sequence]
+    expect(round2Seq).toHaveLength(2)
+    expect(result.current.mode).toBe("reverse")
+    // This assertion is load-bearing for the reverse/forward distinction —
+    // if seq[0] === seq[1], forward and reverse taps are indistinguishable.
+    // If it ever trips, swap EXPO_PUBLIC_TEST_SEED for a seed that splits.
+    expect(round2Seq[0]).not.toBe(round2Seq[1])
+    act(() => {
+      jest.advanceTimersByTime(3000)
+    })
+
+    // Forward order: seq[0] first. Reverse-mode expects seq[1] first.
+    act(() => {
+      result.current.handleButtonTouch(round2Seq[0])
+    })
+    act(() => {
+      jest.advanceTimersByTime(600)
+    })
+    act(() => {
+      result.current.handleButtonRelease(round2Seq[0])
+    })
+
+    expect(result.current.gameState).toBe("gameover")
+  })
+})
