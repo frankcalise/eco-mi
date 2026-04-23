@@ -89,6 +89,15 @@ export function GameButton({
   const translateY = targetCoords.top - baseCoords.top
   const borderRadius = getBorderRadius(position, buttonSize)
 
+  // Glow halo — a colored bloom layered behind the pad that pops in when active.
+  // Sized 20% beyond the pad so it reads as an aura, not an outline. Uses a
+  // snappier spring than the pad body so the glow feels like a sharp pop while
+  // the pad itself settles more softly. When inactive it scales down + fades so
+  // it doesn't bleed into neighbors during the ~1s between rounds.
+  const glowInflate = buttonSize * 0.2
+  const glowSize = buttonSize + glowInflate * 2
+  const glowRadius = buttonSize / 2 + glowInflate
+
   return (
     <EaseView
       animate={{
@@ -109,9 +118,40 @@ export function GameButton({
         { top: baseCoords.top, left: baseCoords.left, width: buttonSize, height: buttonSize },
       ]}
     >
+      <EaseView
+        pointerEvents="none"
+        animate={{
+          opacity: isActive ? 0.65 : 0,
+          scale: isActive ? 1 : 0.9,
+        }}
+        transition={{
+          default: { type: "spring", stiffness: 500, damping: 22, mass: 0.5 },
+          opacity: { type: "timing", duration: 120, easing: "easeOut" },
+        }}
+        style={[
+          styles.glow,
+          getGlowBorderRadius(position, glowRadius),
+          {
+            backgroundColor: displayActiveColor,
+            width: glowSize,
+            height: glowSize,
+            top: -glowInflate,
+            left: -glowInflate,
+          },
+        ]}
+      />
       <View
         testID={`btn-${color}${isActive ? "-active" : ""}`}
-        style={[styles.pressable, buttonStyle, borderRadius]}
+        style={[
+          styles.pressable,
+          buttonStyle,
+          borderRadius,
+          // iOS: colored shadow adds depth on the active pad. Android's elevation
+          // shadow is always grey so this only visibly affects iOS — harmless on
+          // Android (shadowColor is a no-op when elevation is set).
+          { shadowColor: isActive ? displayActiveColor : UI_COLORS.shadowBlack },
+          isActive && styles.pressableActive,
+        ]}
         accessible
         accessibilityLabel={color}
         accessibilityRole="button"
@@ -123,17 +163,38 @@ export function GameButton({
   )
 }
 
+function getGlowBorderRadius(position: Position, radius: number) {
+  // Match the pad's outer corner curvature so the glow traces the pad's outer
+  // edge rather than extending a square halo into the center.
+  switch (position) {
+    case "topLeft":
+      return { borderTopLeftRadius: radius }
+    case "topRight":
+      return { borderTopRightRadius: radius }
+    case "bottomLeft":
+      return { borderBottomLeftRadius: radius }
+    case "bottomRight":
+      return { borderBottomRightRadius: radius }
+  }
+}
+
 const styles = StyleSheet.create({
   button: {
+    position: "absolute",
+  },
+  glow: {
     position: "absolute",
   },
   pressable: {
     borderRadius: 20,
     elevation: 8,
     flex: 1,
-    shadowColor: UI_COLORS.shadowBlack,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
+  },
+  pressableActive: {
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
   },
 })
