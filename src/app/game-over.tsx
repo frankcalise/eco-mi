@@ -127,7 +127,10 @@ export default function GameOverScreen() {
   const inputRef0 = useRef<TextInput>(null)
   const inputRef1 = useRef<TextInput>(null)
   const inputRef2 = useRef<TextInput>(null)
-  const inputRefs = [inputRef0, inputRef1, inputRef2]
+  // Wrap in useRef(...).current so the array identity is stable across renders.
+  // The three ref objects themselves are already stable; this prevents a new
+  // array allocation on every render that the React Compiler can't dedupe.
+  const inputRefs = useRef([inputRef0, inputRef1, inputRef2]).current
 
   const allFilled = letters.every((l) => l.length === 1)
   const showInitialsInput = needsInitials && !initialsSaved
