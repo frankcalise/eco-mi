@@ -103,3 +103,10 @@ web-build/
 
 distbuild-*.aab
 application-*.aab
+
+# Python
+__pycache__/
+*.pyc
+
+# Claude Code agent worktrees
+.claude/worktrees/
