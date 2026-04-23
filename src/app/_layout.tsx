@@ -113,10 +113,16 @@ function Root() {
         }}
       />
       <Stack.Screen name="tracking" options={{ animation: "fade" }} />
-      <Stack.Screen name="achievements" options={secondaryStackScreenOptions} />
-      <Stack.Screen name="stats" options={secondaryStackScreenOptions} />
-      <Stack.Screen name="leaderboard" options={secondaryStackScreenOptions} />
-      <Stack.Screen name="settings" options={secondaryStackScreenOptions} />
+      {/* `as any` load-bearing: expo-router bundles its own copy of
+        @react-navigation/native-stack, so the top-level NativeStackNavigationOptions
+        type is nominally-distinct from the one expo-router's Stack.Screen accepts.
+        Removing the cast produces TS2322 on each line. Resolvable only by aligning
+        the package resolution (overrides/resolutions) or deep-importing the
+        expo-router-internal type path — both more fragile than the cast. */}
+      <Stack.Screen name="achievements" options={secondaryStackScreenOptions as any} />
+      <Stack.Screen name="stats" options={secondaryStackScreenOptions as any} />
+      <Stack.Screen name="leaderboard" options={secondaryStackScreenOptions as any} />
+      <Stack.Screen name="settings" options={secondaryStackScreenOptions as any} />
       <Stack.Screen name="game-over" options={{ animation: "fade", gestureEnabled: false }} />
       <Stack.Screen
         name="mode-select"
