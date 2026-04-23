@@ -39,6 +39,45 @@ import { useBreakpoints } from "@/utils/layoutBreakpoints"
 import { scheduleModePickerPulseSequence } from "@/utils/modePickerPulse"
 import { loadString, saveString } from "@/utils/storage"
 
+// Two-beat wrong-input flash. The previous single-beat at opacity 0.25 over
+// 100ms was too polite for a fail moment — reads as "hmm" rather than "ouch".
+// This schedules a 4-phase opacity pattern (0 → 0.45 → 0.1 → 0.45 → 0) timed
+// to fit inside the engine's 300ms wrongFlash window so mistakes actually
+// sting. EaseView animates between target values each time `animate.opacity`
+// changes; scheduling via local state lets us keyframe without leaving the
+// react-native-ease API.
+function WrongFlashOverlay({ gameSize }: { gameSize: number }) {
+  const [phase, setPhase] = useState<0 | 1 | 2 | 3>(0)
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase(1), 70)
+    const t2 = setTimeout(() => setPhase(2), 140)
+    const t3 = setTimeout(() => setPhase(3), 210)
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+      clearTimeout(t3)
+    }
+  }, [])
+  const opacity = phase === 0 ? 0.45 : phase === 1 ? 0.1 : phase === 2 ? 0.45 : 0
+  return (
+    <EaseView
+      pointerEvents="none"
+      style={[gameScreenStyles.wrongFlashOverlay, { borderRadius: gameSize / 2 }]}
+      initialAnimate={{ opacity: 0 }}
+      animate={{ opacity }}
+      transition={{ default: { type: "timing", duration: 70, easing: "easeOut" } }}
+    />
+  )
+}
+
+const gameScreenStyles = StyleSheet.create({
+  wrongFlashOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: UI_COLORS.red500,
+    zIndex: 10,
+  },
+})
+
 export function GameScreen() {
   const { t } = useTranslation()
   const router = useRouter()
@@ -526,14 +565,7 @@ export function GameScreen() {
 
   const board = (
     <View style={styles.gameBoard}>
-      {wrongFlash && (
-        <EaseView
-          style={[styles.wrongFlashOverlay, { borderRadius: gameSize / 2 }]}
-          initialAnimate={{ opacity: 0 }}
-          animate={{ opacity: 0.25 }}
-          transition={{ default: { type: "timing", duration: 100 } }}
-        />
-      )}
+      {wrongFlash && <WrongFlashOverlay gameSize={gameSize} />}
       <View style={gameContainerStyle}>
         {buttonPositions.map((color, index) => (
           <GameButton
@@ -1167,10 +1199,5 @@ const styles = StyleSheet.create({
     left: 0,
     position: "absolute",
     top: 0,
-  },
-  wrongFlashOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: UI_COLORS.red500,
-    zIndex: 10,
   },
 })
