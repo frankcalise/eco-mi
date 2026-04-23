@@ -20,6 +20,7 @@ import { stackHeaderOptionsFromTheme } from "@/navigation/secondaryStackHeader"
 import { usePreferencesStore } from "@/stores/preferencesStore"
 import { UI_COLORS } from "@/theme/uiColors"
 import { useAnalytics } from "@/utils/analytics"
+import { getReadableForeground } from "@/utils/color"
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { Host, Slider: NativeSlider } =
@@ -354,9 +355,8 @@ export default function SettingsScreen() {
                     {!isOwned && (
                       <Ionicons
                         name="lock-closed"
-                        size={12}
-                        color="rgba(255, 255, 255, 0.7)"
-                        style={styles.lockIconMedium}
+                        size={14}
+                        color={getReadableForeground(gameThemes[id].buttonColors.red.color)}
                       />
                     )}
                   </EaseView>
@@ -517,9 +517,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 6,
     textAlign: "center",
-  },
-  lockIconMedium: {
-    opacity: 0.7,
   },
   removeAdsBtn: {
     alignItems: "center",
