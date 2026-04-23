@@ -7,6 +7,7 @@ import {
   AdEventType,
   TestIds,
   AdsConsent,
+  AdsConsentStatus,
 } from "react-native-google-mobile-ads"
 
 import {
@@ -25,6 +26,7 @@ const GRACE_PERIOD_SESSIONS = 3
 const MIN_GAP_MS = 3 * 60 * 1000
 const MIN_ROUNDS_TO_SHOW = 3
 const GAMES_BETWEEN_ADS = 2
+const REWARDED_TIMEOUT_MS = 60 * 1000
 
 function getInterstitialAdUnitId(): string {
   if (__DEV__) return TestIds.INTERSTITIAL
@@ -64,18 +66,49 @@ export function useAds(): UseAdsReturn {
   const rewardedLoadedRef = useRef(false)
   const gamesThisSessionRef = useRef(0)
   const rewardedShowingRef = useRef(false)
+  const interstitialUnsubsRef = useRef<(() => void)[]>([])
+  const rewardedUnsubsRef = useRef<(() => void)[]>([])
+  // Default to non-personalized until consent resolves — safe default for EEA/UK/CH.
+  const npaRef = useRef(true)
 
   async function requestConsent() {
     try {
       await AdsConsent.requestInfoUpdate()
       await AdsConsent.loadAndShowConsentFormIfRequired()
+      const info = await AdsConsent.getConsentInfo()
+      if (info.status === AdsConsentStatus.NOT_REQUIRED) {
+        // Outside EEA/UK/CH — personalized ads permitted by default.
+        npaRef.current = false
+      } else if (info.status === AdsConsentStatus.OBTAINED) {
+        // TCF purpose 3 (ad personalization) and 4 (ad profile) must both be granted.
+        try {
+          const purposes = await AdsConsent.getPurposeConsents()
+          npaRef.current = !(purposes.charAt(2) === "1" && purposes.charAt(3) === "1")
+        } catch {
+          npaRef.current = true
+        }
+      } else {
+        // REQUIRED but not OBTAINED, or UNKNOWN — serve non-personalized.
+        npaRef.current = true
+      }
     } catch {
-      // Consent errors should not block the app from functioning.
-      // The form may not be configured in AdMob, or the device may be
-      // in a region where consent is not required.
+      // Consent errors should not block the app from functioning. Keep NPA = true,
+      // which is the conservative, policy-safe default for EEA/UK/CH.
     } finally {
       setConsentReady(true)
     }
+  }
+
+  function teardownInterstitial() {
+    for (const unsub of interstitialUnsubsRef.current) unsub()
+    interstitialUnsubsRef.current = []
+    interstitialRef.current = null
+  }
+
+  function teardownRewarded() {
+    for (const unsub of rewardedUnsubsRef.current) unsub()
+    rewardedUnsubsRef.current = []
+    rewardedRef.current = null
   }
 
   useEffect(() => {
@@ -86,8 +119,8 @@ export function useAds(): UseAdsReturn {
     }
     init()
     return () => {
-      interstitialRef.current = null
-      rewardedRef.current = null
+      teardownInterstitial()
+      teardownRewarded()
     }
   }, [])
 
@@ -95,21 +128,24 @@ export function useAds(): UseAdsReturn {
     const adUnitId = getInterstitialAdUnitId()
     if (!adUnitId) return
 
-    const interstitial = InterstitialAd.createForAdRequest(adUnitId)
+    teardownInterstitial()
+    const interstitial = InterstitialAd.createForAdRequest(adUnitId, {
+      requestNonPersonalizedAdsOnly: npaRef.current,
+    })
     interstitialRef.current = interstitial
 
-    interstitial.addAdEventListener(AdEventType.LOADED, () => {
-      loadedRef.current = true
-    })
-
-    interstitial.addAdEventListener(AdEventType.CLOSED, () => {
-      loadedRef.current = false
-      loadInterstitial()
-    })
-
-    interstitial.addAdEventListener(AdEventType.ERROR, () => {
-      loadedRef.current = false
-    })
+    interstitialUnsubsRef.current = [
+      interstitial.addAdEventListener(AdEventType.LOADED, () => {
+        loadedRef.current = true
+      }),
+      interstitial.addAdEventListener(AdEventType.CLOSED, () => {
+        loadedRef.current = false
+        loadInterstitial()
+      }),
+      interstitial.addAdEventListener(AdEventType.ERROR, () => {
+        loadedRef.current = false
+      }),
+    ]
 
     interstitial.load()
   }
@@ -118,24 +154,27 @@ export function useAds(): UseAdsReturn {
     const adUnitId = getRewardedAdUnitId()
     if (!adUnitId) return
 
-    const rewarded = RewardedAd.createForAdRequest(adUnitId)
+    teardownRewarded()
+    const rewarded = RewardedAd.createForAdRequest(adUnitId, {
+      requestNonPersonalizedAdsOnly: npaRef.current,
+    })
     rewardedRef.current = rewarded
 
-    rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
-      rewardedLoadedRef.current = true
-      setRewardedReady(true)
-    })
-
-    rewarded.addAdEventListener(AdEventType.CLOSED, () => {
-      rewardedLoadedRef.current = false
-      setRewardedReady(false)
-      loadRewarded()
-    })
-
-    rewarded.addAdEventListener(AdEventType.ERROR, () => {
-      rewardedLoadedRef.current = false
-      setRewardedReady(false)
-    })
+    rewardedUnsubsRef.current = [
+      rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
+        rewardedLoadedRef.current = true
+        setRewardedReady(true)
+      }),
+      rewarded.addAdEventListener(AdEventType.CLOSED, () => {
+        rewardedLoadedRef.current = false
+        setRewardedReady(false)
+        loadRewarded()
+      }),
+      rewarded.addAdEventListener(AdEventType.ERROR, () => {
+        rewardedLoadedRef.current = false
+        setRewardedReady(false)
+      }),
+    ]
 
     rewarded.load()
   }
@@ -150,10 +189,12 @@ export function useAds(): UseAdsReturn {
 
     return new Promise<boolean>((resolve) => {
       let settled = false
+      let timeoutId: ReturnType<typeof setTimeout> | null = null
 
       function settle(result: boolean) {
         if (settled) return
         settled = true
+        if (timeoutId) clearTimeout(timeoutId)
         rewardedShowingRef.current = false
         unsubReward()
         unsubClose()
@@ -173,6 +214,11 @@ export function useAds(): UseAdsReturn {
       const unsubError = rewarded.addAdEventListener(AdEventType.ERROR, () => {
         settle(false)
       })
+
+      // Safety net: some Android OEMs dismiss the ad without firing CLOSED/ERROR
+      // (memory pressure, activity restart mid-ad). Without this fallback the
+      // continue-in-flight guard in GameScreen stays stuck forever.
+      timeoutId = setTimeout(() => settle(earned), REWARDED_TIMEOUT_MS)
 
       try {
         rewarded.show()
