@@ -67,7 +67,7 @@ Stop and leave a note in `CHANGELOG.md` if:
 
 ## Parallel Subagent Work
 
-When dispatching parallel subagents with `isolation: "worktree"` (e.g. multiple independent bug-fix tracks):
+When dispatching parallel subagents with `isolation: "worktree"` (e.g. multiple independent bug-fix tracks), use the template at `docs/subagent-brief-template.md` — it includes the orchestrator pre-flight checklist, the parameterized brief body, and the merge-orchestration playbook. Rules the template codifies:
 
 - **Agents must branch off develop's tip, not the worktree HEAD.** Worktrees are often initialized on a stale commit; every brief must include "run `git checkout -b <branch> develop` before editing." Skipping this silently diverges the fix from current code.
 - **Agents never push, never merge.** They commit on their branch and return: branch name, commit SHAs, files touched, and any surprises. The orchestrator owns integration.
