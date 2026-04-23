@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { View, Text, TextInput, Platform, Share, StyleSheet } from "react-native"
+import { Alert, View, Text, TextInput, Platform, Share, StyleSheet } from "react-native"
 import { useNavigation, useRouter } from "expo-router"
 import * as Sharing from "expo-sharing"
 import { Ionicons } from "@expo/vector-icons"
@@ -106,19 +106,19 @@ export default function GameOverScreen() {
   const { isTablet } = useBreakpoints()
   const shareCardRef = useRef<ViewShot>(null)
 
-  const {
-    score,
-    level,
-    highScore,
-    previousHighScore,
-    isNewHighScore,
-    mode,
-    showRemoveAds,
-    showContinue,
-    sessionTime,
-    needsInitials,
-    leaderboardRank: _leaderboardRank,
-  } = useGameOverStore()
+  // Per-field selectors avoid re-rendering on unrelated store writes.
+  // A whole-store subscription re-renders on any setGameOver/clear call;
+  // primitive-returning selectors only trigger renders when that field changes.
+  const score = useGameOverStore((s) => s.score)
+  const level = useGameOverStore((s) => s.level)
+  const highScore = useGameOverStore((s) => s.highScore)
+  const previousHighScore = useGameOverStore((s) => s.previousHighScore)
+  const isNewHighScore = useGameOverStore((s) => s.isNewHighScore)
+  const mode = useGameOverStore((s) => s.mode)
+  const showRemoveAds = useGameOverStore((s) => s.showRemoveAds)
+  const showContinue = useGameOverStore((s) => s.showContinue)
+  const sessionTime = useGameOverStore((s) => s.sessionTime)
+  const needsInitials = useGameOverStore((s) => s.needsInitials)
 
   const { addHighScore } = useHighScores()
 
@@ -127,7 +127,10 @@ export default function GameOverScreen() {
   const inputRef0 = useRef<TextInput>(null)
   const inputRef1 = useRef<TextInput>(null)
   const inputRef2 = useRef<TextInput>(null)
-  const inputRefs = [inputRef0, inputRef1, inputRef2]
+  // Wrap in useRef(...).current so the array identity is stable across renders.
+  // The three ref objects themselves are already stable; this prevents a new
+  // array allocation on every render that the React Compiler can't dedupe.
+  const inputRefs = useRef([inputRef0, inputRef1, inputRef2]).current
 
   const allFilled = letters.every((l) => l.length === 1)
   const showInitialsInput = needsInitials && !initialsSaved
@@ -263,9 +266,17 @@ export default function GameOverScreen() {
         const fileUri = uri.startsWith("file://") ? uri : `file://${uri}`
         await Sharing.shareAsync(fileUri, { mimeType: "image/png", dialogTitle: message })
       } else {
-        await Share.share({ message })
+        const result = await Share.share({ message })
+        // User cancellation is not an error — stay silent.
+        if (result.action === Share.dismissedAction) return
       }
-    } catch {}
+    } catch (err) {
+      // Common failure modes: no installed share target (Android) or a
+      // native sheet that genuinely fails to open. Surface a themed alert
+      // so the button doesn't appear broken, and log so Sentry picks it up.
+      console.warn("[game-over] share failed", err)
+      Alert.alert(t("share:errorTitle"), t("share:errorBody"))
+    }
   }
 
   const setPendingAction = usePendingActionStore((s) => s.setAction)

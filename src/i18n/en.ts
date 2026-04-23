@@ -182,6 +182,10 @@ const en = {
     postPBBody: "Enjoy an uninterrupted, ad-free experience",
     maybeLater: "Maybe Later",
   },
+  share: {
+    errorTitle: "Sharing failed",
+    errorBody: "We couldn't open the share sheet. Please try again.",
+  },
   a11y: {
     modeSelector: "Select game mode",
     settings: "Settings",

@@ -182,6 +182,10 @@ const es = {
     postPBBody: "Disfruta de una experiencia sin anuncios",
     maybeLater: "Quizás Después",
   },
+  share: {
+    errorTitle: "Error al compartir",
+    errorBody: "No pudimos abrir el menú para compartir. Inténtalo de nuevo.",
+  },
   a11y: {
     modeSelector: "Seleccionar modo",
     settings: "Ajustes",
