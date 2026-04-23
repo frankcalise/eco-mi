@@ -240,30 +240,63 @@ export function GameScreen() {
     }
   }, [])
 
+  // Ref-wrap every unstable identity the gameover transition effect touches. The effect
+  // intentionally fires only on gameState (and a few primitive deps) — we don't want it
+  // re-running on every render. But that means direct references would be pinned to the
+  // mount-time closure, and hook returns like `analytics` (PostHog re-inits after hydration),
+  // `haptics`, `router`, and the useHighScores / useNotifications / useAds hooks can all
+  // hand back new identities across renders. A stale analytics handle, for example, would
+  // silently drop trackGameOver events after PostHog hydrates asynchronously; a stale
+  // navigateToGameOver would push against an outdated highScore/sessionTime snapshot.
+  const analyticsRef = useRef(analytics)
+  analyticsRef.current = analytics
+  const hapticsRef = useRef(haptics)
+  hapticsRef.current = haptics
+  const routerRef = useRef(router)
+  routerRef.current = router
+  const checkIsHighScoreRef = useRef(checkIsHighScore)
+  checkIsHighScoreRef.current = checkIsHighScore
+  const addHighScoreRef = useRef(addHighScore)
+  addHighScoreRef.current = addHighScore
+  const getRankRef = useRef(getRank)
+  getRankRef.current = getRank
+  const rescheduleAfterGameOverRef = useRef(rescheduleAfterGameOver)
+  rescheduleAfterGameOverRef.current = rescheduleAfterGameOver
+  const incrementGamesPlayedRef = useRef(incrementGamesPlayed)
+  incrementGamesPlayedRef.current = incrementGamesPlayed
+  const playHighScoreJingleRef = useRef(playHighScoreJingle)
+  playHighScoreJingleRef.current = playHighScoreJingle
+  const playGameOverJingleRef = useRef(playGameOverJingle)
+  playGameOverJingleRef.current = playGameOverJingle
+  const navigateToGameOverRef = useRef<
+    (needsInitials?: boolean, leaderboardRank?: number | null) => void
+  >(() => {})
+  navigateToGameOverRef.current = navigateToGameOver
+
   const prevGameState = useRef(gameState)
   useEffect(() => {
     if (prevGameState.current !== "gameover" && gameState === "gameover") {
-      incrementGamesPlayed()
+      incrementGamesPlayedRef.current()
       const elapsed = getSessionTime()
-      analytics.trackGameOver(score, level, elapsed)
+      analyticsRef.current.trackGameOver(score, level, elapsed)
 
       if (isNewHighScore) {
-        playHighScoreJingle()
-        haptics.play("newHighScore")
-        analytics.trackGameCompleted(score, level, true, elapsed)
+        playHighScoreJingleRef.current()
+        hapticsRef.current.play("newHighScore")
+        analyticsRef.current.trackGameCompleted(score, level, true, elapsed)
       } else {
-        playGameOverJingle()
-        haptics.play("gameOver")
+        playGameOverJingleRef.current()
+        hapticsRef.current.play("gameOver")
       }
 
-      rescheduleAfterGameOver()
+      rescheduleAfterGameOverRef.current()
 
-      const qualifies = checkIsHighScore(score, mode)
+      const qualifies = checkIsHighScoreRef.current(score, mode)
       const savedInitials = loadString(SAVED_INITIALS)
       const initialsSkipped = loadString(INITIALS_SKIPPED) === "true"
 
       if (qualifies && savedInitials) {
-        const updated = addHighScore({
+        const updated = addHighScoreRef.current({
           initials: savedInitials,
           score,
           level,
@@ -271,9 +304,9 @@ export function GameScreen() {
           mode,
         })
         const rank = updated.findIndex((entry) => entry.score === score)
-        navigateToGameOver(false, rank >= 0 ? rank : null)
+        navigateToGameOverRef.current(false, rank >= 0 ? rank : null)
       } else if (qualifies && initialsSkipped) {
-        const updated = addHighScore({
+        const updated = addHighScoreRef.current({
           initials: "---",
           score,
           level,
@@ -281,17 +314,17 @@ export function GameScreen() {
           mode,
         })
         const rank = updated.findIndex((entry) => entry.score === score)
-        navigateToGameOver(false, rank >= 0 ? rank : null)
+        navigateToGameOverRef.current(false, rank >= 0 ? rank : null)
       } else if (qualifies) {
-        navigateToGameOver(true, getRank(score, mode))
+        navigateToGameOverRef.current(true, getRankRef.current(score, mode))
       } else {
-        navigateToGameOver(false, null)
+        navigateToGameOverRef.current(false, null)
       }
     }
 
     if (prevGameState.current !== "idle" && gameState === "idle") {
       if (shouldShowNotificationPrompt()) {
-        router.push("/notifications")
+        routerRef.current.push("/notifications")
       }
     }
 
