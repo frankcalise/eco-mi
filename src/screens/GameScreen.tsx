@@ -215,7 +215,11 @@ export function GameScreen() {
   const pulseTimers = useRef<ReturnType<typeof setTimeout>[]>([])
   const isIdle = gameState === "idle"
   const showResetButton = gameState === "showing" || gameState === "waiting"
-  const shouldShowBoardHighlights = gameState === "showing" || gameState === "waiting"
+  // `idle` is included so the free-play tap-to-play flow on the main menu
+  // actually lights up the pad the player just pressed; previously the
+  // isActive gate suppressed the visual so the tone played without feedback.
+  const shouldShowBoardHighlights =
+    gameState === "showing" || gameState === "waiting" || gameState === "idle"
   const [boardArea, setBoardArea] = useState({ width: 0, height: 0 })
   const [onboardingDone, setOnboardingDone] = useState(
     () => loadString(ONBOARDING_COMPLETED) === "true",

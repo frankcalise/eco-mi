@@ -2,10 +2,13 @@ import { Platform, StyleSheet } from "react-native"
 import { EaseView } from "react-native-ease"
 import Svg, { RadialGradient, Rect, Stop } from "react-native-svg"
 
-// Extends the glow 20% past the pad edge, so gradient radius = buttonSize * 0.7.
-// Pad edge falls at 50/70 = ~71% along the radial gradient, which is where the
-// brightest visible stop lands.
-const GLOW_INFLATE_RATIO = 0.2
+// Extends the glow 12% past the pad edge so the Android halo roughly matches
+// iOS's shadowRadius 22 output at current buttonSize ranges. Any larger and
+// the halo spills past the gameContainer ring on the outer cardinal points
+// and into adjacent pads on the inner diagonals. Pad edge ends up at
+// 50/62 ≈ 81% along the radial gradient, which is where the brightest
+// visible stop lands.
+const GLOW_INFLATE_RATIO = 0.12
 
 type PadGlowProps = {
   color: string
@@ -51,8 +54,8 @@ export function PadGlow({ color, isActive, buttonSize, padId }: PadGlowProps) {
           typings don't declare `children`. `id` + url(#id) referencing still
           works when the gradient is a direct Svg child. */}
         <RadialGradient id={gradientId} cx="50%" cy="50%" r="50%">
-          <Stop offset="50%" stopColor={color} stopOpacity="0.7" />
-          <Stop offset="71%" stopColor={color} stopOpacity="0.55" />
+          <Stop offset="60%" stopColor={color} stopOpacity="0.55" />
+          <Stop offset="81%" stopColor={color} stopOpacity="0.45" />
           <Stop offset="100%" stopColor={color} stopOpacity="0" />
         </RadialGradient>
         <Rect width={glowSize} height={glowSize} fill={`url(#${gradientId})`} />
