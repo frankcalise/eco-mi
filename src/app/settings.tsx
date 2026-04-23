@@ -14,7 +14,6 @@ import {
   SETTINGS_NOTIFY_DAILY,
   SETTINGS_NOTIFY_STREAK,
   SETTINGS_NOTIFY_WINBACK,
-  SETTINGS_SOUND_VOLUME,
 } from "@/config/storageKeys"
 import { themeIds, gameThemes } from "@/config/themes"
 import { useAudioTones, type ColorMap } from "@/hooks/useAudioTones"
@@ -87,10 +86,8 @@ export default function SettingsScreen() {
 
   const soundEnabled = usePreferencesStore((s) => s.soundEnabled)
   const setSoundEnabled = usePreferencesStore((s) => s.setSoundEnabled)
-  const [volume, setVolume] = useState(() => {
-    const raw = loadString(SETTINGS_SOUND_VOLUME)
-    return raw != null ? parseFloat(raw) : 1.0
-  })
+  const volume = usePreferencesStore((s) => s.volume)
+  const setVolume = usePreferencesStore((s) => s.setVolume)
   const hapticsEnabled = usePreferencesStore((s) => s.hapticsEnabled)
   const setHapticsEnabled = usePreferencesStore((s) => s.setHapticsEnabled)
   const [notifyDaily, setNotifyDaily] = useState(
@@ -109,7 +106,7 @@ export default function SettingsScreen() {
   const [poppingTheme, setPoppingTheme] = useState<string | null>(null)
 
   const colorMap = buildColorMap(activeTheme)
-  const { playPreview, initialize, cleanup, syncVolume } = useAudioTones(
+  const { playPreview, initialize, cleanup } = useAudioTones(
     colorMap,
     soundEnabled,
     soundPack.oscillatorType,
@@ -142,10 +139,10 @@ export default function SettingsScreen() {
   }
 
   function handleVolumeChange(value: number) {
-    const clamped = Math.round(value * 100) / 100
-    setVolume(clamped)
-    saveString(SETTINGS_SOUND_VOLUME, String(clamped))
-    syncVolume()
+    // Snap to the same 0.05 step Settings renders on, then let the store
+    // clamp + persist + notify subscribers (useAudioTones instances re-apply
+    // gain via their reactive effect).
+    setVolume(Math.round(value * 100) / 100)
   }
 
   function toggleHaptics() {

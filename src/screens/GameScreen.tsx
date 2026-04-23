@@ -83,7 +83,6 @@ export function GameScreen() {
     wrongFlash,
     timerDelta,
     getSessionTime,
-    syncVolume,
   } = useGameEngine({
     oscillatorType: soundPack.oscillatorType,
     theme: activeTheme,
@@ -96,10 +95,6 @@ export function GameScreen() {
   gameStateRef.current = gameState
   const resetGameRef = useRef(resetGame)
   resetGameRef.current = resetGame
-
-  useFocusEffect(() => {
-    syncVolume()
-  })
 
   /**
    * After /game-over pops, we should never stay on the main screen with the engine still in

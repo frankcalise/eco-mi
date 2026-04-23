@@ -115,7 +115,6 @@ interface UseGameEngineReturn {
   playGameOverJingle: () => void
   playHighScoreJingle: () => void
   setMode: (mode: GameMode) => void
-  syncVolume: () => void
 }
 
 function highScoreKey(mode: string): string {
@@ -204,7 +203,6 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     playJingle,
     playGameOverJingle,
     playHighScoreJingle,
-    syncVolume: syncAudioVolume,
   } = useAudioTones(
     activeColorMap,
     soundEnabled,
@@ -624,10 +622,6 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     return Math.floor((Date.now() - sessionStartTimeRef.current) / 1000)
   }
 
-  function syncVolume() {
-    syncAudioVolume()
-  }
-
   function setModeAction(newMode: GameMode) {
     send({ type: "SET_MODE", mode: newMode })
   }
@@ -665,6 +659,5 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     playGameOverJingle,
     playHighScoreJingle,
     setMode: setModeAction,
-    syncVolume,
   }
 }

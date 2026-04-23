@@ -152,6 +152,9 @@
 - [x] **Migrate `soundEnabled` to reactive preferences store**
       Folded `soundEnabled` into `src/stores/preferencesStore.ts` alongside `hapticsEnabled`. `useGameEngine` and `settings.tsx` now read via `usePreferencesStore` selector — in-session mute takes effect immediately without app restart. Deleted the `toggleSound` and `syncSoundState` workarounds on `useGameEngine` (the first had no production caller; the second collapsed to `syncVolume()` since only the volume sync is still needed — volume itself has the same latent bug but is deferred to its own task). GameScreen focus effect renamed accordingly.
 
+- [x] **Migrate `volume` to reactive preferences store**
+      Completed the prefs-store migration. `volume` now lives in `preferencesStore` with a clamped `setVolume` setter. `useAudioTones` subscribes via selector and applies gain to the live master node reactively (single `useEffect` on volume change), replacing the old `syncVolume()` pull pattern. Dropped `syncVolume` from the `AudioTonesHook` interface, from `useGameEngine`'s return, and from the `useFocusEffect` on `GameScreen`. Settings reads volume from the store instead of local `useState` — cross-screen consistency holds even if a second entry point for volume is ever added.
+
 - [ ] **Haptics overhaul: migrate from expo-haptics to Pulsar**
       Replace `expo-haptics` across the app with [Pulsar](https://github.com/software-mansion/pulsar) for richer, more nuanced haptic feedback. Pulsar's pattern composer enables custom haptic sequences per game event (button press, round complete, game over, high score) and its realtime composer could drive gesture-driven feedback. Evaluate:
   - Custom patterns for each game button color (different amplitude/frequency per color)

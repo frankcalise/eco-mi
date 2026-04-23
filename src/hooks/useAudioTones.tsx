@@ -3,8 +3,7 @@ import { AppState, Platform } from "react-native"
 import { AudioContext, GainNode, OscillatorNode } from "react-native-audio-api"
 import type { OscillatorType } from "react-native-audio-api"
 
-import { SETTINGS_SOUND_VOLUME } from "@/config/storageKeys"
-import { loadString } from "@/utils/storage"
+import { usePreferencesStore } from "@/stores/preferencesStore"
 
 // --- Debug logging (set EXPO_PUBLIC_DEBUG_AUDIO=1 to enable in release builds) ---
 const DEBUG_AUDIO = __DEV__ || process.env.EXPO_PUBLIC_DEBUG_AUDIO === "1"
@@ -90,7 +89,6 @@ interface AudioTonesHook {
   playJingle: () => void
   playGameOverJingle: () => void
   playHighScoreJingle: () => void
-  syncVolume: () => void
 }
 
 export function useAudioTones(
@@ -104,6 +102,7 @@ export function useAudioTones(
   const poolRef = useRef<TonePool | null>(null)
   const contextReadyRef = useRef(false)
   const countersRef = useRef({ recreates: 0, resumeFalseNegatives: 0, droppedNotes: 0 })
+  const volume = usePreferencesStore((s) => s.volume)
 
   // --- AppState listener: suspend on background, resume on foreground ---
 
@@ -130,18 +129,11 @@ export function useAudioTones(
 
   // --- Context + pool lifecycle ---
 
-  function readVolume(): number {
-    const raw = loadString(SETTINGS_SOUND_VOLUME)
-    if (raw == null) return 1.0
-    const v = parseFloat(raw)
-    return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 1.0
-  }
-
   function createFreshContext() {
     const ctx = new AudioContext()
     audioContextRef.current = ctx
     const master = ctx.createGain()
-    master.gain.setValueAtTime(readVolume(), ctx.currentTime)
+    master.gain.setValueAtTime(usePreferencesStore.getState().volume, ctx.currentTime)
     master.connect(ctx.destination)
     masterGainRef.current = master
     contextReadyRef.current = true
@@ -226,13 +218,17 @@ export function useAudioTones(
     createFreshContext()
   }
 
-  function syncVolume() {
+  // Reactive bridge: whenever the user moves the volume slider (store updates),
+  // apply the new gain to the live master node. Also covers cross-screen sync —
+  // Settings' own useAudioTones instance and GameScreen's both subscribe to the
+  // same store slice, so changing volume in Settings takes effect everywhere.
+  useEffect(() => {
     const master = masterGainRef.current
     const ctx = audioContextRef.current
     if (master && ctx) {
-      master.gain.setValueAtTime(readVolume(), ctx.currentTime)
+      master.gain.setValueAtTime(volume, ctx.currentTime)
     }
-  }
+  }, [volume])
 
   // Rebuild pooled oscillators when the selected sound pack changes.
   // noteOn/noteOff/scheduleSequence use the prebuilt pool frequencies (220/277/330/415),
@@ -526,7 +522,6 @@ export function useAudioTones(
     playJingle,
     playGameOverJingle,
     playHighScoreJingle,
-    syncVolume,
   }
 }
 
