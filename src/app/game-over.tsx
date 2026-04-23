@@ -106,19 +106,19 @@ export default function GameOverScreen() {
   const { isTablet } = useBreakpoints()
   const shareCardRef = useRef<ViewShot>(null)
 
-  const {
-    score,
-    level,
-    highScore,
-    previousHighScore,
-    isNewHighScore,
-    mode,
-    showRemoveAds,
-    showContinue,
-    sessionTime,
-    needsInitials,
-    leaderboardRank: _leaderboardRank,
-  } = useGameOverStore()
+  // Per-field selectors avoid re-rendering on unrelated store writes.
+  // A whole-store subscription re-renders on any setGameOver/clear call;
+  // primitive-returning selectors only trigger renders when that field changes.
+  const score = useGameOverStore((s) => s.score)
+  const level = useGameOverStore((s) => s.level)
+  const highScore = useGameOverStore((s) => s.highScore)
+  const previousHighScore = useGameOverStore((s) => s.previousHighScore)
+  const isNewHighScore = useGameOverStore((s) => s.isNewHighScore)
+  const mode = useGameOverStore((s) => s.mode)
+  const showRemoveAds = useGameOverStore((s) => s.showRemoveAds)
+  const showContinue = useGameOverStore((s) => s.showContinue)
+  const sessionTime = useGameOverStore((s) => s.sessionTime)
+  const needsInitials = useGameOverStore((s) => s.needsInitials)
 
   const { addHighScore } = useHighScores()
 
