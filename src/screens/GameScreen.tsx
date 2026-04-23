@@ -15,6 +15,7 @@ import type { CompactModePickerSheetHandle } from "@/components/CompactModePicke
 import { GameButton } from "@/components/GameButton"
 import { GameHeader } from "@/components/GameHeader"
 import { GameStatusBar } from "@/components/GameStatusBar"
+import { IdleSparkleTraveler } from "@/components/IdleSparkleTraveler"
 import { OnboardingTooltip } from "@/components/OnboardingTooltip"
 import { PressableScale } from "@/components/PressableScale"
 import { StreakBanner } from "@/components/StreakBanner"
@@ -584,6 +585,14 @@ export function GameScreen() {
             themeActiveColor={activeTheme.buttonColors[color].activeColor}
           />
         ))}
+
+        <IdleSparkleTraveler
+          gameSize={gameSize}
+          buttonSize={buttonSize}
+          slotInset={slotInset}
+          theme={activeTheme}
+          active={gameState === "idle" && !isShuffling}
+        />
 
         <View
           style={[
