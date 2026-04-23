@@ -1,5 +1,7 @@
 import { renderHook, act } from "@testing-library/react-native"
 
+import { usePreferencesStore } from "@/stores/preferencesStore"
+
 import { useGameEngine, colors } from "../useGameEngine"
 
 jest.mock("@/hooks/useAudioTones", () => ({
@@ -36,6 +38,7 @@ jest.mock("@/utils/storage", () => ({
 
 beforeEach(() => {
   jest.useFakeTimers()
+  usePreferencesStore.setState({ soundEnabled: true, hapticsEnabled: true })
 })
 
 afterEach(() => {
@@ -254,19 +257,19 @@ describe("useGameEngine", () => {
     clearTimeoutSpy.mockRestore()
   })
 
-  it("toggles sound state", () => {
+  it("reflects preferencesStore soundEnabled reactively", () => {
     const { result } = renderHook(() => useGameEngine())
 
     expect(result.current.soundEnabled).toBe(true)
 
     act(() => {
-      result.current.toggleSound()
+      usePreferencesStore.getState().setSoundEnabled(false)
     })
 
     expect(result.current.soundEnabled).toBe(false)
 
     act(() => {
-      result.current.toggleSound()
+      usePreferencesStore.getState().setSoundEnabled(true)
     })
 
     expect(result.current.soundEnabled).toBe(true)

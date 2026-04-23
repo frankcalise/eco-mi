@@ -83,7 +83,7 @@ export function GameScreen() {
     wrongFlash,
     timerDelta,
     getSessionTime,
-    syncSoundState,
+    syncVolume,
   } = useGameEngine({
     oscillatorType: soundPack.oscillatorType,
     theme: activeTheme,
@@ -98,7 +98,7 @@ export function GameScreen() {
   resetGameRef.current = resetGame
 
   useFocusEffect(() => {
-    syncSoundState()
+    syncVolume()
   })
 
   /**

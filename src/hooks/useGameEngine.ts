@@ -9,13 +9,13 @@ import {
   DAILY_LAST_PLAYED,
   DAILY_PREFIX,
   HIGH_SCORE_PREFIX,
-  SETTINGS_SOUND_ENABLED,
   STATS_LONGEST_STREAK,
 } from "@/config/storageKeys"
 import { type GameTheme, gameThemes } from "@/config/themes"
 import { useAudioTones } from "@/hooks/useAudioTones"
 import { useHaptics } from "@/hooks/useHaptics"
 import { recordGameResult } from "@/hooks/useStats"
+import { usePreferencesStore } from "@/stores/preferencesStore"
 import { saveString, loadString } from "@/utils/storage"
 
 import {
@@ -110,13 +110,12 @@ interface UseGameEngineReturn {
   continueGame: () => void
   handleButtonTouch: (color: Color) => void
   handleButtonRelease: (color: Color) => void
-  toggleSound: () => void
   playPreview: (overrideType?: OscillatorType) => void
   playJingle: () => void
   playGameOverJingle: () => void
   playHighScoreJingle: () => void
   setMode: (mode: GameMode) => void
-  syncSoundState: () => void
+  syncVolume: () => void
 }
 
 function highScoreKey(mode: string): string {
@@ -157,9 +156,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
   // Local UI state
   const [activeButton, setActiveButton] = useState<Color | null>(null)
-  const [soundEnabled, setSoundEnabled] = useState(
-    () => loadString(SETTINGS_SOUND_ENABLED) !== "false",
-  )
+  const soundEnabled = usePreferencesStore((s) => s.soundEnabled)
   const [wrongFlash, setWrongFlash] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [inputTimeRemaining, setInputTimeRemaining] = useState<number | null>(null)
@@ -622,20 +619,12 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     inputLocked.current = false
   }
 
-  function toggleSound() {
-    setSoundEnabled((prev) => {
-      saveString(SETTINGS_SOUND_ENABLED, prev ? "false" : "true")
-      return !prev
-    })
-  }
-
   function getSessionTime(): number {
     if (!sessionStartTimeRef.current) return 0
     return Math.floor((Date.now() - sessionStartTimeRef.current) / 1000)
   }
 
-  function syncSoundState() {
-    setSoundEnabled(loadString(SETTINGS_SOUND_ENABLED) !== "false")
+  function syncVolume() {
     syncAudioVolume()
   }
 
@@ -671,12 +660,11 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     continueGame,
     handleButtonTouch,
     handleButtonRelease,
-    toggleSound,
     playPreview,
     playJingle,
     playGameOverJingle,
     playHighScoreJingle,
     setMode: setModeAction,
-    syncSoundState,
+    syncVolume,
   }
 }

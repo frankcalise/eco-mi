@@ -14,7 +14,6 @@ import {
   SETTINGS_NOTIFY_DAILY,
   SETTINGS_NOTIFY_STREAK,
   SETTINGS_NOTIFY_WINBACK,
-  SETTINGS_SOUND_ENABLED,
   SETTINGS_SOUND_VOLUME,
 } from "@/config/storageKeys"
 import { themeIds, gameThemes } from "@/config/themes"
@@ -86,9 +85,8 @@ export default function SettingsScreen() {
     getSoundProductId,
   } = usePurchases()
 
-  const [soundEnabled, setSoundEnabled] = useState(
-    () => loadString(SETTINGS_SOUND_ENABLED) !== "false",
-  )
+  const soundEnabled = usePreferencesStore((s) => s.soundEnabled)
+  const setSoundEnabled = usePreferencesStore((s) => s.setSoundEnabled)
   const [volume, setVolume] = useState(() => {
     const raw = loadString(SETTINGS_SOUND_VOLUME)
     return raw != null ? parseFloat(raw) : 1.0
@@ -140,9 +138,7 @@ export default function SettingsScreen() {
   }, [navigation])
 
   function toggleSoundEnabled() {
-    const next = !soundEnabled
-    setSoundEnabled(next)
-    saveString(SETTINGS_SOUND_ENABLED, next ? "true" : "false")
+    setSoundEnabled(!soundEnabled)
   }
 
   function handleVolumeChange(value: number) {
