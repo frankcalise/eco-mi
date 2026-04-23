@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { View, Text, TextInput, Platform, Share, StyleSheet } from "react-native"
+import { Alert, View, Text, TextInput, Platform, Share, StyleSheet } from "react-native"
 import { useNavigation, useRouter } from "expo-router"
 import * as Sharing from "expo-sharing"
 import { Ionicons } from "@expo/vector-icons"
@@ -266,9 +266,17 @@ export default function GameOverScreen() {
         const fileUri = uri.startsWith("file://") ? uri : `file://${uri}`
         await Sharing.shareAsync(fileUri, { mimeType: "image/png", dialogTitle: message })
       } else {
-        await Share.share({ message })
+        const result = await Share.share({ message })
+        // User cancellation is not an error — stay silent.
+        if (result.action === Share.dismissedAction) return
       }
-    } catch {}
+    } catch (err) {
+      // Common failure modes: no installed share target (Android) or a
+      // native sheet that genuinely fails to open. Surface a themed alert
+      // so the button doesn't appear broken, and log so Sentry picks it up.
+      console.warn("[game-over] share failed", err)
+      Alert.alert(t("share:errorTitle"), t("share:errorBody"))
+    }
   }
 
   const setPendingAction = usePendingActionStore((s) => s.setAction)
