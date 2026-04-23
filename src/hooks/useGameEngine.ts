@@ -166,6 +166,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const buttonPressStartTime = useRef<number | null>(null)
   const inputLocked = useRef(false)
   const continueLocked = useRef(false)
+  const sideEffectsFiredRef = useRef(false)
   const visualSequenceTokenRef = useRef(0)
   const timerBonusRef = useRef(0)
   const wrongCountRef = useRef(0)
@@ -205,6 +206,17 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const ctx = state.context
   const gameState = toPublicState(state.value as string)
   const mode = ctx.mode
+
+  // Mirror machine context into a ref so deferred callbacks (setInterval,
+  // setTimeout, audio-clock completions) read live values instead of the
+  // render-time snapshot captured by JS closure. Without this, the timer
+  // tick and the 500ms continue-replay callback read stale `ctx.*` fields,
+  // and `handleGameOverSideEffects` can't observe `gameResultRecorded`
+  // flipping when called twice in one game.
+  const contextRef = useRef(ctx)
+  useEffect(() => {
+    contextRef.current = ctx
+  }, [ctx])
 
   // Keep scoreRef in sync for timer callbacks
   useEffect(() => {
@@ -310,10 +322,25 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   }
 
   function handleGameOverSideEffects() {
+    // Read live context instead of the render-time `ctx`/`mode` closures.
+    // This function is reachable from startTimer's setInterval (where
+    // `ctx` is captured at the render when `startTimer` was invoked), from
+    // endGame(), and from the non-timed wrong-input branch of
+    // handleButtonRelease — any two of which could fire in the same
+    // game-over transition (e.g. a timer tick landing the same frame as
+    // endGame before stopTimer cancels the interval). `gameResultRecorded`
+    // guards the machine-side recordGameResult, but saveHighScore and
+    // saveDailyResult have no such guard, so a local once-per-transition
+    // ref is belt-and-suspenders against double writes. It resets on
+    // start/reset/continue so legitimate repeat game-overs (e.g. losing
+    // again after continueGame) still persist a higher score.
+    if (sideEffectsFiredRef.current) return
+    sideEffectsFiredRef.current = true
+    const live = contextRef.current
     const sc = scoreRef.current
-    if (sc > ctx.highScore) saveHighScore(sc)
-    if (!ctx.gameResultRecorded) recordGameResult(sc)
-    if (mode === "daily") saveDailyResult(sc)
+    if (sc > live.highScore) saveHighScore(sc)
+    if (!live.gameResultRecorded) recordGameResult(sc)
+    if (live.mode === "daily") saveDailyResult(sc)
   }
 
   // --- Sequence playback ---
@@ -431,6 +458,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     stopTimer()
     cancelVisualSequence()
     inputLocked.current = false
+    sideEffectsFiredRef.current = false
     timerBonusRef.current = 0
     wrongCountRef.current = 0
     lastHapticSecond.current = -1
@@ -469,6 +497,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     // an AppState suspend/resume cycle (e.g. rewarded ad → main menu).
     silenceAll()
     inputLocked.current = false
+    sideEffectsFiredRef.current = false
     setWrongFlash(false)
     setButtonPositions([...colors])
     setIsShuffling(false)
@@ -507,12 +536,21 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     // the replayed sequence. See resetGame for the same rationale.
     silenceAll()
     inputLocked.current = false
+    sideEffectsFiredRef.current = false
     setWrongFlash(false)
-    const sequenceToReplay = [...ctx.sequence]
-    const levelToReplay = ctx.level
     send({ type: "CONTINUE" })
 
     addTimeout(() => {
+      // Read sequence/level from the ref inside the deferred callback so
+      // we pick up any machine mutation that happened between the call
+      // site and this 500ms-later firing. Pre-fix these were captured by
+      // JS closure at call time — latent today because the machine
+      // preserves sequence across CONTINUE, but one future mutation
+      // (e.g. a bonus round inserted on continue) would silently replay
+      // the wrong sequence.
+      const live = contextRef.current
+      const sequenceToReplay = [...live.sequence]
+      const levelToReplay = live.level
       send({ type: "SET_INITIAL_SEQUENCE", sequence: sequenceToReplay })
       addTimeout(() => {
         continueLocked.current = false
