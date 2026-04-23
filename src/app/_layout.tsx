@@ -113,10 +113,10 @@ function Root() {
         }}
       />
       <Stack.Screen name="tracking" options={{ animation: "fade" }} />
-      <Stack.Screen name="achievements" options={secondaryStackScreenOptions as any} />
-      <Stack.Screen name="stats" options={secondaryStackScreenOptions as any} />
-      <Stack.Screen name="leaderboard" options={secondaryStackScreenOptions as any} />
-      <Stack.Screen name="settings" options={secondaryStackScreenOptions as any} />
+      <Stack.Screen name="achievements" options={secondaryStackScreenOptions} />
+      <Stack.Screen name="stats" options={secondaryStackScreenOptions} />
+      <Stack.Screen name="leaderboard" options={secondaryStackScreenOptions} />
+      <Stack.Screen name="settings" options={secondaryStackScreenOptions} />
       <Stack.Screen name="game-over" options={{ animation: "fade", gestureEnabled: false }} />
       <Stack.Screen
         name="mode-select"
