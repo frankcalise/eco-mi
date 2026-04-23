@@ -463,6 +463,11 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     clearAllTimeouts()
     stopTimer()
     cancelVisualSequence()
+    // `scheduleSequence` writes gain automation directly onto the audio
+    // render thread's timeline — `clearAllTimeouts` only reaches JS timers.
+    // Without this, events survive a reset and can resurface audibly after
+    // an AppState suspend/resume cycle (e.g. rewarded ad → main menu).
+    silenceAll()
     inputLocked.current = false
     setWrongFlash(false)
     setButtonPositions([...colors])
@@ -496,6 +501,11 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     continueLocked.current = true
     clearAllTimeouts()
     cancelVisualSequence()
+    // Kill anything left on the audio clock from the pre-game-over sequence
+    // *before* scheduling the replay. AppState resume on ad dismiss can
+    // un-pause the context mid-queue; without this, residual events overlap
+    // the replayed sequence. See resetGame for the same rationale.
+    silenceAll()
     inputLocked.current = false
     setWrongFlash(false)
     const sequenceToReplay = [...ctx.sequence]

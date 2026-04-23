@@ -18,13 +18,8 @@
 - [ ] **Leaderboard mode tab label wraps in Spanish ("CONTRARRELOJ")**
       The timed mode label in Spanish is "Contrarreloj" — too long to fit on one line in the mode tab button on the leaderboard screen, causing it to wrap across two lines ("CONTRARRE / LOJ"). Fix options: shorten the Spanish translation to an abbreviation ("C.RELOJ" or "TIEMPO"), reduce the tab font size for long labels, or allow the tab row to scroll horizontally. Check PT for the same issue ("CRONOMETRADO"). Ref: leaderboard mode tabs in `src/app/leaderboard.tsx`.
 
-- [ ] **Watch-ad-to-continue in daily mode may leave audio playing on main menu**
-      Repro: play daily mode → hit game over → tap "Watch ad to continue" → dismiss / finish ad → back out to main menu. Observed: tones audibly replay on the idle/main menu screen (sequence audio keeps playing even though there's no active game). Suspected causes to investigate:
-  - `showContinue` path in daily mode may skip a sequence/audio cleanup step that the "play again" and "main menu" paths do hit.
-  - `usePendingActionStore` flow for `continue` → if the user backs out _after_ the ad but _before_ GameScreen consumes the action, the sequence may resume on idle.
-  - Rewarded-ad resume race: `useAudioTones` playback might be restarted on ad dismiss (audio session resume) while the game engine has already transitioned to idle.
-  - Check whether this reproes in classic/timed/reverse/chaos or only daily — daily has unique streak-preservation logic around continue that may diverge from other modes.
-  - When fixing, verify the oscillator pool is drained + all scheduled `stopTone` timers cleared on transition to idle, regardless of which path (play_again, continue, main_menu, back gesture) got us there.
+- [x] **Watch-ad-to-continue leaves audio playing on main menu**
+      Root-caused to a cleanup gap, not a mode-specific bug: `scheduleSequence` writes gain automation directly onto the audio render thread's timeline, so `clearAllTimeouts` doesn't reach it. When the rewarded ad suspended the AudioContext mid-queue and dismissal resumed it, still-queued events fired after the engine had already transitioned to idle. Affected all modes; most visible in daily because seeded RNG made the leaked sequence recognizable. Fix: `resetGame()` and `continueGame()` now call `silenceAll()` (destroy + rebuild the pool) alongside JS-side cleanup, matching what `endGame()` already did. Regression tests in `useGameEngine.bugs.test.ts` assert the call. Suspend/resume race from the ad dismissal can no longer replay leftover audio because the pool is now always freshly silent on any path to idle.
 
 - [x] **Audio pops/clicks when tapping game buttons**
       Audible pop artifact on button press, especially on quick taps. Likely related to the oscillator start/stop envelope in `src/hooks/useAudioTones.tsx`. The attack ramp (`ATTACK_S = 0.01`) may be too short on some devices, or the continuous sound start/stop cycle creates a discontinuity when rapidly re-triggering. Investigate:

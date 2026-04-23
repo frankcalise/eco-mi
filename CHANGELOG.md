@@ -19,6 +19,7 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 
 ### Fix
 
+- **Sequence audio leaked onto the main menu after a rewarded-ad continue** — Reproed most visibly in daily mode (seeded RNG makes the leaked sequence identical to what just played) but affected all modes. Root cause: `scheduleSequence` writes gain automation directly onto the audio render thread's timeline, so `clearAllTimeouts` and `cancelVisualSequence` don't reach it. When a rewarded ad suspends the app's AudioContext mid-queue and the ad dismissal resumes it, any still-queued gain events fire — even after the engine has transitioned to idle. `resetGame` and `continueGame` now call `silenceAll()` (destroy + recreate the oscillator pool) alongside the JS-side cleanup, closing the window. `endGame` already did this; bringing the other two paths in line. Regression tests assert `silenceAll` fires on both transitions.
 - **newHighScore haptic was double-firing** — GameScreen fired the celebration haptic on the gameover transition, and `/game-over` fired it again on mount ~400ms later. Tolerable when it was a short `notificationAsync(Success)` buzz; catastrophic for a 720ms authored pattern. The celebration haptic now fires once on GameScreen, sync'd to the jingle start. Also added a parallel `haptics.play('gameOver')` next to `playGameOverJingle()` — previously the non-HS branch had no haptic at all.
 
 ### Fix

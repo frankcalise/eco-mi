@@ -2,14 +2,20 @@ import { renderHook, act } from "@testing-library/react-native"
 
 import { useGameEngine, colors } from "../useGameEngine"
 
+// Hoisted mock fns so regression tests below can assert call counts on
+// specific audio methods (silenceAll in particular — see the silencing
+// regression tests at the end of this file).
+const mockSilenceAll = jest.fn()
+const mockScheduleSequence = jest.fn()
+
 jest.mock("@/hooks/useAudioTones", () => ({
   useAudioTones: () => ({
     initialize: jest.fn().mockResolvedValue(undefined),
     cleanup: jest.fn().mockResolvedValue(undefined),
     noteOn: jest.fn(),
     noteOff: jest.fn(),
-    silenceAll: jest.fn(),
-    scheduleSequence: jest.fn(),
+    silenceAll: mockSilenceAll,
+    scheduleSequence: mockScheduleSequence,
     playPreview: jest.fn(),
     playJingle: jest.fn(),
     playGameOverJingle: jest.fn(),
@@ -47,6 +53,8 @@ jest.mock("@/utils/storage", () => ({
 
 beforeEach(() => {
   jest.useFakeTimers()
+  mockSilenceAll.mockClear()
+  mockScheduleSequence.mockClear()
 })
 
 afterEach(() => {
@@ -259,5 +267,50 @@ describe("useGameEngine — behavior guards", () => {
     })
 
     expect(result.current.gameState).toBe("gameover")
+  })
+})
+
+// Regression coverage for the leaked-audio-on-idle bug: `scheduleSequence`
+// writes gain automation directly onto the audio render thread's timeline,
+// so JS-side cleanup (`clearAllTimeouts`, `cancelVisualSequence`) does not
+// reach it. Without `silenceAll`, those events survive across an AppState
+// suspend/resume cycle (rewarded ad → main menu) and fire on the idle
+// screen. `resetGame` and `continueGame` must both silence the pool
+// before transitioning — see useGameEngine.ts:resetGame and continueGame
+// for the rationale comments.
+describe("useGameEngine — audio silencing on state transitions", () => {
+  it("resetGame silences the audio pool", () => {
+    const { result } = renderHook(() => useGameEngine())
+
+    // Start a round to register the hook, then reset.
+    act(() => {
+      result.current.startGame()
+    })
+    act(() => {
+      jest.advanceTimersByTime(500)
+    })
+
+    mockSilenceAll.mockClear() // baseline after startup
+
+    act(() => {
+      result.current.resetGame()
+    })
+
+    expect(mockSilenceAll).toHaveBeenCalledTimes(1)
+    expect(result.current.gameState).toBe("idle")
+  })
+
+  it("continueGame silences the audio pool before scheduling the replay", () => {
+    const { result } = startScoreAndLose()
+
+    expect(result.current.gameState).toBe("gameover")
+    mockSilenceAll.mockClear() // ignore any silence calls from the pre-gameover flow
+
+    act(() => {
+      result.current.continueGame()
+    })
+
+    // silenceAll runs synchronously at the top of continueGame.
+    expect(mockSilenceAll).toHaveBeenCalledTimes(1)
   })
 })
