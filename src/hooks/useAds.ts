@@ -53,13 +53,11 @@ type UseAdsReturn = {
   incrementGamesPlayed: () => void
   incrementSessionCount: () => void
   adShownThisSession: boolean
-  consentReady: boolean
 }
 
 export function useAds(): UseAdsReturn {
   const [adShownThisSession, setAdShownThisSession] = useState(false)
   const [rewardedReady, setRewardedReady] = useState(false)
-  const [consentReady, setConsentReady] = useState(false)
   const interstitialRef = useRef<InterstitialAd | null>(null)
   const rewardedRef = useRef<RewardedAd | null>(null)
   const loadedRef = useRef(false)
@@ -94,8 +92,6 @@ export function useAds(): UseAdsReturn {
     } catch {
       // Consent errors should not block the app from functioning. Keep NPA = true,
       // which is the conservative, policy-safe default for EEA/UK/CH.
-    } finally {
-      setConsentReady(true)
     }
   }
 
@@ -275,6 +271,5 @@ export function useAds(): UseAdsReturn {
     incrementGamesPlayed,
     incrementSessionCount,
     adShownThisSession,
-    consentReady,
   }
 }
