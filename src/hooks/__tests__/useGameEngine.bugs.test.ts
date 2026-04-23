@@ -314,3 +314,71 @@ describe("useGameEngine — audio silencing on state transitions", () => {
     expect(mockSilenceAll).toHaveBeenCalledTimes(1)
   })
 })
+
+// Regression coverage for the rewarded-ad continue bug: before the fix in
+// GameScreen.tsx's useFocusEffect, the engine would be reset to idle mid-ad
+// (the focus-effect's pendingAction guard failed because the pending-action
+// useEffect had already cleared the store synchronously on commit). By the
+// time continueGame() finally ran after the ad resolved, the machine was no
+// longer in gameover, so the function bailed via its guard at useGameEngine.ts
+// line ~494. Result: the user watched the ad, earned the reward, and landed
+// on main menu with no replay.
+//
+// The GameScreen fix adds a `continueInFlight` guard to the useFocusEffect.
+// This engine-level test verifies the invariant that continueGame() — when
+// called from gameover state, as the successful-ad path does — actually runs
+// its full replay pipeline and reaches scheduleSequence with the preserved
+// sequence after the 500ms delay.
+describe("useGameEngine — rewarded continue replay", () => {
+  it("continueGame schedules the sequence replay after the 500ms delay", () => {
+    const { result } = startScoreAndLose()
+
+    expect(result.current.gameState).toBe("gameover")
+    const sequenceAtGameOver = [...result.current.sequence]
+    mockScheduleSequence.mockClear() // ignore schedule calls from the pre-gameover flow
+
+    act(() => {
+      result.current.continueGame()
+    })
+
+    // continueGame queues two nested addTimeouts: 500ms outer, 0ms inner.
+    // The outer fires → sends SET_INITIAL_SEQUENCE + queues inner. The inner
+    // fires (next microtask) → showSequence → scheduleSequence. Advance past
+    // both in one call to flush the chain.
+    act(() => {
+      jest.advanceTimersByTime(600)
+    })
+
+    expect(mockScheduleSequence).toHaveBeenCalled()
+    // First positional arg to scheduleSequence is the array of colors.
+    expect(mockScheduleSequence.mock.calls[0][0]).toEqual(sequenceAtGameOver)
+  })
+
+  it("continueGame does nothing if the engine left gameover state before it ran", () => {
+    // Simulates what happened pre-fix: resetGame fired mid-ad (moving the
+    // engine to idle), then continueGame was invoked when showRewarded
+    // resolved. The guard at the top of continueGame should protect against
+    // scheduling a replay in that case.
+    const { result } = startScoreAndLose()
+
+    act(() => {
+      result.current.resetGame() // simulate the spurious mid-ad reset
+    })
+
+    expect(result.current.gameState).toBe("idle")
+    mockScheduleSequence.mockClear()
+
+    act(() => {
+      result.current.continueGame() // would run when showRewarded resolves
+    })
+    act(() => {
+      jest.advanceTimersByTime(500)
+    })
+    act(() => {
+      jest.advanceTimersByTime(0)
+    })
+
+    expect(mockScheduleSequence).not.toHaveBeenCalled()
+    expect(result.current.gameState).toBe("idle")
+  })
+})

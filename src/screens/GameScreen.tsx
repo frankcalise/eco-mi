@@ -100,11 +100,20 @@ export function GameScreen() {
    * After /game-over pops, we should never stay on the main screen with the engine still in
    * gameover — the bottom panel hides start + idle actions in that state. If returning from
    * game-over without the pending-action effect running (timing / nav focus), reset here.
-   * Skip when the pending action is "continue"; continueGame() must run while still in gameover.
+   *
+   * Two guards, both required:
+   *   1. `action === "continue"` — covers the synchronous case where the pending action is
+   *      still queued when focus is gained.
+   *   2. `continueInFlight.current` — covers the rewarded-continue async case. The pending-action
+   *      useEffect runs on commit (before nav animation completes), clears the store, and starts
+   *      `handleContinue` which awaits `showRewarded`. By the time useFocusEffect fires, the store
+   *      is empty but `continueInFlight` is true — without this guard we'd reset the engine mid-ad
+   *      and strand the user on main menu with no replay after they watched the ad.
    */
   useFocusEffect(
     useCallback(() => {
       if (usePendingActionStore.getState().action === "continue") return
+      if (continueInFlight.current) return
       if (gameStateRef.current === "gameover") {
         resetGameRef.current()
       }
