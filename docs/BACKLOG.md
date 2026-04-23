@@ -319,6 +319,31 @@
 - [x] **Tracking screen "Share Statistics" copy is misleading**
       "Share Statistics" implies game stats but actually triggers ATT ad tracking consent. Apple has rejected apps for misleading pre-permission language. Revise to something like "Allow Tracking" or "Support with Ads" that accurately describes the IDFA consent being requested.
 
+- [ ] **Full theme-chrome audit across Pastel + Neon + Retro (non-Classic themes)**
+      The game was visually designed around Classic (dark navy bg) and several surfaces/borders/CTAs were hardcoded with `rgba(0, 0, 0, X)` / `rgba(255, 255, 255, X)` values that assume a dark backdrop. On Pastel (light bg) and Neon (black bg with vivid accents) those assumptions break in specific, painful ways:
+
+  **Pastel observations (2026-04-23 device review, Pixel 9 Pro):**
+  - `gameContainerStyle.backgroundColor: "rgba(0, 0, 0, 0.5)"` (`GameScreen.tsx:459`) renders as a dark grey disc on the pale pastel background — jarring visual clash, reads as "the pad quadrant is on a separate dark surface." Should pull from `activeTheme.surfaceColor` so the container fades into the theme.
+  - Score box borders (`rgba(255, 255, 255, 0.2)`-style) disappear against light pastel bg — boxes look like floating text with no container.
+  - Stat pill borders on `/game-over` are barely visible against pastel (hard to distinguish the 4 colored pills).
+  - "Watch Ad to Continue" outlined button uses a dark theme border/text on light pastel — discordant.
+  - Bottom idle icon buttons (trophy / stats / achievements) use dark-theme outlines that fight the pastel bg.
+  - **Pad active glow is doubly washed out on pastel**: the glow uses the pad's own pastel color (e.g. `#f8a5c2` red-pad) as shadow color on an already-light bg. On iOS shadow it's invisible; on Android the SVG radial gradient barely reads. Either boost glow opacity theme-specifically, or use a darker "glow accent" color derived from the pad per-theme, or use `theme.destructiveColor` / etc. as the glow source for light themes.
+
+  **Neon observations (2026-04-23 device review, iOS sim):**
+  - `.playAgainButton` and `.startGame` CTAs: white text on `theme.accentColor = "#39ff14"` (Neon's vivid green) measures ~2.5:1 contrast — fails WCAG AA for normal text (needs 4.5:1). Same pattern on any other primary CTA that uses `activeTheme.accentColor` as a background with white text. Fix: compute foreground via the existing `getReadableForeground(bg)` util in `src/utils/color.ts` so the text color picks black when the accent is bright.
+  - Likely affects other CTAs across Settings ("Remove Ads" using `UI_COLORS.brandPurple` is fine, but anything using `activeTheme.accentColor` as bg needs the same fix).
+
+  **Retro: needs spot-check** — retro's palette is desaturated brick/forest/mustard, so likely has the opposite problem (buttons too dim against dark retro bg, contrast marginal on secondary text).
+
+  **Approach**:
+  1. Grep `src/` for hardcoded `rgba(` and `#[0-9a-f]{3,8}` literals in StyleSheet blocks. For each, decide: use `activeTheme.surfaceColor` / `borderColor` / `textColor` / `secondaryTextColor` / `destructiveColor` / `warningColor` / `accentColor`, or keep as raw token if truly theme-agnostic (e.g. `UI_COLORS.shadowBlack`).
+  2. For every primary CTA using `activeTheme.accentColor` as background, replace hardcoded `color: "white"` with `color: getReadableForeground(activeTheme.accentColor)`.
+  3. Capture screenshots on all 4 themes × all major screens (idle, gameplay, /game-over, /settings, /leaderboard, /stats, /achievements) and diff visually against Classic as the reference.
+  4. For the pad glow specifically, consider a per-theme "glow intensity" or "glow color" override in `src/config/themes.ts` so Pastel can boost + Neon can stay punchy without global tuning.
+
+  Scope is non-trivial — expect this to be its own session. Don't bundle with other polish work.
+
 - [ ] **Colorblind mode: shape/glyph overlay on pads**
       Simon-style play depends entirely on distinguishing 4 colors + position. ~4–8% of males have red-green color deficiency, and on the retro theme both red (`#c0392b`) and green (`#27ae60`) desaturate to near-identical mid-greys for deuteranopes/protanopes. Add a user-toggleable "Colorblind patterns" setting that renders a unique glyph on each pad — circle / square / triangle / diamond, or numerals 1-4 — at ~24% opacity in the pad's contrast color. Also serves players in bright sunlight or on cheap displays. WCAG 1.4.1 (Use of Color). New setting in `settings.tsx` under "Accessibility" section, plumbed through theme context to `GameButton`.
 
