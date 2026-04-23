@@ -1,6 +1,7 @@
 import { View, StyleSheet } from "react-native"
 import { EaseView } from "react-native-ease"
 
+import { PadGlow } from "@/components/PadGlow"
 import { colorMap, type Color } from "@/hooks/useGameEngine"
 import { UI_COLORS } from "@/theme/uiColors"
 
@@ -109,6 +110,12 @@ export function GameButton({
         { top: baseCoords.top, left: baseCoords.left, width: buttonSize, height: buttonSize },
       ]}
     >
+      <PadGlow
+        color={displayActiveColor}
+        isActive={isActive}
+        buttonSize={buttonSize}
+        padId={color}
+      />
       <View
         testID={`btn-${color}${isActive ? "-active" : ""}`}
         style={[
