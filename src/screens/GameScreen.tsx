@@ -588,7 +588,6 @@ export function GameScreen() {
 
         <IdleSparkleTraveler
           gameSize={gameSize}
-          buttonSize={buttonSize}
           slotInset={slotInset}
           theme={activeTheme}
           active={gameState === "idle" && !isShuffling}
