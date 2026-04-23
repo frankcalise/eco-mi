@@ -181,7 +181,7 @@ export default function GameOverScreen() {
     return () => clearTimeout(timer)
   }, [showInitialsInput])
 
-  const { removeAds } = usePurchases()
+  const { removeAds, purchaseRemoveAds } = usePurchases()
   const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
     useStoreReview()
   const { showPostPBPrompt, triggerPostPBCheck, dismissPostPBPrompt } = usePostPBPrompt()
@@ -305,6 +305,11 @@ export default function GameOverScreen() {
 
   async function handleRemoveAds() {
     analytics.trackIapInitiated("ecomi_remove_ads")
+    const success = await purchaseRemoveAds()
+    if (success) {
+      analytics.trackIapCompleted("ecomi_remove_ads")
+      dismissPostPBPrompt()
+    }
   }
 
   return (
