@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 
 import { ACHIEVEMENTS, type AchievementId } from "@/config/achievements"
 import { ACHIEVEMENTS as ACHIEVEMENTS_STORAGE_KEY } from "@/config/storageKeys"
@@ -46,10 +46,6 @@ function unlock(
 export function useAchievements(): UseAchievementsReturn {
   const [achievements, setAchievements] = useState<AchievementRecord>(loadAchievements)
   const [newlyUnlocked, setNewlyUnlocked] = useState<AchievementId[]>([])
-
-  useEffect(() => {
-    setAchievements(loadAchievements())
-  }, [])
 
   function checkAchievements(ctx: AchievementContext) {
     let record = { ...achievements }
