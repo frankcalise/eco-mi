@@ -8,8 +8,18 @@ All notable changes to Eco Mi are documented here. Entries are appended automati
 
 ### Feat
 
+- **Signature haptic patterns via Pulsar migration** — Swapped `expo-haptics` for `react-native-pulsar` 1.3.0 (Software Mansion) to unlock authored amplitude + frequency patterns synced to the audio jingles. New `src/config/hapticPatterns.ts` holds two signature `Pattern` objects wired through `usePatternComposer` in `useHaptics`:
+  - **`VICTORY_PATTERN`** (newHighScore) — four-tap ascending staircase (amplitude 0.3 → 1.0, frequency 0.3 → 1.0) landing on the 1st/3rd/5th/6th notes of the 720ms rising jingle. Continuous envelope adds a Duolingo-style sparkle lift that sustains 180ms past the jingle end so the celebration tails off instead of cutting dead.
+  - **`SPIRAL_PATTERN`** (gameOver) — four descending spiral taps, hard thud at 600ms aligned to the final 440Hz note, then two decaying bounces. Continuous frequency drops 1.0 → 0.1 under the spiral for a Looney-Tunes falling-whistle feel.
+  - Other events (`buttonPress`, `menuTap`, `sequenceFlash`, `countdownTick`, `wrongButton`) map to Pulsar's `Presets.System.*` primitives for parity with pre-migration feel. Pulsar's `notificationError` is a native multi-tap, so the old 150ms setTimeout double-pulse for `wrongButton` was dropped.
+  - `expo-haptics` removed from `package.json`. Native dirs regenerated via `expo prebuild --clean`; stay gitignored per CNG.
+- **Dev-only Haptics Lab** — New `/haptics-lab` route exposed via the Expo dev menu ("Haptics Lab", next to "Seed Screenshot Data"). Edit pattern JSON in-place, toggle "+ audio" to fire the jingle alongside for sync validation, tap "Parse & play" to iterate without rebuilding. Also includes a preset grid (`impactLight/Medium/Heavy`, `notification*`, `selection`) for calibrating intensity against the authored patterns. Behind `__DEV__`, so the dev menu registration + everything it reaches tree-shakes out of production bundles.
 - **Tablet-optimized layout** — `supportsTablet: true` enabled. `src/utils/layoutBreakpoints.ts` helper (`isCompact`/`isTablet`) based on shortest screen side. `OrientationLockProvider` enforces portrait on phones, unlocks on tablets. `useGameBoardMetrics` hook computes board sizing from measured available space and freezes values during active play to prevent mid-round layout shifts. GameScreen refactored with distinct compact/tablet-portrait/tablet-landscape compositions. Secondary screens (achievements, stats, leaderboard, game-over, settings, AchievementToast, HighScoreTable) gained max-width centering and density tuning for tablet. Added `expo-screen-orientation` dependency.
 - **Mode selector migrated to `/mode-select` route** — platform-specific `CompactModePickerSheet` (iOS ActionSheet, Android dialog-style, web fallback). `pendingModeStore` Zustand store carries selection back to GameScreen. `GameModePickerContent` shared component for mode list. Extracted `gameModes.ts`, `modePickerTiming.ts`, `modePickerPulse.ts` config files. Mode picker content and `ModeItem` scale up on tablet.
+
+### Fix
+
+- **newHighScore haptic was double-firing** — GameScreen fired the celebration haptic on the gameover transition, and `/game-over` fired it again on mount ~400ms later. Tolerable when it was a short `notificationAsync(Success)` buzz; catastrophic for a 720ms authored pattern. The celebration haptic now fires once on GameScreen, sync'd to the jingle start. Also added a parallel `haptics.play('gameOver')` next to `playGameOverJingle()` — previously the non-HS branch had no haptic at all.
 
 ### Fix
 
