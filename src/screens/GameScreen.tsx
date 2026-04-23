@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { LayoutChangeEvent } from "react-native"
 import { Platform, StyleSheet, Text, useWindowDimensions, View } from "react-native"
-import * as Haptics from "expo-haptics"
 import { useFocusEffect, useRouter } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
@@ -24,6 +23,7 @@ import { INITIALS_SKIPPED, ONBOARDING_COMPLETED, SAVED_INITIALS } from "@/config
 import { useAds } from "@/hooks/useAds"
 import { useGameBoardMetrics } from "@/hooks/useGameBoardMetrics"
 import { useGameEngine, type GameMode } from "@/hooks/useGameEngine"
+import { useHaptics } from "@/hooks/useHaptics"
 import { useHighScores } from "@/hooks/useHighScores"
 import { useNotifications, shouldShowNotificationPrompt } from "@/hooks/useNotifications"
 import { usePurchases } from "@/hooks/usePurchases"
@@ -53,6 +53,7 @@ export function GameScreen() {
   const { soundPack } = useSoundPack()
   const { activeTheme } = useTheme()
   const analytics = useAnalytics()
+  const haptics = useHaptics()
 
   const {
     gameState,
@@ -189,7 +190,7 @@ export function GameScreen() {
   function handleCompactModeSelect(id: GameMode) {
     if (id === mode) return
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    haptics.play("buttonPress")
 
     pulseTimers.current.forEach(clearTimeout)
     pulseTimers.current = []
@@ -235,7 +236,7 @@ export function GameScreen() {
 
       if (isNewHighScore) {
         playHighScoreJingle()
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+        haptics.play("newHighScore")
         analytics.trackGameCompleted(score, level, true, elapsed)
       } else {
         playGameOverJingle()
@@ -603,7 +604,7 @@ export function GameScreen() {
         style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+          haptics.play("menuTap")
           router.push({ pathname: "/leaderboard", params: { mode } })
         }}
       >
@@ -616,7 +617,7 @@ export function GameScreen() {
         style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+          haptics.play("menuTap")
           router.push("/stats")
         }}
       >
@@ -629,7 +630,7 @@ export function GameScreen() {
         style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+          haptics.play("menuTap")
           router.push("/achievements")
         }}
       >
@@ -757,7 +758,7 @@ export function GameScreen() {
                         style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                          haptics.play("menuTap")
                           router.push({ pathname: "/leaderboard", params: { mode } })
                         }}
                       >
@@ -770,7 +771,7 @@ export function GameScreen() {
                         style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                          haptics.play("menuTap")
                           router.push("/stats")
                         }}
                       >
@@ -787,7 +788,7 @@ export function GameScreen() {
                         style={[styles.idleActionButton, { borderColor: activeTheme.borderColor }]}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                          haptics.play("menuTap")
                           router.push("/achievements")
                         }}
                       >

@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react"
 import { View, Text, StyleSheet } from "react-native"
-import * as Haptics from "expo-haptics"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
 import { EaseView } from "react-native-ease"
 
 import { PressableScale } from "@/components/PressableScale"
 import type { GameTheme } from "@/config/themes"
+import { useHaptics } from "@/hooks/useHaptics"
 import { UI_COLORS } from "@/theme/uiColors"
 
 const NEON_COLOR_ORDER = ["red", "blue", "green"] as const
@@ -20,6 +20,7 @@ type GameHeaderProps = {
 
 export function GameHeader({ isIdle, theme, onModePress, onSettingsPress }: GameHeaderProps) {
   const { t } = useTranslation()
+  const haptics = useHaptics()
 
   const [neonColorIndex, setNeonColorIndex] = useState(0)
   const neonIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -53,7 +54,7 @@ export function GameHeader({ isIdle, theme, onModePress, onSettingsPress }: Game
         accessibilityLabel={t("a11y:modeSelector")}
         accessibilityRole="button"
         onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+          haptics.play("menuTap")
           onModePress()
         }}
         disabled={!isIdle}
@@ -98,7 +99,7 @@ export function GameHeader({ isIdle, theme, onModePress, onSettingsPress }: Game
         accessibilityLabel={t("a11y:settings")}
         accessibilityRole="button"
         onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+          haptics.play("menuTap")
           onSettingsPress()
         }}
         disabled={!isIdle}

@@ -15,6 +15,9 @@
 
 ## Bugs
 
+- [ ] **Leaderboard mode tab label wraps in Spanish ("CONTRARRELOJ")**
+      The timed mode label in Spanish is "Contrarreloj" — too long to fit on one line in the mode tab button on the leaderboard screen, causing it to wrap across two lines ("CONTRARRE / LOJ"). Fix options: shorten the Spanish translation to an abbreviation ("C.RELOJ" or "TIEMPO"), reduce the tab font size for long labels, or allow the tab row to scroll horizontally. Check PT for the same issue ("CRONOMETRADO"). Ref: leaderboard mode tabs in `src/app/leaderboard.tsx`.
+
 - [x] **Audio pops/clicks when tapping game buttons**
       Audible pop artifact on button press, especially on quick taps. Likely related to the oscillator start/stop envelope in `src/hooks/useAudioTones.tsx`. The attack ramp (`ATTACK_S = 0.01`) may be too short on some devices, or the continuous sound start/stop cycle creates a discontinuity when rapidly re-triggering. Investigate:
   - Whether the gain node value is non-zero when a new oscillator starts (creating a click)
@@ -134,13 +137,35 @@
   - **react-native-nitro-haptics** — lighter alternative with more granularity than expo-haptics
     Ensure countdown haptics don't conflict with existing button tap and sequence playback haptics — may need to suppress timer haptics during active input.
 
+- [ ] **Daily streak-extended celebration beat on /game-over**
+      When the player finishes a daily-mode game that extended their current streak, slot a brief celebratory "streak extended" beat at the top of `/game-over` _before_ revealing the trophy/summary view. Flow: daily game ends → land on `/game-over` → first paint shows only a large flame icon + "Day N streak!" headline + short sub-label (e.g. "You're on fire — keep it going!") + a single Continue CTA → Continue dismisses the celebration layer and reveals the existing trophy/stat-pills/initials layout (animated in as it does today). The celebration should _not_ be a separate route — keep it as a stacked layer inside `src/app/game-over.tsx` so there's no extra navigation state and back-button behavior is unchanged.
+  - Only show when `mode === "daily"` AND the streak was extended this game (i.e. `currentStreak > previousStreak`, not just any daily win). Streak broken → no celebration. Streak same (already played today) → no celebration.
+  - Milestone streaks (3, 7, 30, 100) get upgraded visuals — bigger flame, confetti Lottie, milestone-specific headline ("One week streak!"). Non-milestone extensions get the lighter treatment.
+  - Pair with a distinct haptic pattern (once Pulsar lands): rising double-pulse that feels like a match strike + flame whoosh, separate from both the new-high-score "victory" and regular game-over patterns. Non-milestone extensions use the base pattern; milestones layer a sustained flourish on top.
+  - Pair with a short flame/whoosh audio cue (existing `react-native-audio-api` oscillator engine, respecting sound pack + soundEnabled).
+  - Continue should also be auto-dismissed after ~2.5–3s if the player doesn't tap, so it never blocks the game-over flow. Analytics: emit `streak_extended_celebration_shown` with streak count + whether it was milestone.
+  - Open question: does this stack awkwardly with the achievement toast if a streak milestone _also_ unlocks an achievement? Likely suppress the toast during the celebration layer and let it appear on the summary view after Continue.
+
+- [x] **Centralized event-based haptics hook + wire settings toggle + game-over haptics**
+      Introduced `useHaptics()` in `src/hooks/useHaptics.ts` with an event-based API (`play('buttonPress')`, `play('newHighScore')`, `play('gameOver')`, `play('wrongButton')`, `play('menuTap')`, `play('sequenceFlash')`, `play('countdownTick', { urgency })`). Callers describe intent; the hook owns the mapping to `expo-haptics` primitives — makes the future Pulsar swap a one-file change. Backed by a reactive `preferencesStore` (Zustand) so the haptics settings toggle actually takes effect in-session (previously `SETTINGS_HAPTICS_ENABLED` was stored but never read — every haptic fired regardless). All existing call sites migrated: `useGameEngine`, `GameScreen`, `settings`, `mode-select`, `GameHeader`. Added first-pass haptics to `/game-over` (mount beat + button handlers). Simulator dev aid: logs `[haptics] eventName` instead of firing, since simulator haptics don't actuate.
+
+- [ ] **Migrate `soundEnabled` to reactive preferences store**
+      Same latent bug the haptics toggle had: `useGameEngine` reads `SETTINGS_SOUND_ENABLED` via `useState(() => loadString(...))` which snapshots at mount and misses in-session toggle changes — player has to restart the app for mute to take effect in a running session. Fold `soundEnabled` into `src/stores/preferencesStore.ts` the same way `hapticsEnabled` works, and replace the mount-snapshot reads in `useGameEngine` + `useAudioTones` + `settings.tsx` with `usePreferencesStore((s) => s.soundEnabled)`. Low-risk follow-up to the haptics refactor; mechanical change.
+
 - [ ] **Haptics overhaul: migrate from expo-haptics to Pulsar**
       Replace `expo-haptics` across the app with [Pulsar](https://github.com/software-mansion/pulsar) for richer, more nuanced haptic feedback. Pulsar's pattern composer enables custom haptic sequences per game event (button press, round complete, game over, high score) and its realtime composer could drive gesture-driven feedback. Evaluate:
   - Custom patterns for each game button color (different amplitude/frequency per color)
   - Escalating intensity patterns for streak combos
-  - Distinct game-over vs high-score celebration haptics
+  - Distinct game-over vs high-score celebration haptics (see dedicated entry below for pattern direction)
   - Whether worklet integration improves responsiveness during animations
   - Backward compatibility — ensure Android API 24+ coverage is acceptable
+
+- [ ] **Signature haptic patterns: New High Score + Game Over**
+      Pair the existing jingles with purpose-built haptic patterns for the two highest-emotion moments. Likely lands as part of the Pulsar migration (expo-haptics is too coarse for this), but the design direction stands regardless of engine.
+  - **New High Score — "victory"**: Duolingo-lesson-complete energy. Ascending staircase of 3–4 taps (light → medium → medium → heavy) timed to the jingle's rising motif, finishing with a held sustain + sparkle roll-off. Should _feel_ like confetti + a trophy plunk, not just "buzz."
+  - **Game Over — "spiral + kaput"**: Looney Tunes falling-whistle descent. Rapid descending tremolo (high-frequency → low-frequency taper over ~700ms) simulating the spiral-down whistle, then a single hard **thud** impact on impact with the ground, and optionally a tiny stuttered bounce-and-settle (2 decaying micro-pulses). Cartoon physics in haptics.
+  - Sync tightly to the jingle envelopes so the haptic feels authored, not bolted on. Prototype in Pulsar's pattern composer, A/B against the current `notificationAsync(Success|Error)` on device (simulator haptics are useless).
+  - Respect the existing haptics settings toggle; never fire if muted.
 
 - [x] **Theme-aware navigation transition background**
       `_layout.tsx` currently hardcodes the stack `contentStyle.backgroundColor` and the root wrapper View to `#1a1a2e` (Classic theme). Users on other themes (Neon, Retro, Pastel) see a momentary flash to that classic dark color during slide transitions. To fix: lift the theme context up to `_layout.tsx` so the root View and stack contentStyle use `activeTheme.backgroundColor` dynamically. Particularly noticeable on Pastel (light theme) where the flash goes from light → dark → light.
@@ -338,6 +363,16 @@
 
 - [x] **Install expo-insights for update + adoption telemetry**
       `npx expo install expo-insights` adds first-class visibility into OTA update adoption, launch success/failure rates, and version distribution across the install base — visible in the Expo dashboard without needing to wire anything into PostHog/Sentry. Especially useful once we start shipping EAS Updates: we'll be able to see how quickly users pick up a new JS bundle and whether a bad update is causing launch failures. No runtime config required beyond the install; data flows automatically on production builds.
+
+- [ ] **Fix Android edge-to-edge deprecated APIs (Play Console vitals)**
+      Android vitals flagged on 1.0.1: "Your app uses deprecated APIs or parameters for edge-to-edge." Android 15 (API 35) enforces edge-to-edge by default and deprecates `window.setStatusBarColor`, `setNavigationBarColor`, and `setNavigationBarDividerColor`. Audit app for any direct usage (unlikely in our RN code, but check native deps / plugins). Confirm `edgeToEdgeEnabled: true` is set in `app.config.ts` (already the SDK 55 default via `expo-build-properties`) and that we draw content behind system bars correctly using `react-native-safe-area-context`. Expand the Play Console action to see the exact deprecated API and affected lib. Likely just needs a dep bump or a config-plugin tweak.
+      - Ref: Play Console → Android vitals → actions recommended
+      - Surface: User experience / Release 1.0.1
+
+- [ ] **Remove Android resizability / orientation restrictions for large screens (Play Console vitals)**
+      Android vitals flagged on 1.0.1: "Remove resizability and orientation restrictions in your game to support large screen devices." Play Store ranks apps lower on tablets/foldables/ChromeOS when they lock orientation or declare non-resizable. We currently set `orientation: "portrait"` in `app.config.ts`. Options: (1) allow `orientation: "default"` on Android tablets only via config plugin, or (2) add `android:resizeableActivity="true"` + `android:supportsPictureInPicture="false"` and declare tablet support while keeping phone portrait-lock. Simon-style gameplay works fine in landscape — main work is making the board layout responsive. Lower priority than the edge-to-edge fix, but both affect the same 1.0.1 vitals surface.
+      - Ref: Play Console → Android vitals → actions recommended
+      - Surface: User experience / Release 1.0.1
 
 ---
 

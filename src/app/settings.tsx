@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { View, Text, Pressable, Platform, StyleSheet, ScrollView } from "react-native"
 import * as Application from "expo-application"
-import * as Haptics from "expo-haptics"
 import { useNavigation } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
@@ -12,7 +11,6 @@ import { NativeToggle } from "@/components/NativeToggle"
 import { PressableScale } from "@/components/PressableScale"
 import { SOUND_PACKS } from "@/config/soundPacks"
 import {
-  SETTINGS_HAPTICS_ENABLED,
   SETTINGS_NOTIFY_DAILY,
   SETTINGS_NOTIFY_STREAK,
   SETTINGS_NOTIFY_WINBACK,
@@ -21,10 +19,12 @@ import {
 } from "@/config/storageKeys"
 import { themeIds, gameThemes } from "@/config/themes"
 import { useAudioTones, type ColorMap } from "@/hooks/useAudioTones"
+import { useHaptics } from "@/hooks/useHaptics"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useSoundPack } from "@/hooks/useSoundPack"
 import { useTheme } from "@/hooks/useTheme"
 import { stackHeaderOptionsFromTheme } from "@/navigation/secondaryStackHeader"
+import { usePreferencesStore } from "@/stores/preferencesStore"
 import { UI_COLORS } from "@/theme/uiColors"
 import { useAnalytics } from "@/utils/analytics"
 import { loadString, saveString } from "@/utils/storage"
@@ -66,6 +66,7 @@ export default function SettingsScreen() {
   const { t, i18n } = useTranslation()
   const navigation = useNavigation()
   const analytics = useAnalytics()
+  const haptics = useHaptics()
 
   const { soundPack, previewSoundPack, setSoundPack, setPreviewSoundPack, clearSoundPreview } =
     useSoundPack()
@@ -92,9 +93,8 @@ export default function SettingsScreen() {
     const raw = loadString(SETTINGS_SOUND_VOLUME)
     return raw != null ? parseFloat(raw) : 1.0
   })
-  const [hapticsEnabled, setHapticsEnabled] = useState(
-    () => loadString(SETTINGS_HAPTICS_ENABLED) !== "false",
-  )
+  const hapticsEnabled = usePreferencesStore((s) => s.hapticsEnabled)
+  const setHapticsEnabled = usePreferencesStore((s) => s.setHapticsEnabled)
   const [notifyDaily, setNotifyDaily] = useState(
     () => loadString(SETTINGS_NOTIFY_DAILY) !== "false",
   )
@@ -153,9 +153,10 @@ export default function SettingsScreen() {
   }
 
   function toggleHaptics() {
-    const next = !hapticsEnabled
-    setHapticsEnabled(next)
-    saveString(SETTINGS_HAPTICS_ENABLED, next ? "true" : "false")
+    // Fire one last buzz on disable so the user feels confirmation; on enable
+    // the new state will govern the *next* interaction naturally.
+    haptics.play("menuTap")
+    setHapticsEnabled(!hapticsEnabled)
   }
 
   function toggleNotifyDaily() {
@@ -194,7 +195,7 @@ export default function SettingsScreen() {
               testID="btn-sound-toggle"
               value={soundEnabled}
               onValueChange={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                haptics.play("menuTap")
                 toggleSoundEnabled()
               }}
               activeColor={activeTheme.accentColor}
@@ -263,7 +264,7 @@ export default function SettingsScreen() {
                       clearSoundPreview()
                       return
                     }
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                    haptics.play("menuTap")
                     if (!soundEnabled) {
                       setSoundHint(true)
                       setTimeout(() => setSoundHint(false), 2000)
@@ -356,7 +357,7 @@ export default function SettingsScreen() {
                       clearPreview()
                       return
                     }
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                    haptics.play("menuTap")
                     setPoppingTheme(id)
                     setTimeout(() => setPoppingTheme(null), 150)
                     if (isOwned) {

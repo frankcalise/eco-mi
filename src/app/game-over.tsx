@@ -23,6 +23,7 @@ import {
 } from "@/config/storageKeys"
 import type { GameTheme } from "@/config/themes"
 import { useAchievements } from "@/hooks/useAchievements"
+import { useHaptics } from "@/hooks/useHaptics"
 import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
 import { usePostPBPrompt } from "@/hooks/usePostPBPrompt"
 import { usePurchases } from "@/hooks/usePurchases"
@@ -101,6 +102,7 @@ export default function GameOverScreen() {
   const insets = useSafeAreaInsets()
   const { activeTheme } = useTheme()
   const analytics = useAnalytics()
+  const haptics = useHaptics()
   const { isTablet } = useBreakpoints()
   const shareCardRef = useRef<ViewShot>(null)
 
@@ -152,6 +154,7 @@ export default function GameOverScreen() {
 
   function handleSaveInitials() {
     if (!allFilled) return
+    haptics.play("buttonPress")
     const initials = letters.join("")
     saveString(SAVED_INITIALS, initials)
     const entry: HighScoreEntry = {
@@ -166,6 +169,7 @@ export default function GameOverScreen() {
   }
 
   function handleSkipInitials() {
+    haptics.play("menuTap")
     saveString(INITIALS_SKIPPED, "true")
     setInitialsSaved(true)
   }
@@ -195,6 +199,9 @@ export default function GameOverScreen() {
   useEffect(() => {
     if (triggeredRef.current) return
     triggeredRef.current = true
+
+    // Emotional beat: one haptic on mount that matches the outcome.
+    haptics.play(isNewHighScore ? "newHighScore" : "gameOver")
 
     const gamesPlayed = parseInt(loadString(STATS_GAMES_PLAYED) ?? "0", 10)
     const currentStreak = parseInt(loadString(DAILY_CURRENT_STREAK) ?? "0", 10)
@@ -247,6 +254,7 @@ export default function GameOverScreen() {
       : null
 
   async function handleShare() {
+    haptics.play("menuTap")
     analytics.trackShareTapped(score, level)
     const message = t("game:shareMessage", { level, score, mode: t(`game:modes.${mode}`) })
     try {
@@ -273,16 +281,19 @@ export default function GameOverScreen() {
   }, [navigation])
 
   function handlePlayAgain() {
+    haptics.play("buttonPress")
     setPendingAction("play_again")
     router.back()
   }
 
   function handleContinue() {
+    haptics.play("buttonPress")
     setPendingAction("continue")
     router.back()
   }
 
   function handleMainMenu() {
+    haptics.play("menuTap")
     setPendingAction("main_menu")
     router.back()
   }

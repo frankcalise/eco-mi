@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react"
-import * as Haptics from "expo-haptics"
 import { useMachine } from "@xstate/react"
 import type { OscillatorType } from "react-native-audio-api"
 
@@ -15,6 +14,7 @@ import {
 } from "@/config/storageKeys"
 import { type GameTheme, gameThemes } from "@/config/themes"
 import { useAudioTones } from "@/hooks/useAudioTones"
+import { useHaptics } from "@/hooks/useHaptics"
 import { recordGameResult } from "@/hooks/useStats"
 import { saveString, loadString } from "@/utils/storage"
 
@@ -153,6 +153,7 @@ function getTestSeed(): number | null {
 
 export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineReturn {
   const [state, send] = useMachine(gameEngineMachine)
+  const haptics = useHaptics()
 
   // Local UI state
   const [activeButton, setActiveButton] = useState<Color | null>(null)
@@ -307,17 +308,15 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
         clearAllTimeouts()
         silenceAll()
         send({ type: "TIMER_EXPIRED" })
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-        setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error), 150)
+        haptics.play("wrongButton")
         handleGameOverSideEffects()
       } else {
         setTimeRemaining(remaining)
         const sec = Math.ceil(remaining)
         if (sec !== lastHapticSecond.current && sec <= 10 && sec > 0) {
           lastHapticSecond.current = sec
-          if (sec <= 3) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
-          else if (sec <= 5) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-          else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+          const urgency = sec <= 3 ? "high" : sec <= 5 ? "medium" : "low"
+          haptics.play("countdownTick", { urgency })
         }
       }
     }, 100)
@@ -334,7 +333,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
   function flashButton(color: Color, duration: number) {
     setActiveButton(color)
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    haptics.play("sequenceFlash")
     addTimeout(() => setActiveButton(null), duration)
   }
 
@@ -499,8 +498,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       send({ type: "RESET" })
       return
     }
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-    setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error), 150)
+    haptics.play("wrongButton")
     send({ type: "END_GAME" })
     handleGameOverSideEffects()
   }
@@ -534,7 +532,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     buttonPressStartTime.current = Date.now()
     setActiveButton(color)
     noteOn(color)
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    haptics.play("buttonPress")
   }
 
   function handleButtonRelease(color: Color) {
@@ -569,8 +567,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
 
     if (color !== expectedColor) {
       silenceAll()
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-      setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error), 150)
+      haptics.play("wrongButton")
       // Drop pending sequence / chaos shuffle timers so nothing fires after gameover or reset.
       if (mode !== "timed") {
         clearAllTimeouts()

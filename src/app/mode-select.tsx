@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
-import * as Haptics from "expo-haptics"
 import { useLocalSearchParams, useRouter } from "expo-router"
 
 import { GameModePickerContent } from "@/components/GameModePickerContent"
 import { GAME_MODES } from "@/config/gameModes"
 import type { GameMode } from "@/hooks/useGameEngine"
+import { useHaptics } from "@/hooks/useHaptics"
 import { useTheme } from "@/hooks/useTheme"
 import { usePendingModeStore } from "@/stores/pendingModeStore"
 import { UI_COLORS } from "@/theme/uiColors"
@@ -21,6 +21,7 @@ function parseCurrentMode(raw: string | undefined): GameMode {
 export default function ModeSelectScreen() {
   const router = useRouter()
   const { activeTheme } = useTheme()
+  const haptics = useHaptics()
   const setPendingMode = usePendingModeStore((s) => s.setPendingMode)
   const params = useLocalSearchParams<{ currentMode?: string }>()
   const currentMode = parseCurrentMode(
@@ -45,7 +46,7 @@ export default function ModeSelectScreen() {
       return
     }
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    haptics.play("buttonPress")
 
     pulseTimers.current.forEach(clearTimeout)
     pulseTimers.current = []
