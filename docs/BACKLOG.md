@@ -81,6 +81,30 @@
 - [x] **Continue via ad logs duplicate leaderboard entry**
       When a player gets game over with a high score, the score is added to the leaderboard (`useHighScores.addHighScore` called from `GameScreen.tsx` game-over effect). If they continue via rewarded ad and then lose again, a second entry is logged — potentially the same or a different score. Stats are already guarded against double-counting by `gameResultRecorded`, but the leaderboard path in GameScreen fires on every gameover transition. Fix: only log to the leaderboard on the final gameover (skip if `continuedThisGame` is false on the first game-over, or defer logging until the game truly ends). Alternatively, if the continued score is higher, replace the first entry rather than adding a second.
 
+- [ ] **State machine: `startTimer` interval reads stale `ctx` via JS closure**
+      In `useGameEngine.ts` (~line 292–315), `handleGameOverSideEffects` called from inside the `setInterval` tick captures `state.context` from the render in which `startTimer` was invoked. If timed-mode expiry fires later in the game, `ctx.highScore` and `ctx.gameResultRecorded` reflect the snapshot at timer start, not the live machine context — meaning double-calls to `saveHighScore`/`recordGameResult` can silently misfire. Mirror the existing `scoreRef` pattern: keep a ref that tracks the fields `handleGameOverSideEffects` reads and deref inside the interval callback. Low observed impact today because the machine moves quickly to gameover, but this is a latent bug that would surface the first time we add anything that mutates those fields mid-game.
+
+- [ ] **State machine: `continueGame` captures `ctx.sequence` / `ctx.level` via closure before `addTimeout`**
+      `useGameEngine.ts:511–521` snapshots `sequenceToReplay` and `levelToReplay` synchronously, sends `CONTINUE`, then schedules replay in an `addTimeout(..., 500)`. Safe today because `setupContinue` preserves the sequence, but any future `setupContinue` action that mutates `sequence` (or if a `RESET` fires between the two `addTimeout` callbacks) would play back the wrong data silently. Fix: read the latest machine snapshot inside the timeout callback via a `contextRef` that mirrors `state.context`.
+
+- [ ] **`handleGameOverSideEffects` can double-fire `saveHighScore` / `saveDailyResult`**
+      `useGameEngine.ts:312–317` is called from both `endGame` and the non-timed wrong-input branch of `handleButtonRelease`. `gameResultRecorded` guards the inner `recordGameResult` call, but `saveHighScore` and `saveDailyResult` have no such guard. If the machine ever reaches `gameover` through a new path (e.g., `INPUT_TIMEOUT` autofires while `handleButtonRelease` is also processing), both write paths execute. Guard both on `ctx.gameResultRecorded`, or consolidate all game-over side effects into a single `useEffect` that watches the `state.value` transition into `gameover` (see related architectural task in Tech Debt).
+
+- [ ] **Ad serving dies for rest of session on single ERROR event**
+      `useAds.ts` flips `loadedRef.current = false` on `AdEventType.ERROR` for both interstitial and rewarded but never retries. A single network blip during ad load kills monetization for the rest of the session — the next `showInterstitial`/`showRewarded` call bails immediately because `loadedRef.current` is false and no reload is scheduled. Add a debounced retry (~30s) on ERROR so transient failures recover.
+
+- [ ] **`consentReady` is exported from `useAds` but nothing consumes it**
+      The hook exposes `consentReady` in its return but every caller ignores it; ad init fires `loadInterstitial`/`loadRewarded` immediately regardless of whether consent has resolved. Since both load methods tolerate the pre-consent state (they just use `npaRef` default = true), this is harmless today but the unused flag is a code smell. Either drop it from the return type, or gate initial ad load behind it so we don't fire requests before consent settles.
+
+- [ ] **`handleShare` on `/game-over` swallows all errors silently**
+      `src/app/game-over.tsx:256–269` wraps `Sharing.shareAsync` / `Share.share` in `catch {}`, so a missing share target on Android (or any other failure) gives the user no feedback — the button just looks broken. Surface a themed toast or `Alert` on failure; at minimum log the error to Sentry so we have visibility into how often this fails.
+
+- [ ] **`useAchievements` runs initial load twice on mount**
+      `src/hooks/useAchievements.ts:50–52` uses `useState(loadAchievements)` as a lazy initializer (correct), then has a follow-up `useEffect(() => { setAchievements(loadAchievements()) }, [])` that re-reads the same MMKV values and triggers an extra render on every mount of `GameOverScreen`. Delete the `useEffect` — the lazy initializer is sufficient.
+
+- [ ] **`inputRefs` array recreated every render in `/game-over`**
+      `src/app/game-over.tsx:130` builds `const inputRefs = [inputRef0, inputRef1, inputRef2]` on every render. The consumers happen to read the ref objects (which are stable) so the current code works, but the array identity thrashes — the React Compiler can't stabilize it, and any future consumer taking `inputRefs` as a prop or dep would re-fire. Either `useRef([inputRef0, inputRef1, inputRef2]).current` at mount, or index the named refs directly in the handlers.
+
 ## Animation Polish
 
 - [x] **Chaos mode: animated shuffle sequences (shell game style)**
@@ -204,6 +228,48 @@
 - [x] **Idle screen: one-shot retro chiptune jingle**
       Compose a short (3–5 second) retro chiptune jingle using the existing `react-native-audio-api` oscillator engine. Play it once when the game returns to idle state (app launch, after game over → home, after reset). The jingle should use the currently selected sound pack's `oscillatorType` (sine, square, sawtooth, triangle) so it changes character with the player's choice. Respect the existing `soundEnabled` toggle — no sound when muted. Keep the melody simple: 6–10 notes in a major key, ascending pattern, classic arcade "ready!" feel.
 
+- [ ] **Pad active state: shadow + glow pulse (depth layer)**
+      Today the `GameButton` active state animates `scale: 1.08` and `opacity: 0.85 → 1` but the shadow is static. Premium Simon-likes "lift" the pressed pad. Add a second `EaseView` overlay beneath the pad that animates a blurred colored glow (radial gradient via `expo-linear-gradient` or a blurred colored `View` at ~40% opacity inflated 15% beyond pad bounds) in + out with the active state. Use a snappier spring than the pad body (`stiffness: 500, damping: 22`) so the glow reads as a sharp "pop" while the pad settles more gently. Pair with a subtle inner-shadow on inactive pads so "off" reads as depth, not just dimness. Also intensify `wrongFlash` from 0.25 opacity / 100ms to a 2-beat `0 → 0.45 → 0.1 → 0` over ~280ms so mistakes sting.
+
+- [ ] **Idle main-menu: sparkle traveler tracing the pad ring**
+      While the game is in idle state, animate a small glowing point that traces the outer edge of the 4-pad quadrant, pausing briefly on each pad and pulsing its color before moving on. Circuit: red → blue → green → yellow → red, continuous loop at ~4s per full revolution. Uses the active theme's `buttonColors[color].color` for the traveler and a fainter radial glow matching `accentColor`. Pauses on `gameState !== "idle"` and on reduced-motion. Pairs beautifully with the existing neon title color cycle — title and traveler can share the same color phase so the whole idle screen feels "alive" rather than static. Implementation: `react-native-ease` for position tween around a bezier path (or 4 discrete corner keyframes with smooth easing between), `react-native-svg` for the stroke+glow if a gradient trail is desired. Keep the traveler low-intensity — 8–12px dot, 30–40% alpha — so it reads as ambient, not UI chrome.
+
+- [ ] **Start button breathe: pair scale loop with shadow/rim-glow**
+      `GameScreen.tsx:647-674` currently loops `scale: 1.0 → 1.02` every 1200ms with a static shadow. Premium apps pair idle breathing with a corresponding "lift" so the button appears to inhale. Two options: (a) animate `shadowRadius: 8 → 16` and `shadowOpacity: 0.3 → 0.5` in sync with the scale loop, or (b) swap the scale for an accent-colored rim glow (`borderWidth: 0 → 2`, `borderColor: activeTheme.accentColor + "80"`) for a more Stripe-like effect without the bouncy quality. Whichever direction, keep the 1200ms period so the rhythm stays meditative.
+
+- [ ] **Game-over hero landing: accelerate CTA + animate score value**
+      `/game-over` currently cascades stat pills at 250/350/450/550ms and delays the CTA block to `+700ms` — the Play Again button appears ~1.1s after mount, which makes the primary action feel late for non-PB games. Also, the score value itself never animates: it's baked into the pill so the "hero number" never lands. Tighten: compress pill stagger to ~60ms each, drop CTA delay from 700 → 350ms with a `translateY: 16 → 0, scale: 0.98 → 1` spring, and wrap the score value in a count-up (spring from 0 → final over ~450ms, `stiffness: 90, damping: 14`). Replace the title's `timing 300ms` with a spring `stiffness: 160, damping: 14` so "GAME OVER" lands with weight rather than fading in.
+
+- [ ] **Theme swap: animated surface transition (replace hard snap)**
+      Tapping a theme circle in `/settings` calls `setTheme(id)` synchronously — background, header, pads, and all surfaces re-render instantly. Premium apps sweep the transition. Wrap the root `View` in `_layout.tsx` with an `EaseView` that animates `backgroundColor` over ~350ms with `easeInOut`, or layer a crossfade overlay where the incoming theme fades in behind a departing scrim. Also rethink the 40×40 swatch — make each a mini 2×2 pad preview (all 4 theme pad colors in a quadrant at 48×48) so the swatch actually previews the theme, not just its red. Move the selection ring from per-swatch `borderWidth` toggle to a shared indicator that slides between options (`layoutId`-style).
+
+- [ ] **Sound-pack pill: explicit preview affordance**
+      `settings.tsx:231-278` pills auto-play a preview tone on tap but there's no visual cue signaling "tap to preview" — first-time users don't know. Add an `Ionicons name="volume-medium"` inside each owned pill (keep the `lock-closed` icon for unowned) and swap to `"volume-high"` with a gentle `opacity 0.6 → 1` loop while the pack is previewing, so users see *which* pack is speaking. Reuse the existing `soundDisabledHint` pattern to show a one-shot tooltip "Tap to preview" the first time Settings opens.
+
+- [ ] **Splash → index cross-fade (kill the blink)**
+      `_layout.tsx:85` calls `SplashScreen.hideAsync()` with no crossfade, so the native splash snaps off to the idle screen. Wrap the first render in a 240ms `EaseView` opacity fade so the logo dissolves into the game. Zero functional change; just removes the blink.
+
+- [ ] **AnimatedCountdown: quicker cross-fade or smart swap**
+      `src/components/AnimatedCountdown.tsx:23-27` drops the number for 150ms of its 1s life, which reads as a stutter. Options: (a) drop fade to ~80ms so the number is present for most of the tick, or (b) do a straight swap + scale bump for small deltas (±1) and only animate for large jumps (≥2). Also replace hardcoded `#ef4444` / `#fbbf24` with `activeTheme.destructiveColor` / `warningColor` so the countdown doesn't go red-on-red on the classic theme.
+
+- [ ] **Global motion token file (`src/theme/motion.ts`)**
+      Animation timings and springs are scattered across ~20 components with varied stiffness values (300 / 400 / 200 / 220) and a mix of `easeOut` / `easeInOut` / `linear`. Premium products have one motion language. Create a `motion.ts` with named presets — `snap` (spring 400/22/0.7, for taps/pops), `smooth` (spring 220/20/0.9, for standard transitions), `grand` (spring 120/14/1.0, for hero moments), `exit` (timing 200 easeIn, for dismissal). Migrate components incrementally to consume these. Pure refactor: no user-visible change on day 1, but every subsequent animation edit gets more consistent.
+
+- [ ] **Leaderboard rank tiers: gold / silver / bronze**
+      `HighScoreTable` today shows 5 visually identical rows with just a number column. Give ranks 1/2/3 distinct accent treatments — gold (`#fbbf24`), silver (`#cbd5e1`), bronze (`#b45309`) — applied to the rank number + a subtle left border or medal icon. Keeps the table readable but gives the top slots the visual weight they deserve. Pair with `fontVariant: ["tabular-nums"]` on score columns to kill the space-padded number hack.
+
+- [ ] **Streak banner: gentle prompt for 0-streak users**
+      `StreakBanner` today only renders when `streak > 0`. New players and lapsed players see nothing, so the daily-streak loop has no visible hook. After a user has ≥3 sessions with `streak === 0`, show a low-key banner ("Play today to start a streak") with the flame icon dimmed. Disappears the moment they play a daily game.
+
+- [ ] **Locked achievement: progress subtitle**
+      `achievements.tsx` locked rows show only the title + description. Give players something to chase: for quantitative achievements (games played, level reached, high score), render a small `2/5 games` or `Level 12 / 15` subtitle under the description so progress is visible. Requires wiring `useStats` into the achievements screen and computing the progress per achievement based on its unlock condition.
+
+- [ ] **Play Again: pre-navigation ack-scale**
+      On press of Play Again in `/game-over`, the button scales down (via `PressableScale`) but there's no success beat before `router.back()` fires. Add a quick `scale 1 → 1.05 → 1` ack over ~200ms before calling `setPendingAction("play_again")` so the user feels the commitment land rather than the screen just disappearing.
+
+- [ ] **Title text-shadow: layered ghost for crisper neon**
+      `GameHeader` applies `textShadowRadius: 12` with no offset, which can render muddy on iOS. Test a 2-layer approach: primary text with `textShadowRadius: 8`, plus a ghost layer at `opacity: 0.4` offset by 1px — sharper neon feel, no perf cost. Visual review on device before shipping.
+
 ---
 
 ## UX Polish & Accessibility
@@ -246,6 +312,45 @@
 
 - [x] **Tracking screen "Share Statistics" copy is misleading**
       "Share Statistics" implies game stats but actually triggers ATT ad tracking consent. Apple has rejected apps for misleading pre-permission language. Revise to something like "Allow Tracking" or "Support with Ads" that accurately describes the IDFA consent being requested.
+
+- [ ] **Colorblind mode: shape/glyph overlay on pads**
+      Simon-style play depends entirely on distinguishing 4 colors + position. ~4–8% of males have red-green color deficiency, and on the retro theme both red (`#c0392b`) and green (`#27ae60`) desaturate to near-identical mid-greys for deuteranopes/protanopes. Add a user-toggleable "Colorblind patterns" setting that renders a unique glyph on each pad — circle / square / triangle / diamond, or numerals 1-4 — at ~24% opacity in the pad's contrast color. Also serves players in bright sunlight or on cheap displays. WCAG 1.4.1 (Use of Color). New setting in `settings.tsx` under "Accessibility" section, plumbed through theme context to `GameButton`.
+
+- [ ] **Reduced motion: `useReducedMotion` hook + gate loops / Lottie / shuffles**
+      Grepping `src/` for `AccessibilityInfo` / `isReduceMotionEnabled` returns zero results. The neon title color cycle (`GameHeader.tsx:71-95`), Start button scale breathe (`GameScreen.tsx:655,742`), shuffle animations, Lottie trophy (`game-over.tsx:331`), streak banner, and the `EaseView` pop on every `PressableScale` all fire unconditionally. Violates WCAG 2.3.3 and iOS `UIAccessibility.isReduceMotionEnabled`. Add a shared `useReducedMotion()` hook that subscribes to `AccessibilityInfo.reduceMotionChanged`; wrap each looping/large-transform animation with a guard (`reduced ? nothing : the animation`). For Lottie, swap to a static trophy PNG under reduced motion. For the shuffle mode, skip animations entirely and snap to final positions.
+
+- [ ] **Screen-reader sequence announcements + live region**
+      Game-state transitions ("Watch sequence" / "Repeat sequence"), individual pad flashes during playback, `wrongFlash`, and game-over are all visual-only. `GameStatusBar` has no `accessibilityLiveRegion`, and there is no `AccessibilityInfo.announceForAccessibility` call anywhere. Blind players cannot track the sequence even with audio — they hear only the tone frequency, not which pad played. WCAG 4.1.3 (Status Messages). Add `accessibilityLiveRegion="polite"` to the status text, and during `gameState === "showing"` announce each pad ("red, top left") at the start of its flash. Announce correct/wrong on each player tap, and "Game over, score 47" on transition.
+
+- [ ] **Game pad `accessibilityLabel` includes position**
+      `src/components/GameButton.tsx:116` uses `accessibilityLabel={color}` — a VoiceOver user hears "red / red / red / red" for four unlabeled pads. Switch to `"red pad, top left"` etc. via an i18n key like `a11y:pad` with `{ color, position }` interpolation. Also add `accessibilityState={{ disabled: !isActive }}` where appropriate so VO reads "red pad, top left, dimmed" during the showing phase.
+
+- [ ] **Theme / sound-pack picker: `accessibilityLabel` + `accessibilityState={{ selected }}`**
+      `src/app/settings.tsx:325-364` (themes) and `:232-278` (sound packs) render `Pressable` circles/pills with zero a11y props — a VO user hears generic "button" and has no idea what Classic, Neon, Retro, Pastel even are. Add `accessibilityRole="button"`, `accessibilityLabel={theme.name}`, `accessibilityHint={isOwned ? t("a11y:applyTheme") : t("a11y:previewLocked")}`, `accessibilityState={{ selected: isSelected, disabled: !isOwned && !canPreview }}`. WCAG 4.1.2.
+
+- [ ] **Onboarding tooltip contrast fix (white-on-green fails AA in classic)**
+      `src/components/OnboardingTooltip.tsx:25` renders white text on `activeTheme.accentColor`. On classic (`#22c55e`) the ratio is ~2.3:1 at 15px — fails AA. On pastel (`#6c5ce7`) it's ~7.4:1 (fine). Either pick the foreground dynamically via the `getReadableForeground()` util already added in `src/utils/color.ts`, or darken the classic accent so white-on-accent works globally.
+
+- [ ] **Retro + pastel secondary text marginal contrast**
+      Retro's `secondaryTextColor #998877` on background `#2c2c2c` is ~4.1:1 — fails AA for 12–14px body copy (needs 4.5:1). Pastel's `#7a7a9a` on `#f5f0ff` sits exactly at 4.5:1, which fails once sub-pixel anti-aliasing reduces effective contrast. Nudge retro secondary to ~`#b0a089`, pastel secondary to ~`#6a6a8a`.
+
+- [ ] **Timer ring: non-color urgency cue**
+      The `TimerRing` turns red at ≤10s remaining but there's no size change and no haptic outside of the existing `countdownTick`. Adds color reliance (WCAG 1.4.1). Add a subtle scale pulse at ≤5s that matches the haptic cadence, and consider a ring thickness bump from 5s onward so the urgency is readable regardless of color perception.
+
+- [ ] **Lottie trophy: reduced-motion fallback**
+      `game-over.tsx:331` renders `LottieView autoPlay loop={false}` for new-high-score celebrations unconditionally. Under reduced motion this should swap to a static trophy PNG (or freeze on the final frame). Gated by the `useReducedMotion` task above.
+
+- [ ] **Initials boxes clip at large dynamic text sizes**
+      `game-over.tsx:653-660` hardcodes `64×52` dimensions around a 32pt `Oxanium-Bold` character. iOS accessibility text sizes scale up to 310%, which clips the character inside the box. Let the container grow with content (`minWidth` + `alignItems: "center"` + intrinsic height) or clamp the inner `Text` size separately from the system text scale.
+
+- [ ] **`ModalOverlay`: `accessibilityViewIsModal` on iOS + focus trap**
+      `src/components/ModalOverlay.tsx` backdrop is tap-to-dismiss but there's no `accessibilityViewIsModal={true}` — VoiceOver can swipe past the modal to content beneath. Add the prop on iOS and an equivalent `importantForAccessibility` gate on Android.
+
+- [ ] **Mode-select "Dismiss" hardcoded English literal**
+      `src/app/mode-select.tsx:73` uses the string `"Dismiss"` directly instead of an i18n key. ES/PT users see English. Move to `t("common:dismiss")` or equivalent.
+
+- [ ] **Sound-pack pill: touch target below 44pt**
+      `settings.tsx:235` pills use `paddingVertical: 6` + `hitSlop: { top: 6, bottom: 6, left: 4, right: 4 }` with 10px font — effective target is ~28–30pt tall, under iOS HIG 44pt. Bump vertical padding to 10 or hitSlop to `{ top: 10, bottom: 10, left: 8, right: 8 }`.
 
 ---
 
@@ -337,6 +442,19 @@
 
 ---
 
+## Monetization & Ads
+
+- [ ] **Banner ad on `/leaderboard` (first non-intrusive banner placement)**
+      All three review agents converged on `/leaderboard` as the highest-value, lowest-risk banner placement. Dwell time is high (users scan scores), the screen is read-only so the banner doesn't compete with primary CTAs, and the bottom-pinned `BannerAdSize.ANCHORED_ADAPTIVE_BANNER` stays out of the way. Gate with `!removeAds` — IAP users never see it. Do NOT add banners to the idle/home screen (hurts first-impression and the Play button's dominance), GameScreen (accidental-tap policy risk near the pads), game-over (interstitial already fires there), or settings (cognitively dissonant with the Remove Ads CTA sitting inches away). `/stats` and `/achievements` are secondary candidates with similar characteristics if the leaderboard banner performs. Env slots `EXPO_PUBLIC_ADMOB_BANNER_{IOS,ANDROID}` are already defined in `.env.example` but unused. Ref: VISION.md §178–194.
+
+- [ ] **"Tired of ads?" conversion prompt after Nth interstitial**
+      VISION.md §194 specifies this and it remains unimplemented. Track `interstitials_shown` in MMKV; after count === 3, fire a one-time modal with direct `purchaseRemoveAds()` call, persist a `tired_of_ads_shown` flag so it never re-fires. Highest-ROI conversion lever in the codebase today — the user has just seen three interstitials, so the pitch is behaviorally timed, not speculative. Pair with the existing `PostPBPrompt` component for visual consistency (same modal frame, different copy + icon).
+
+- [ ] **Rewarded-continue → IAP handoff after multiple watches in a session**
+      When a player has watched 2+ rewarded-continue ads in a single session, surface a themed "Skip the wait — Remove Ads" CTA on the next game-over alongside the usual continue offer. Behavioral trigger ("I keep needing this") converts materially better than the passive `showRemoveAds` link that renders today. Track `rewardedAdsThisSession` in the ads hook; on the second+ game-over of the session, swap the `showRemoveAds` link text for a stronger CTA with a direct purchase call.
+
+---
+
 ## Tech Debt
 
 - [ ] **Migrate from expo-eas-observe to expo-observe**
@@ -384,6 +502,24 @@
       Android vitals flagged on 1.0.1: "Remove resizability and orientation restrictions in your game to support large screen devices." Play Store ranks apps lower on tablets/foldables/ChromeOS when they lock orientation or declare non-resizable. We currently set `orientation: "portrait"` in `app.config.ts`. Options: (1) allow `orientation: "default"` on Android tablets only via config plugin, or (2) add `android:resizeableActivity="true"` + `android:supportsPictureInPicture="false"` and declare tablet support while keeping phone portrait-lock. Simon-style gameplay works fine in landscape — main work is making the board layout responsive. Lower priority than the edge-to-edge fix, but both affect the same 1.0.1 vitals surface.
       - Ref: Play Console → Android vitals → actions recommended
       - Surface: User experience / Release 1.0.1
+
+- [ ] **Collapse game-engine side effects into a single state-watching effect (architectural)**
+      `useGameEngine.ts` mixes side effects (audio playback, haptics, persistence, analytics) with machine wiring through a combination of JS `setTimeout` callbacks, `useEffect` watchers, and imperative calls inside action handlers. Every one of those code paths can observe stale closure state — which explains why the last ~5 bugfix commits have all been race/closure-class fixes (rewarded-continue race, reset/silence race, audio BT suspend/resume, input timeout cleanup). The cleanest long-term fix: make `useGameEngine` a thin adapter over XState and route *all* side effects through one `useEffect` that pattern-matches on `(prev, next)` of `state.value`. Collapses the stale-closure surface from 10+ sites to 1, makes every trigger auditable, and stops the pattern of "fix one race, find another next week." Non-trivial refactor — pair with a reverse-mode integration test first so we don't regress the current behavior.
+
+- [ ] **Stale closures in `GameScreen.tsx` long-lived effects**
+      Two effects on `GameScreen.tsx` close over mutable identities with bare dep arrays: the pending-action handler (~line 126-134) captures `resetGame` / `handleContinue` at mount, and the `gameState` transition effect (~line 235-290) captures `analytics`, `haptics`, `checkIsHighScore`, `addHighScore`, `getRank`, `rescheduleAfterGameOver`, `playHighScoreJingle`, `playGameOverJingle`, `navigateToGameOver`, and `router` at mount. If any of those change identity (most are stable today, but `analytics` in particular can re-init after PostHog hydrates), the stale version is what actually runs. Adopt a consistent pattern: either `useRef`-wrap all values referenced from fire-once effects (matching the existing `resetGameRef` pattern), or read from Zustand `getState()` at call-time instead of closing over reactive values.
+
+- [ ] **`useGameOverStore()` whole-store subscription**
+      `src/app/game-over.tsx:121` calls `useGameOverStore()` with no selector, so the component subscribes to every field and re-renders on *any* store write — even from unrelated callers. Split into per-field selectors (`const score = useGameOverStore((s) => s.score)`) or use a combined selector with `shallow` equality.
+
+- [ ] **Async `onPress` handlers without `void` wrapping**
+      React Native's `onPress` expects `() => void`. Passing an `async` function returns a `Promise` that's silently dropped — any rejection propagates nowhere. Sites to fix: `handleStartGame` in `GameScreen.tsx:668,752`; `handleShare` in `game-over.tsx:525`; the IAP handlers in `settings.tsx:284,370`. Pattern: `onPress={() => { void handleStartGame() }}`.
+
+- [ ] **`_layout.tsx`: `secondaryStackScreenOptions as any` casts**
+      Four `Stack.Screen` options props use `as any` to paper over a type mismatch between the Expo Router `NativeStackNavigationOptions` shape and the local helper's return type. Type `secondaryStackScreenOptions` with `NativeStackNavigationOptions` from `@react-navigation/native-stack` so the casts can be removed.
+
+- [ ] **Reverse-mode integration test (index math untested)**
+      `useGameEngine.ts:562` does the reverse-mode correctness check via `sequence.length - 1 - (newPlayerLen - 1)`. No existing test exercises this path end-to-end, so a single off-by-one error would silently break the entire mode. Add an integration test in `__tests__/useGameEngine.test.ts` that plays two full reverse-mode rounds and asserts the expected color at each tap.
 
 ---
 
@@ -850,6 +986,19 @@ Ideas worth tracking but not committed to any phase. Revisit after 6+ months of 
 
 - [ ] **Multiplayer — "Eco Mi Duel" (1v1 competitive modes)**
       Explore adding Tetris Attack–style competitive play where completing sequences "attacks" the opponent (time drain, sequence extensions, phantom pads, speed bursts, color swaps). Modes under consideration: **Time War** (shared timer, completions drain opponent's clock), **Breakthrough** (foreign sequences injected into opponent's flow with a reflect/counter mechanic), **Chaos Duel** (shared sequence with opponent-inflicted corruptions). Platform strategy: same-device split screen (iPad/tablet in landscape) as the zero-infrastructure starting point, then online 1v1 via Firebase Realtime DB / Supabase with ghost replays for async play. Foldable phones (Fold/Pixel Fold) as a natural divided-screen form factor. BLE / Multipeer Connectivity for offline local play (airplane mode scenarios). NFC not viable as a transport. Full design doc: `docs/MULTIPLAYER_VISION.md`. Revisit after v1.x retention signal justifies the investment.
+
+- [ ] **Committed visual material system (expo-blur glass surfaces OR neumorphic elevation)**
+      The app currently mixes translucent `rgba` surfaces, flat solid pads, outlined Ionicons, and dropped shadows — a grab-bag of "dark gaming" conventions that ceilings out at "polished indie." Premium products commit to a single material direction. Two paths worth prototyping before picking:
+  - **Glass (via `expo-blur`):** wrap the score boxes, mode-sheet card, game container, and `ModalOverlay` surfaces with `<BlurView intensity={40} tint="dark">` (or `tint="light"` under pastel). Replace `rgba(0,0,0,0.3)` backgrounds with blur layers over a subtly animated gradient background driven by `activeTheme.accentColor`. Gives the app an Arc/Apple-Music/iOS-Settings feel where every surface breathes with the content behind it. Works especially well on dark themes; pastel needs careful tinting to avoid washout. Perf: `expo-blur` is a native view so it's cheap, but heavy use over animated content (e.g. the active pad glow) can still hit fill-rate on older Android. Test on Pixel 5 / iPhone SE 2 before broadly applying.
+  - **Elevated neumorphism:** each card uses paired light + dark shadows (outer drop + inner highlight) to look carved out of the background, with theme-accent rim lights on the active element. More tactile, pairs well with the pad glow/shadow task. Denser visual vocabulary but risks feeling dated if overdone.
+
+      Deliverables when scoped: a shared `<Surface variant="glass|elevated|flat">` primitive that every card / pill / modal consumes, plus audit + migration of existing hardcoded `rgba` surfaces. This is the single highest-leverage visual change if we want reviewers to say "this feels like a flagship app." Pairs naturally with the motion-token file (committed materials + committed motion = house style).
+
+- [ ] **Scripted first-run onboarding demo sequence**
+      Today `OnboardingTooltip` shows one static sentence when `gameState === "waiting"`. A premium first-run: on cold start with `ONBOARDING_COMPLETED !== "true"`, auto-play a 6-second demo sequence — highlight two pads in order ("watch the pattern") → invite the user to repeat → congratulate + haptic + accent flash → drop into level 1. No new engine capability needed (we already have `activeButton`, `sequence`, haptics, jingle) — pure choreography around the existing state machine. Single highest-leverage change for App Store conversion and first-session retention. Localize the captions for en/es/pt.
+
+- [ ] **Unified `useMoment(name)` choreography layer**
+      Today each component fires its own haptic / audio / animation inline for named events. Build a `useMoment()` hook that composes visual + haptic + audio + timing into a single named choreographed unit: `moment.play("level-up")` triggers a dot-fill on `GameStatusBar`, an `AnimatedNumber` bump, a chord on the accent color, and a `selection` haptic — all as one aligned beat. Stripe / Linear / Arc all have something like this. It's what makes interactions feel *composed* rather than *coincident*. Depends on the motion-token file existing first. Moments worth authoring: `level-up`, `new-pb`, `streak-extended`, `mode-switch`, `theme-swap`, `unlock`.
 
 - [ ] **Dynamic splash screen + app icon theming (user theme carries through full app lifecycle)**
       Let the user's selected pad theme (pastel, dark, neon, etc.) show through from app launch into gameplay — the first thing they see matches the aesthetic they chose. **Splash screen approach:** Use the "extended splash" pattern — native splash stays minimal/neutral (logo on dark bg), JS reads theme from MMKV on mount, renders a themed full-screen view matching the chosen theme, then hides the native splash and transitions into the app. Works cross-platform with unlimited theme variants, zero native complexity. True native splash can't be runtime-swapped (iOS has one storyboard per binary; Android's activity-alias trick is fragile). **App icon approach:** Use [`expo-dynamic-app-icon`](https://github.com/outsung/expo-dynamic-app-icon) — wraps `setAlternateIconName` (iOS) and activity-alias (Android). All icon variants must be declared at build time, user picks via settings. Icons tied to theme names so switching theme also offers an icon swap. **Bonus polish:** Transition animation from themed splash into game — four pads fly into position, subtle pulse in theme colors. **Open questions:** Should icon change be automatic with theme switch or opt-in? How many icon variants before we hit store review friction? Revisit when theme system is expanded beyond the current set.
