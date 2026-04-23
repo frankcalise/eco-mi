@@ -1,6 +1,7 @@
 import { View, StyleSheet } from "react-native"
 import { EaseView } from "react-native-ease"
 
+import { PadGlow } from "@/components/PadGlow"
 import { colorMap, type Color } from "@/hooks/useGameEngine"
 import { UI_COLORS } from "@/theme/uiColors"
 
@@ -109,9 +110,26 @@ export function GameButton({
         { top: baseCoords.top, left: baseCoords.left, width: buttonSize, height: buttonSize },
       ]}
     >
+      <PadGlow
+        color={displayActiveColor}
+        isActive={isActive}
+        buttonSize={buttonSize}
+        padId={color}
+      />
       <View
         testID={`btn-${color}${isActive ? "-active" : ""}`}
-        style={[styles.pressable, buttonStyle, borderRadius]}
+        style={[
+          styles.pressable,
+          buttonStyle,
+          borderRadius,
+          // iOS: colored shadow radiating from the pad's exact quadrant shape
+          // gives a soft feathered glow on all sides — no sharp edges, no
+          // separate halo layer needed. Android ignores shadowColor and falls
+          // back to the grey elevation; accepted tradeoff vs. the visual cost
+          // of a solid overlay's right-angle corners into the cross-gap.
+          { shadowColor: isActive ? displayActiveColor : UI_COLORS.shadowBlack },
+          isActive && styles.pressableActive,
+        ]}
         accessible
         accessibilityLabel={color}
         accessibilityRole="button"
@@ -131,9 +149,19 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     elevation: 8,
     flex: 1,
-    shadowColor: UI_COLORS.shadowBlack,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
+  },
+  pressableActive: {
+    // Reset offset to {0,0} so the glow radiates evenly on all sides rather
+    // than biasing downward from the default {0,4}. Opacity + radius cranked
+    // to make the bloom actually visible — the pad's own activeColor is a
+    // lighter/pastel variant of its base (vivid red → pastel red etc.), so
+    // without a strong shadow the active state just reads as "dimmed" not
+    // "lit up."
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.95,
+    shadowRadius: 22,
   },
 })
