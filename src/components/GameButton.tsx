@@ -147,11 +147,14 @@ const styles = StyleSheet.create({
     shadowRadius: 4.65,
   },
   pressableActive: {
-    // shadowOffset intentionally unset here so the pad inherits the default
-    // {0,4} offset above for subtle downward depth. Active state boosts
-    // opacity + radius to emit a soft feathered glow around all four sides,
-    // shape-matched to the pad's quadrant.
-    shadowOpacity: 0.75,
-    shadowRadius: 16,
+    // Reset offset to {0,0} so the glow radiates evenly on all sides rather
+    // than biasing downward from the default {0,4}. Opacity + radius cranked
+    // to make the bloom actually visible — the pad's own activeColor is a
+    // lighter/pastel variant of its base (vivid red → pastel red etc.), so
+    // without a strong shadow the active state just reads as "dimmed" not
+    // "lit up."
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.95,
+    shadowRadius: 22,
   },
 })
