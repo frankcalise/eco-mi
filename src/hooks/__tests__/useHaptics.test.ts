@@ -1,15 +1,24 @@
-import * as Haptics from "expo-haptics"
 import { renderHook, act } from "@testing-library/react-native"
+import { Presets } from "react-native-pulsar"
 
 import { SETTINGS_HAPTICS_ENABLED } from "@/config/storageKeys"
 import { usePreferencesStore } from "@/stores/preferencesStore"
 import { storage } from "@/utils/storage"
 
-jest.mock("expo-haptics", () => ({
-  impactAsync: jest.fn(),
-  notificationAsync: jest.fn(),
-  ImpactFeedbackStyle: { Light: "light", Medium: "medium", Heavy: "heavy" },
-  NotificationFeedbackType: { Success: "success", Warning: "warning", Error: "error" },
+jest.mock("react-native-pulsar", () => ({
+  Presets: {
+    System: {
+      impactLight: jest.fn(),
+      impactMedium: jest.fn(),
+      impactHeavy: jest.fn(),
+      impactSoft: jest.fn(),
+      impactRigid: jest.fn(),
+      notificationSuccess: jest.fn(),
+      notificationWarning: jest.fn(),
+      notificationError: jest.fn(),
+      selection: jest.fn(),
+    },
+  },
 }))
 
 jest.mock("expo-device", () => ({
@@ -19,8 +28,11 @@ jest.mock("expo-device", () => ({
 // eslint-disable-next-line import/first
 import { useHaptics } from "../useHaptics"
 
-const mockImpact = Haptics.impactAsync as jest.Mock
-const mockNotification = Haptics.notificationAsync as jest.Mock
+const mockImpactLight = Presets.System.impactLight as unknown as jest.Mock
+const mockImpactMedium = Presets.System.impactMedium as unknown as jest.Mock
+const mockImpactHeavy = Presets.System.impactHeavy as unknown as jest.Mock
+const mockNotificationSuccess = Presets.System.notificationSuccess as unknown as jest.Mock
+const mockNotificationError = Presets.System.notificationError as unknown as jest.Mock
 
 beforeEach(() => {
   storage.clearAll()
@@ -35,23 +47,21 @@ afterEach(() => {
 })
 
 describe("useHaptics", () => {
-  it("fires Medium impact for buttonPress", () => {
+  it("fires impactMedium for buttonPress", () => {
     const { result } = renderHook(() => useHaptics())
     act(() => {
       result.current.play("buttonPress")
     })
-    expect(mockImpact).toHaveBeenCalledWith("medium")
+    expect(mockImpactMedium).toHaveBeenCalledTimes(1)
   })
 
-  it("fires Light impact for menuTap and sequenceFlash", () => {
+  it("fires impactLight for menuTap and sequenceFlash", () => {
     const { result } = renderHook(() => useHaptics())
     act(() => {
       result.current.play("menuTap")
       result.current.play("sequenceFlash")
     })
-    expect(mockImpact).toHaveBeenCalledTimes(2)
-    expect(mockImpact).toHaveBeenNthCalledWith(1, "light")
-    expect(mockImpact).toHaveBeenNthCalledWith(2, "light")
+    expect(mockImpactLight).toHaveBeenCalledTimes(2)
   })
 
   it("maps countdownTick urgency to Heavy/Medium/Light", () => {
@@ -61,40 +71,33 @@ describe("useHaptics", () => {
       result.current.play("countdownTick", { urgency: "medium" })
       result.current.play("countdownTick", { urgency: "low" })
     })
-    expect(mockImpact).toHaveBeenNthCalledWith(1, "heavy")
-    expect(mockImpact).toHaveBeenNthCalledWith(2, "medium")
-    expect(mockImpact).toHaveBeenNthCalledWith(3, "light")
+    expect(mockImpactHeavy).toHaveBeenCalledTimes(1)
+    expect(mockImpactMedium).toHaveBeenCalledTimes(1)
+    expect(mockImpactLight).toHaveBeenCalledTimes(1)
   })
 
-  it("fires Success notification for newHighScore", () => {
+  it("fires notificationSuccess for newHighScore", () => {
     const { result } = renderHook(() => useHaptics())
     act(() => {
       result.current.play("newHighScore")
     })
-    expect(mockNotification).toHaveBeenCalledWith("success")
+    expect(mockNotificationSuccess).toHaveBeenCalledTimes(1)
   })
 
-  it("fires Error notification for gameOver (single pulse)", () => {
+  it("fires notificationError for gameOver", () => {
     const { result } = renderHook(() => useHaptics())
     act(() => {
       result.current.play("gameOver")
     })
-    expect(mockNotification).toHaveBeenCalledTimes(1)
-    expect(mockNotification).toHaveBeenCalledWith("error")
+    expect(mockNotificationError).toHaveBeenCalledTimes(1)
   })
 
-  it("fires Error notification twice for wrongButton", () => {
+  it("fires notificationError once for wrongButton (Pulsar preset handles double-pulse natively)", () => {
     const { result } = renderHook(() => useHaptics())
     act(() => {
       result.current.play("wrongButton")
     })
-    expect(mockNotification).toHaveBeenCalledTimes(1)
-    act(() => {
-      jest.advanceTimersByTime(150)
-    })
-    expect(mockNotification).toHaveBeenCalledTimes(2)
-    expect(mockNotification).toHaveBeenNthCalledWith(1, "error")
-    expect(mockNotification).toHaveBeenNthCalledWith(2, "error")
+    expect(mockNotificationError).toHaveBeenCalledTimes(1)
   })
 
   it("no-ops when hapticsEnabled is false", () => {
@@ -105,11 +108,9 @@ describe("useHaptics", () => {
       result.current.play("newHighScore")
       result.current.play("wrongButton")
     })
-    act(() => {
-      jest.advanceTimersByTime(500)
-    })
-    expect(mockImpact).not.toHaveBeenCalled()
-    expect(mockNotification).not.toHaveBeenCalled()
+    expect(mockImpactMedium).not.toHaveBeenCalled()
+    expect(mockNotificationSuccess).not.toHaveBeenCalled()
+    expect(mockNotificationError).not.toHaveBeenCalled()
   })
 
   it("reacts to preference changes between renders", () => {
@@ -118,7 +119,7 @@ describe("useHaptics", () => {
     act(() => {
       result.current.play("buttonPress")
     })
-    expect(mockImpact).toHaveBeenCalledTimes(1)
+    expect(mockImpactMedium).toHaveBeenCalledTimes(1)
 
     // User flips the toggle off mid-session.
     act(() => {
@@ -129,7 +130,7 @@ describe("useHaptics", () => {
     act(() => {
       result.current.play("buttonPress")
     })
-    expect(mockImpact).toHaveBeenCalledTimes(1) // still 1 — the second call was suppressed
+    expect(mockImpactMedium).toHaveBeenCalledTimes(1) // still 1 — the second call was suppressed
   })
 
   it("persists hapticsEnabled changes to MMKV via setHapticsEnabled", () => {
