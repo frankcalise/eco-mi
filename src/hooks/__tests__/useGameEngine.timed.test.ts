@@ -28,6 +28,12 @@ jest.mock("react-native-pulsar", () => ({
       notificationError: jest.fn(),
     },
   },
+  usePatternComposer: () => ({
+    play: jest.fn(),
+    stop: jest.fn(),
+    parse: jest.fn(),
+    isParsed: jest.fn(() => true),
+  }),
 }))
 
 jest.mock("@/hooks/useStats", () => ({
