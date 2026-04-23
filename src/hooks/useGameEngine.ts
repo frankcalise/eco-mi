@@ -538,11 +538,19 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     inputLocked.current = false
     sideEffectsFiredRef.current = false
     setWrongFlash(false)
-    const sequenceToReplay = [...ctx.sequence]
-    const levelToReplay = ctx.level
     send({ type: "CONTINUE" })
 
     addTimeout(() => {
+      // Read sequence/level from the ref inside the deferred callback so
+      // we pick up any machine mutation that happened between the call
+      // site and this 500ms-later firing. Pre-fix these were captured by
+      // JS closure at call time — latent today because the machine
+      // preserves sequence across CONTINUE, but one future mutation
+      // (e.g. a bonus round inserted on continue) would silently replay
+      // the wrong sequence.
+      const live = contextRef.current
+      const sequenceToReplay = [...live.sequence]
+      const levelToReplay = live.level
       send({ type: "SET_INITIAL_SEQUENCE", sequence: sequenceToReplay })
       addTimeout(() => {
         continueLocked.current = false
