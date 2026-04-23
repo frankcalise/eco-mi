@@ -27,6 +27,7 @@ const MIN_GAP_MS = 3 * 60 * 1000
 const MIN_ROUNDS_TO_SHOW = 3
 const GAMES_BETWEEN_ADS = 2
 const REWARDED_TIMEOUT_MS = 60 * 1000
+const AD_RETRY_DELAY_MS = 30 * 1000
 
 function getInterstitialAdUnitId(): string {
   if (__DEV__) return TestIds.INTERSTITIAL
@@ -53,13 +54,11 @@ type UseAdsReturn = {
   incrementGamesPlayed: () => void
   incrementSessionCount: () => void
   adShownThisSession: boolean
-  consentReady: boolean
 }
 
 export function useAds(): UseAdsReturn {
   const [adShownThisSession, setAdShownThisSession] = useState(false)
   const [rewardedReady, setRewardedReady] = useState(false)
-  const [consentReady, setConsentReady] = useState(false)
   const interstitialRef = useRef<InterstitialAd | null>(null)
   const rewardedRef = useRef<RewardedAd | null>(null)
   const loadedRef = useRef(false)
@@ -68,6 +67,8 @@ export function useAds(): UseAdsReturn {
   const rewardedShowingRef = useRef(false)
   const interstitialUnsubsRef = useRef<(() => void)[]>([])
   const rewardedUnsubsRef = useRef<(() => void)[]>([])
+  const interstitialRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const rewardedRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Default to non-personalized until consent resolves — safe default for EEA/UK/CH.
   const npaRef = useRef(true)
 
@@ -94,18 +95,24 @@ export function useAds(): UseAdsReturn {
     } catch {
       // Consent errors should not block the app from functioning. Keep NPA = true,
       // which is the conservative, policy-safe default for EEA/UK/CH.
-    } finally {
-      setConsentReady(true)
     }
   }
 
   function teardownInterstitial() {
+    if (interstitialRetryRef.current) {
+      clearTimeout(interstitialRetryRef.current)
+      interstitialRetryRef.current = null
+    }
     for (const unsub of interstitialUnsubsRef.current) unsub()
     interstitialUnsubsRef.current = []
     interstitialRef.current = null
   }
 
   function teardownRewarded() {
+    if (rewardedRetryRef.current) {
+      clearTimeout(rewardedRetryRef.current)
+      rewardedRetryRef.current = null
+    }
     for (const unsub of rewardedUnsubsRef.current) unsub()
     rewardedUnsubsRef.current = []
     rewardedRef.current = null
@@ -137,6 +144,10 @@ export function useAds(): UseAdsReturn {
     interstitialUnsubsRef.current = [
       interstitial.addAdEventListener(AdEventType.LOADED, () => {
         loadedRef.current = true
+        if (interstitialRetryRef.current) {
+          clearTimeout(interstitialRetryRef.current)
+          interstitialRetryRef.current = null
+        }
       }),
       interstitial.addAdEventListener(AdEventType.CLOSED, () => {
         loadedRef.current = false
@@ -144,6 +155,13 @@ export function useAds(): UseAdsReturn {
       }),
       interstitial.addAdEventListener(AdEventType.ERROR, () => {
         loadedRef.current = false
+        // A transient load failure (network blip, no fill) must not kill ad
+        // serving for the rest of the session. Schedule a debounced reload.
+        if (interstitialRetryRef.current) clearTimeout(interstitialRetryRef.current)
+        interstitialRetryRef.current = setTimeout(() => {
+          interstitialRetryRef.current = null
+          loadInterstitial()
+        }, AD_RETRY_DELAY_MS)
       }),
     ]
 
@@ -164,6 +182,10 @@ export function useAds(): UseAdsReturn {
       rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
         rewardedLoadedRef.current = true
         setRewardedReady(true)
+        if (rewardedRetryRef.current) {
+          clearTimeout(rewardedRetryRef.current)
+          rewardedRetryRef.current = null
+        }
       }),
       rewarded.addAdEventListener(AdEventType.CLOSED, () => {
         rewardedLoadedRef.current = false
@@ -173,6 +195,13 @@ export function useAds(): UseAdsReturn {
       rewarded.addAdEventListener(AdEventType.ERROR, () => {
         rewardedLoadedRef.current = false
         setRewardedReady(false)
+        // A transient load failure must not permanently disable the continue
+        // offer. Schedule a debounced reload.
+        if (rewardedRetryRef.current) clearTimeout(rewardedRetryRef.current)
+        rewardedRetryRef.current = setTimeout(() => {
+          rewardedRetryRef.current = null
+          loadRewarded()
+        }, AD_RETRY_DELAY_MS)
       }),
     ]
 
@@ -275,6 +304,5 @@ export function useAds(): UseAdsReturn {
     incrementGamesPlayed,
     incrementSessionCount,
     adShownThisSession,
-    consentReady,
   }
 }
