@@ -108,6 +108,8 @@ interface UseGameEngineReturn {
   continueGame: () => void
   handleButtonTouch: (color: Color) => void
   handleButtonRelease: (color: Color) => void
+  previewPadTouch: (color: Color) => void
+  previewPadRelease: (color: Color) => void
   playPreview: (overrideType?: OscillatorType) => void
   playJingle: () => void
   playGameOverJingle: () => void
@@ -570,6 +572,50 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     haptics.play("buttonPress")
   }
 
+  // Idle-state free play: the player can tap pads on the main menu to trigger
+  // the pad tone + glow + haptic without starting a game. Does not touch any
+  // machine state — no playerSequence, no score, no transitions. If the
+  // engine is ever not in "idle" when these fire (state moved on between
+  // touch and release, etc.), they fall back to cleaning up transient state
+  // without advancing anything.
+  function previewPadTouch(color: Color) {
+    if (state.value !== "idle") return
+    if (inputLocked.current) return
+    inputLocked.current = true
+
+    buttonPressStartTime.current = Date.now()
+    setActiveButton(color)
+    noteOn(color)
+    haptics.play("buttonPress")
+  }
+
+  function previewPadRelease(color: Color) {
+    if (state.value !== "idle") {
+      if (inputLocked.current) {
+        noteOff(color)
+        setActiveButton(null)
+        buttonPressStartTime.current = null
+        inputLocked.current = false
+      }
+      return
+    }
+    // Use level-1 tone duration as the visual-hold floor — the same minimum
+    // the game uses for quick taps during waiting. Keeps the glow legible on
+    // snap taps without lingering after long presses.
+    const toneDuration = getToneDuration(1)
+    const pressDuration = buttonPressStartTime.current
+      ? Date.now() - buttonPressStartTime.current
+      : 0
+    noteOff(color)
+    if (pressDuration < toneDuration) {
+      addTimeout(() => setActiveButton(null), toneDuration - pressDuration)
+    } else {
+      setActiveButton(null)
+    }
+    buttonPressStartTime.current = null
+    inputLocked.current = false
+  }
+
   function handleButtonRelease(color: Color) {
     if (state.value !== "waiting") {
       // State moved on between touch and release (backgrounding, INPUT_TIMEOUT, etc.).
@@ -703,6 +749,8 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     continueGame,
     handleButtonTouch,
     handleButtonRelease,
+    previewPadTouch,
+    previewPadRelease,
     playPreview,
     playJingle,
     playGameOverJingle,

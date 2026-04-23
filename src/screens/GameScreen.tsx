@@ -15,7 +15,6 @@ import type { CompactModePickerSheetHandle } from "@/components/CompactModePicke
 import { GameButton } from "@/components/GameButton"
 import { GameHeader } from "@/components/GameHeader"
 import { GameStatusBar } from "@/components/GameStatusBar"
-import { IdleSparkleTraveler } from "@/components/IdleSparkleTraveler"
 import { OnboardingTooltip } from "@/components/OnboardingTooltip"
 import { PressableScale } from "@/components/PressableScale"
 import { StreakBanner } from "@/components/StreakBanner"
@@ -111,6 +110,8 @@ export function GameScreen() {
     continueGame,
     handleButtonTouch,
     handleButtonRelease,
+    previewPadTouch,
+    previewPadRelease,
     playJingle,
     playGameOverJingle,
     playHighScoreJingle,
@@ -574,24 +575,25 @@ export function GameScreen() {
             color={color}
             index={index}
             isActive={shouldShowBoardHighlights && activeButton === color}
-            disabled={gameState !== "waiting" || isShuffling}
+            // Enabled in "waiting" (gameplay) and "idle" (free-play tapping).
+            // Everything else (showing, advancing, gameover, replaying) locks
+            // pads so the user can't interrupt sequence playback or resolve
+            // animations.
+            disabled={(gameState !== "waiting" && gameState !== "idle") || isShuffling}
             buttonSize={buttonSize}
             gameSize={gameSize}
             slotInset={slotInset}
             isShuffling={isShuffling}
-            onPressIn={() => handleButtonTouch(color)}
-            onPressOut={() => handleButtonRelease(color)}
+            onPressIn={() =>
+              gameState === "idle" ? previewPadTouch(color) : handleButtonTouch(color)
+            }
+            onPressOut={() =>
+              gameState === "idle" ? previewPadRelease(color) : handleButtonRelease(color)
+            }
             themeColor={activeTheme.buttonColors[color].color}
             themeActiveColor={activeTheme.buttonColors[color].activeColor}
           />
         ))}
-
-        <IdleSparkleTraveler
-          gameSize={gameSize}
-          slotInset={slotInset}
-          theme={activeTheme}
-          active={gameState === "idle" && !isShuffling}
-        />
 
         <View
           style={[
