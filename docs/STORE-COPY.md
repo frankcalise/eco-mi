@@ -243,3 +243,90 @@ Novidades no Eco Mi 1.1.0:
 | 5   | CUSTOMIZE / YOUR STYLE       | PERSONALIZA / TU ESTILO          | PERSONALIZE / SEU ESTILO    |
 | 6   | TRACK / YOUR PROGRESS        | SIGUE / TU PROGRESO              | ACOMPANHE / SEU PROGRESSO   |
 | 7   | UNLOCK / ACHIEVEMENTS        | DESBLOQUEA / LOGROS              | DESBLOQUEIE / CONQUISTAS    |
+
+---
+
+## Generating Screenshots
+
+Final App Store screenshots are rendered via `scripts/compose_enhanced.py` (the compositor) and `scripts/build_screenshots.py` (the batch orchestrator). Each device preset defines canvas size, device frame asset, and typography scale — add a preset to support a new device/size.
+
+### Prerequisites
+
+- Python 3.11+ with Pillow and NumPy:
+  ```bash
+  python3.11 -m venv /tmp/ecomi-venv
+  /tmp/ecomi-venv/bin/python -m pip install Pillow numpy
+  ```
+- `SF Pro Display Black` font installed at `/Library/Fonts/SF-Pro-Display-Black.otf` (ships with macOS Sonoma+; otherwise download from Apple's [SF Pro](https://developer.apple.com/fonts/) page and install).
+- Device frame PNGs in `scripts/assets/`:
+  - `device_frame_enhanced.png` — iPhone 6.9" (1290×2796 canvas)
+  - `device_frame_ipad.png` — iPad Pro 13" (2064×2752 canvas)
+
+Frame assets come from Apple's Figma "Product Bezels" library (iOS and iPadOS). Export the target device component in **portrait** at **2×** PNG with a transparent screen cutout.
+
+### Directory layout
+
+```
+screenshots/
+├── raw/<locale>/<device>/      # Simulator captures (source of truth)
+│   └── {1-game-modes, 2-game-play, 3-high-score, 4-leaderboards,
+│          5-customize, 6-progress, 7-achievements}.png
+└── final/<locale>/<device>/    # Rendered App Store uploads
+    └── {01-play-five-modes, 02-challenge-memory, ...}.jpg
+```
+
+- `<locale>`: `en` / `es` / `pt`
+- `<device>`: `iphone` or `ipad`
+- EN raw filenames have **no suffix**; ES/PT append `-es` / `-pt` (e.g. `1-game-modes-es.png`).
+
+### Capturing raw simulator screenshots
+
+For each of the 7 scenes per locale:
+
+1. Boot the target simulator:
+   - **iPhone**: iPhone 16 Pro Max (or any 6.9" iPhone) → 1290×2796
+   - **iPad**: iPad Pro 13" (M4) → 2064×2752 *(requires `supportsTablet: true` in `app.config.ts` and `npx expo prebuild --platform ios`)*
+2. Run the app on that simulator (`bun run ios --device "iPad Pro 13-inch (M4)"` or pick the sim in Xcode).
+3. In the Expo dev menu, trigger **"Screenshot Data Seed"** — populates a consistent UI state across scenes (leaderboard entries, high scores, unlock flags).
+4. Navigate to each of the 7 scenes and capture via `Cmd+S` in the simulator (or `xcrun simctl io booted screenshot <path>.png`).
+5. Save under `screenshots/raw/<locale>/<device>/` with the naming convention above.
+
+For ES/PT captures, change the simulator's language via **Settings → General → Language & Region** before running.
+
+### Rendering
+
+Full batch (all locales × all devices):
+
+```bash
+/tmp/ecomi-venv/bin/python scripts/build_screenshots.py
+```
+
+Single device:
+
+```bash
+/tmp/ecomi-venv/bin/python scripts/build_screenshots.py --device iphone-6.9
+/tmp/ecomi-venv/bin/python scripts/build_screenshots.py --device ipad-13
+```
+
+Missing raw captures or frame assets are skipped with a `⚠` message — safe to run with a partial raw set during iteration.
+
+Single screenshot (for tuning or ad-hoc renders):
+
+```bash
+/tmp/ecomi-venv/bin/python scripts/compose_enhanced.py \
+  --device ipad-13 \
+  --bg "#1a1a2e" \
+  --verb "PLAY" \
+  --desc "FIVE GAME MODES" \
+  --screenshot screenshots/raw/en/ipad/1-game-modes.png \
+  --output /tmp/test.jpg
+```
+
+### Adding a new device
+
+1. Extract a photorealistic frame PNG from Apple's Figma "Product Bezels" library (portrait, 2× PNG, transparent screen). Save to `scripts/assets/device_frame_<id>.png`.
+2. Add an entry to `DEVICE_PRESETS` in `scripts/compose_enhanced.py` with canvas dimensions, device body geometry (`device_w`, `bezel`, `screen_corner_r`), frame path, and — if the frame is larger than the canvas — a `frame_scale` < 1.0 to downscale it. Use the existing `ipad-13` preset as a template.
+3. Add the matching subdirectory name to `DEVICE_DIR` in `scripts/build_screenshots.py`.
+4. Capture raws to `screenshots/raw/<locale>/<new-device>/` and run the orchestrator with `--device <new-id>`.
+
+Verb/desc copy comes from the Screenshot Headlines table above — shared across all devices.
