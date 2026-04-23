@@ -25,6 +25,12 @@ function relativeLuminance([r, g, b]: [number, number, number]): number {
   return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2]
 }
 
+function contrastRatio(foregroundLuminance: number, backgroundLuminance: number): number {
+  const lighter = Math.max(foregroundLuminance, backgroundLuminance)
+  const darker = Math.min(foregroundLuminance, backgroundLuminance)
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
 /**
  * Returns "#000000" or "#ffffff" — whichever yields higher WCAG contrast
  * against the supplied background. Falls back to white on unparseable input.
@@ -32,5 +38,8 @@ function relativeLuminance([r, g, b]: [number, number, number]): number {
 export function getReadableForeground(bgHex: string): "#000000" | "#ffffff" {
   const rgb = hexToRgb(bgHex)
   if (!rgb) return "#ffffff"
-  return relativeLuminance(rgb) > 0.5 ? "#000000" : "#ffffff"
+  const backgroundLuminance = relativeLuminance(rgb)
+  const whiteContrast = contrastRatio(1, backgroundLuminance)
+  const blackContrast = contrastRatio(0, backgroundLuminance)
+  return blackContrast >= whiteContrast ? "#000000" : "#ffffff"
 }

@@ -319,6 +319,21 @@
 - [x] **Tracking screen "Share Statistics" copy is misleading**
       "Share Statistics" implies game stats but actually triggers ATT ad tracking consent. Apple has rejected apps for misleading pre-permission language. Revise to something like "Allow Tracking" or "Support with Ads" that accurately describes the IDFA consent being requested.
 
+- [ ] **Theme picker: show selected theme name + strengthen selected-state visual**
+      The Settings theme row renders 4 colored circles — red, cyan, brick, pink — with no text labels. The only way a user knows what theme they're on is:
+  - the 2px green border on the active circle (easy to miss, especially on Classic whose pad-red matches the highlight direction visually), and
+  - the `lock-closed` icon that only appears on *unowned* themes, so owned + inactive themes are completely unlabeled.
+
+      By contrast the Sound Pack row immediately above shows each pack's name ("Classic", "Retro", "Buzzy", "Mellow") which makes selection and identity obvious at a glance. The theme row should match that clarity.
+
+      Two changes to prototype (pick one or combine):
+  1. **Show the active theme name**, either as a subtitle under the `THEME` section header (e.g. `THEME — PASTEL`) or as a label that appears under the currently-selected circle. Localize via the existing `t("themes.{id}")` pattern in `src/i18n/`.
+  2. **Strengthen the selected-state visual** beyond the current `borderColor: UI_COLORS.green500, borderWidth: 2`. Options: (a) grow the selected circle slightly (scale 1.15 via EaseView), (b) add a theme-colored outer glow ring, (c) render a small check-mark badge at the bottom-right of the selected swatch, (d) swap the flat circle for a mini 2×2 pad preview at 48×48 (same idea as the share-card logo mark) so each swatch shows all 4 pad colors in context.
+
+      Pair with the broader theme-chrome audit below — fixes to pastel/neon chrome will affect how the THEME section itself looks.
+
+      Files: `src/app/settings.tsx` (theme row render, ~line 325–365), `src/config/themes.ts` (already has `name` field on each theme — reuse it). New i18n keys under a `themes` namespace if localizing.
+
 - [ ] **Full theme-chrome audit across Pastel + Neon + Retro (non-Classic themes)**
       The game was visually designed around Classic (dark navy bg) and several surfaces/borders/CTAs were hardcoded with `rgba(0, 0, 0, X)` / `rgba(255, 255, 255, X)` values that assume a dark backdrop. On Pastel (light bg) and Neon (black bg with vivid accents) those assumptions break in specific, painful ways:
 
