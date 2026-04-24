@@ -430,7 +430,7 @@ Single-screen Expo Router app scaffolded from Ignite v11.1.3. All game logic liv
 | Framework  | Expo SDK 53, RN 0.79, New Architecture, Hermes                                     | Expo SDK 55, RN 0.84, React 19.2                                                                |
 | Navigation | Expo Router (file-based, `src/app/`)                                               | Solid                                                                                           |
 | Storage    | `react-native-mmkv` via `src/utils/storage.ts`                                     | Solid                                                                                           |
-| Audio      | `react-native-audio-api` (Web Audio oscillators) via `src/hooks/useAudioTones.tsx` | Good, needs sound pack extension                                                                |
+| Audio      | `react-native-audio-api` (Web Audio) via `useAudioTones` — [AUDIO-ARCHITECTURE.md](AUDIO-ARCHITECTURE.md) | Good, needs sound pack extension                                                                |
 | Theme      | Ignite theme system (`src/theme/`) — full light/dark infrastructure                | Exists but unused by game                                                                       |
 | Fonts      | SpaceGrotesk loaded at runtime. Oxanium bundled but not wired up.                  | Needs swap                                                                                      |
 | Haptics    | `Vibration` API (basic patterns)                                                   | Replace with `expo-haptics`                                                                     |
