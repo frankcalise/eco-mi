@@ -7,6 +7,7 @@ import * as SplashScreen from "expo-splash-screen"
 import * as Sentry from "@sentry/react-native"
 import i18n from "i18next"
 import { PostHogProvider } from "posthog-react-native"
+import { EaseView } from "react-native-ease"
 import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context"
 
 import { AnalyticsBootstrap } from "@/components/AnalyticsBootstrap"
@@ -152,11 +153,20 @@ function Root() {
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <View style={[styles.splashBg, { backgroundColor: themeBg }]}>
+      {/* Fade in as the native splash hides — prevents the "blink" where the
+        JS root would otherwise pop in instantly on top of the disappearing
+        native splash. 240ms easeOut mirrors the backlog spec (motion.exit is
+        200ms easeIn, which felt too abrupt for a first-frame fade-in). */}
+      <EaseView
+        style={[styles.splashBg, { backgroundColor: themeBg }]}
+        initialAnimate={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ default: { type: "timing", duration: 240, easing: "easeOut" } }}
+      >
         <ThemeProvider>
           <OrientationLockProvider>{inner}</OrientationLockProvider>
         </ThemeProvider>
-      </View>
+      </EaseView>
     </SafeAreaProvider>
   )
 }
