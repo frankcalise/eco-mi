@@ -10,6 +10,7 @@ import { EaseView } from "react-native-ease"
 import { NativeToggle } from "@/components/NativeToggle"
 import { PressableScale } from "@/components/PressableScale"
 import { SOUND_PACKS } from "@/config/soundPacks"
+import { SETTINGS_SOUND_PREVIEW_HINT_SEEN } from "@/config/storageKeys"
 import { themeIds, gameThemes } from "@/config/themes"
 import { useAudioTones, type ColorMap } from "@/hooks/useAudioTones"
 import { useHaptics } from "@/hooks/useHaptics"
@@ -21,10 +22,38 @@ import { usePreferencesStore } from "@/stores/preferencesStore"
 import { UI_COLORS } from "@/theme/uiColors"
 import { useAnalytics } from "@/utils/analytics"
 import { getReadableForeground } from "@/utils/color"
+import { loadString, saveString } from "@/utils/storage"
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { Host, Slider: NativeSlider } =
   Platform.OS === "ios" ? require("@expo/ui/swift-ui") : require("@expo/ui/jetpack-compose")
+
+function SoundPackIcon({
+  isOwned,
+  isSpeaking,
+  color,
+}: {
+  isOwned: boolean
+  isSpeaking: boolean
+  color: string
+}) {
+  if (!isOwned && !isSpeaking) {
+    return <Ionicons name="lock-closed" size={12} color={color} />
+  }
+  const iconName = isSpeaking ? "volume-high" : "volume-medium"
+  return (
+    <EaseView
+      animate={{ opacity: isSpeaking ? 0.55 : 1 }}
+      transition={{
+        default: isSpeaking
+          ? { type: "timing", duration: 700, easing: "easeInOut", loop: "reverse" }
+          : { type: "timing", duration: 200 },
+      }}
+    >
+      <Ionicons name={iconName} size={12} color={color} />
+    </EaseView>
+  )
+}
 
 function buildColorMap(theme: typeof gameThemes.classic): ColorMap {
   return {
@@ -96,6 +125,14 @@ export default function SettingsScreen() {
   const [soundHint, setSoundHint] = useState(false)
   const [restoreMessage, setRestoreMessage] = useState<string | null>(null)
   const [poppingTheme, setPoppingTheme] = useState<string | null>(null)
+  const [showPreviewHint, setShowPreviewHint] = useState(
+    () => loadString(SETTINGS_SOUND_PREVIEW_HINT_SEEN) !== "true",
+  )
+  function dismissPreviewHint() {
+    if (!showPreviewHint) return
+    setShowPreviewHint(false)
+    saveString(SETTINGS_SOUND_PREVIEW_HINT_SEEN, "true")
+  }
 
   const transientTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
   function scheduleTransient(fn: () => void, ms: number) {
@@ -245,8 +282,9 @@ export default function SettingsScreen() {
                 <Pressable
                   key={pack.id}
                   testID={`btn-sound-pack-${pack.id}`}
-                  hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+                  hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
                   onPress={() => {
+                    dismissPreviewHint()
                     if (pack.id === soundPack.id) {
                       clearSoundPreview()
                       return
@@ -287,7 +325,11 @@ export default function SettingsScreen() {
                   >
                     <View style={styles.selectorButtonInner}>
                       <Text style={[styles.soundPackName, { color: labelColor }]}>{pack.name}</Text>
-                      {!isOwned && <Ionicons name="lock-closed" size={10} color={labelColor} />}
+                      <SoundPackIcon
+                        isOwned={isOwned}
+                        isSpeaking={isSelected || isPreviewing}
+                        color={labelColor}
+                      />
                     </View>
                   </EaseView>
                 </Pressable>
@@ -324,19 +366,34 @@ export default function SettingsScreen() {
               {t("game:soundDisabledHint")}
             </Text>
           </EaseView>
+          {showPreviewHint && !soundHint && (
+            <Text style={[styles.hintText, { color: activeTheme.secondaryTextColor }]}>
+              {t("game:soundPreviewHint")}
+            </Text>
+          )}
         </View>
 
         {/* Theme */}
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: activeTheme.secondaryTextColor }]}>
             {t("game:theme")}
+            <Text style={{ color: activeTheme.textColor }}>
+              {" — "}
+              {t(`themes:${activeTheme.id}` as const)}
+            </Text>
           </Text>
           <View style={styles.row}>
             {themeIds.map((id) => {
-              const isOwned = gameThemes[id].free || ownsTheme(id)
+              const swatchTheme = gameThemes[id]
+              const isOwned = swatchTheme.free || ownsTheme(id)
               const isSelected = id === theme.id
               const isPreviewing = previewTheme?.id === id
               const isPopping = poppingTheme === id
+              const outlineColor = isSelected
+                ? activeTheme.accentColor
+                : isPreviewing
+                  ? activeTheme.warningColor
+                  : activeTheme.borderColor
               return (
                 <Pressable
                   key={id}
@@ -361,18 +418,62 @@ export default function SettingsScreen() {
                     animate={{ scale: isPopping ? 1.08 : 1 }}
                     transition={{ default: { type: "spring", stiffness: 400, damping: 15 } }}
                     style={[
-                      styles.themeCircle,
-                      { backgroundColor: gameThemes[id].buttonColors.red.color },
-                      isSelected && { borderColor: activeTheme.accentColor, borderWidth: 2 },
-                      isPreviewing && { borderColor: activeTheme.warningColor, borderWidth: 2 },
+                      styles.themeSwatch,
+                      isSelected || isPreviewing
+                        ? styles.themeSwatchEmphasized
+                        : styles.themeSwatchNormal,
+                      { borderColor: outlineColor },
                     ]}
                   >
-                    {!isOwned && (
-                      <Ionicons
-                        name="lock-closed"
-                        size={14}
-                        color={getReadableForeground(gameThemes[id].buttonColors.red.color)}
+                    <View style={styles.themeSwatchRow}>
+                      <View
+                        style={[
+                          styles.themeSwatchCell,
+                          { backgroundColor: swatchTheme.buttonColors.red.color },
+                        ]}
                       />
+                      <View
+                        style={[
+                          styles.themeSwatchCell,
+                          { backgroundColor: swatchTheme.buttonColors.blue.color },
+                        ]}
+                      />
+                    </View>
+                    <View style={styles.themeSwatchRow}>
+                      <View
+                        style={[
+                          styles.themeSwatchCell,
+                          { backgroundColor: swatchTheme.buttonColors.green.color },
+                        ]}
+                      />
+                      <View
+                        style={[
+                          styles.themeSwatchCell,
+                          { backgroundColor: swatchTheme.buttonColors.yellow.color },
+                        ]}
+                      />
+                    </View>
+                    {!isOwned && (
+                      <View style={styles.themeSwatchLockOverlay}>
+                        <Ionicons name="lock-closed" size={16} color={UI_COLORS.white} />
+                      </View>
+                    )}
+                    {isSelected && (
+                      <View
+                        style={[
+                          styles.themeSwatchCheck,
+                          {
+                            backgroundColor: activeTheme.accentColor,
+                            borderColor: activeTheme.backgroundColor,
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name="checkmark"
+                          size={10}
+                          color={getReadableForeground(activeTheme.accentColor)}
+                        />
+                      </View>
                     )}
                   </EaseView>
                 </Pressable>
@@ -579,8 +680,8 @@ const styles = StyleSheet.create({
   selectorButton: {
     borderRadius: 8,
     borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   selectorButtonInner: {
     alignItems: "center",
@@ -602,12 +703,48 @@ const styles = StyleSheet.create({
     paddingRight: Platform.OS === "ios" ? 8 : 0,
     paddingVertical: 8,
   },
-  themeCircle: {
+  themeSwatch: {
+    borderRadius: 10,
+    height: 48,
+    overflow: "hidden",
+    padding: 2,
+    width: 48,
+  },
+  themeSwatchCell: {
+    flex: 1,
+  },
+  themeSwatchCheck: {
     alignItems: "center",
-    borderRadius: 20,
-    height: 40,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    bottom: -4,
+    height: 18,
     justifyContent: "center",
-    width: 40,
+    position: "absolute",
+    right: -4,
+    width: 18,
+  },
+  themeSwatchEmphasized: {
+    borderWidth: 2.5,
+  },
+  themeSwatchLockOverlay: {
+    alignItems: "center",
+    backgroundColor: UI_COLORS.backdropSoft,
+    bottom: 0,
+    justifyContent: "center",
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  themeSwatchNormal: {
+    borderWidth: 1,
+  },
+  themeSwatchRow: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 2,
+    marginBottom: 2,
   },
   unlockBtn: {
     alignItems: "center",

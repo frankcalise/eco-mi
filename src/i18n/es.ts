@@ -61,6 +61,7 @@ const es = {
       chaos: "Los botones cambian cada ronda",
     },
     soundDisabledHint: "Activa el sonido para escuchar",
+    soundPreviewHint: "Toca un paquete para escucharlo",
     soundPack: "Paquete de Sonido",
     theme: "Tema",
     soundToggle: "Sonido",
@@ -204,6 +205,12 @@ const es = {
       content: "No se encontraron datos. Intenta pulsar el botón para actualizar.",
       button: "Intentar de nuevo",
     },
+  },
+  themes: {
+    classic: "Clásico",
+    neon: "Neón",
+    retro: "Retro",
+    pastel: "Pastel",
   },
 }
 

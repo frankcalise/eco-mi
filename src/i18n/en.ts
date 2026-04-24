@@ -61,6 +61,7 @@ const en = {
       chaos: "Buttons shuffle after each round",
     },
     soundDisabledHint: "Enable sound to preview",
+    soundPreviewHint: "Tap a pack to preview",
     soundPack: "Sound Pack",
     theme: "Theme",
     soundToggle: "Sound",
@@ -204,6 +205,12 @@ const en = {
       content: "No data found yet. Try clicking the button to refresh or reload the app.",
       button: "Let's try this again",
     },
+  },
+  themes: {
+    classic: "Classic",
+    neon: "Neon",
+    retro: "Retro",
+    pastel: "Pastel",
   },
 }
 

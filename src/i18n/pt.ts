@@ -61,6 +61,7 @@ const pt = {
       chaos: "Os botões mudam a cada rodada",
     },
     soundDisabledHint: "Ative o som para ouvir",
+    soundPreviewHint: "Toque em um pacote para ouvi-lo",
     soundPack: "Pacote de Som",
     theme: "Tema",
     soundToggle: "Som",
@@ -203,6 +204,12 @@ const pt = {
       content: "Nenhum dado encontrado. Tente pressionar o botão para atualizar.",
       button: "Tentar novamente",
     },
+  },
+  themes: {
+    classic: "Clássico",
+    neon: "Néon",
+    retro: "Retrô",
+    pastel: "Pastel",
   },
 }
 

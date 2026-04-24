@@ -45,6 +45,7 @@ export const SETTINGS_HAPTICS_ENABLED = "ecomi:settings:hapticsEnabled"
 export const SETTINGS_NOTIFY_DAILY = "ecomi:settings:notifyDaily"
 export const SETTINGS_NOTIFY_STREAK = "ecomi:settings:notifyStreak"
 export const SETTINGS_NOTIFY_WINBACK = "ecomi:settings:notifyWinback"
+export const SETTINGS_SOUND_PREVIEW_HINT_SEEN = "ecomi:settings:soundPreviewHintSeen"
 
 // Achievements
 export const ACHIEVEMENTS = "ecomi:achievements"
