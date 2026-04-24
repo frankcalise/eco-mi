@@ -45,6 +45,9 @@ export function GameHeader({ isIdle, theme, onModePress, onSettingsPress }: Game
   const titleBaseColor = theme.statusBarStyle === "dark" ? `${theme.textColor}B8` : `${theme.textColor}66`
   const titleGhostColor =
     theme.statusBarStyle === "dark" ? `${theme.backgroundColor}55` : `${theme.backgroundColor}33`
+  // Pastel is the only light theme (statusBarStyle: "dark"); a 1px offset ghost reads too loud on
+  // its light background, so the edge-sharpening ghost layer is suppressed there.
+  const showTitleGhost = theme.statusBarStyle !== "dark"
 
   return (
     <View style={styles.header}>
@@ -77,10 +80,17 @@ export function GameHeader({ isIdle, theme, onModePress, onSettingsPress }: Game
         <View style={styles.titleStack}>
           {isIdle ? (
             <>
+              {/*
+                Ghost layer: always rendered so it sizes the absolute-positioned siblings, but on
+                Pastel (the only light theme) it's hidden via opacity since a 1px offset ghost reads
+                too loud on a light bg. Elsewhere it provides a crisp 1px offset-shadow edge to
+                sharpen the neon glyph.
+              */}
               <Text
                 style={[
                   styles.title,
                   styles.titleGhost,
+                  !showTitleGhost && styles.titleGhostHidden,
                   {
                     color: titleGhostColor,
                     textShadowColor: titleGhostColor,
@@ -160,16 +170,19 @@ const styles = StyleSheet.create({
     letterSpacing: 4,
   },
   titleGhost: {
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 6,
-    transform: [{ translateX: 1 }, { translateY: 1 }],
+    opacity: 0.4,
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 0,
+  },
+  titleGhostHidden: {
+    opacity: 0,
   },
   titleLayerAbsolute: {
     position: "absolute",
   },
   titleNeon: {
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
+    textShadowRadius: 8,
   },
   titleStack: {
     alignItems: "center",
