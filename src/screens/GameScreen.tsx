@@ -1,6 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import type { LayoutChangeEvent } from "react-native"
-import { Platform, StyleSheet, Text, useWindowDimensions, View } from "react-native"
+import {
+  Animated,
+  Easing,
+  Platform,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native"
 import { useFocusEffect, useRouter } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
@@ -33,6 +43,7 @@ import { useGameOverStore } from "@/stores/gameOverStore"
 import { usePendingActionStore } from "@/stores/pendingActionStore"
 import { usePendingModeStore } from "@/stores/pendingModeStore"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
+import { motion } from "@/theme/motion"
 import { UI_COLORS } from "@/theme/uiColors"
 import { useAnalytics } from "@/utils/analytics"
 import { useBreakpoints } from "@/utils/layoutBreakpoints"
@@ -70,6 +81,11 @@ function WrongFlashOverlay({ gameSize }: { gameSize: number }) {
 }
 
 const gameScreenStyles = StyleSheet.create({
+  startButtonShadow: {
+    borderRadius: 12,
+    shadowColor: UI_COLORS.shadowBlack,
+    shadowOffset: { width: 0, height: 4 },
+  },
   wrongFlashOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: UI_COLORS.red500,
@@ -77,6 +93,60 @@ const gameScreenStyles = StyleSheet.create({
     zIndex: 10,
   },
 })
+
+// Idle breathe for the Start button. EaseView drives the scale loop (1 → 1.02,
+// reversing) via the shared `motion.breathe` preset. react-native-ease's
+// `animate` prop doesn't accept shadow/elevation, so depth breathes in a
+// parallel RN Animated loop tuned to the same 1500ms easeInOut reversing
+// cadence — shadowRadius 8→16, shadowOpacity 0.3→0.5 on iOS, elevation 6→10
+// on Android. The result: the button inhales instead of just scaling.
+function BreathingStartButton({
+  style,
+  children,
+}: {
+  style?: StyleProp<ViewStyle>
+  children: ReactNode
+}) {
+  const breathe = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breathe, {
+          toValue: 1,
+          duration: motion.breathe.duration,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+        Animated.timing(breathe, {
+          toValue: 0,
+          duration: motion.breathe.duration,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+      ]),
+    )
+    animation.start()
+    return () => animation.stop()
+  }, [breathe])
+
+  const shadowRadius = breathe.interpolate({ inputRange: [0, 1], outputRange: [8, 16] })
+  const shadowOpacity = breathe.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.5] })
+  const elevation = breathe.interpolate({ inputRange: [0, 1], outputRange: [6, 10] })
+
+  const animatedShadowStyle = Platform.select({
+    ios: { shadowRadius, shadowOpacity },
+    default: { elevation },
+  })
+
+  return (
+    <EaseView animate={{ scale: 1.02 }} transition={{ default: motion.breathe }} style={style}>
+      <Animated.View style={[gameScreenStyles.startButtonShadow, animatedShadowStyle]}>
+        {children}
+      </Animated.View>
+    </EaseView>
+  )
+}
 
 export function GameScreen() {
   const { t } = useTranslation()
@@ -772,16 +842,7 @@ export function GameScreen() {
   )
 
   const startButtonNode = (
-    <EaseView
-      animate={{ scale: 1.02 }}
-      transition={{
-        default: {
-          type: "timing",
-          duration: 1200,
-          easing: "easeInOut",
-          loop: "reverse",
-        },
-      }}
+    <BreathingStartButton
       style={[
         styles.startButtonWrapper,
         isTabletPortrait && styles.startButtonWrapperTabletPortrait,
@@ -799,7 +860,7 @@ export function GameScreen() {
           {t("game:startGame")}
         </Text>
       </PressableScale>
-    </EaseView>
+    </BreathingStartButton>
   )
 
   const resetButtonNode = showResetButton ? (
@@ -861,18 +922,7 @@ export function GameScreen() {
               <View style={styles.secondaryBottom}>
                 {isIdle ? (
                   <>
-                    <EaseView
-                      animate={{ scale: 1.02 }}
-                      transition={{
-                        default: {
-                          type: "timing",
-                          duration: 1200,
-                          easing: "easeInOut",
-                          loop: "reverse",
-                        },
-                      }}
-                      style={styles.startButtonWrapperTablet}
-                    >
+                    <BreathingStartButton style={styles.startButtonWrapperTablet}>
                       <PressableScale
                         testID="btn-start"
                         accessibilityLabel={t("a11y:startGame")}
@@ -885,7 +935,7 @@ export function GameScreen() {
                           {t("game:startGame")}
                         </Text>
                       </PressableScale>
-                    </EaseView>
+                    </BreathingStartButton>
                     <View style={styles.idleActions}>{renderIdleActionButtons()}</View>
                   </>
                 ) : (
@@ -1180,16 +1230,11 @@ const styles = StyleSheet.create({
   startButton: {
     alignItems: "center",
     borderRadius: 12,
-    elevation: 6,
     flexDirection: "row",
     gap: 10,
     justifyContent: "center",
     paddingHorizontal: 28,
     paddingVertical: 16,
-    shadowColor: UI_COLORS.shadowBlack,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
   },
   startButtonText: {
     color: UI_COLORS.white,
