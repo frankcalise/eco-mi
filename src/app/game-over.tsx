@@ -36,6 +36,7 @@ import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { motion } from "@/theme/motion"
 import { useAnalytics } from "@/utils/analytics"
 import { formatDuration } from "@/utils/formatTime"
+import { shouldFallbackToMainMenuOnGameOverExit } from "@/utils/gameOverNavigation"
 import { useBreakpoints } from "@/utils/layoutBreakpoints"
 import { loadString, saveString } from "@/utils/storage"
 
@@ -132,6 +133,7 @@ export default function GameOverScreen() {
   const inputRef0 = useRef<TextInput>(null)
   const inputRef1 = useRef<TextInput>(null)
   const inputRef2 = useRef<TextInput>(null)
+  const explicitExitRef = useRef(false)
   // Wrap in useRef(...).current so the array identity is stable across renders.
   // The three ref objects themselves are already stable; this prevents a new
   // array allocation on every render that the React Compiler can't dedupe.
@@ -309,7 +311,12 @@ export default function GameOverScreen() {
   useEffect(() => {
     return navigation.addListener("beforeRemove", () => {
       const { action, setAction } = usePendingActionStore.getState()
-      if (!action) {
+      if (
+        shouldFallbackToMainMenuOnGameOverExit({
+          explicitExit: explicitExitRef.current,
+          pendingAction: action,
+        })
+      ) {
         // Android/system back from /game-over should always return to a valid idle game state.
         setAction("main_menu")
       }
@@ -323,6 +330,7 @@ export default function GameOverScreen() {
     setPlayAgainAckScale(1.05)
     scheduleTransient(() => setPlayAgainAckScale(1), 100)
     scheduleTransient(() => {
+      explicitExitRef.current = true
       setPendingAction("play_again")
       router.back()
     }, 200)
@@ -330,12 +338,14 @@ export default function GameOverScreen() {
 
   function handleContinue() {
     haptics.play("buttonPress")
+    explicitExitRef.current = true
     setPendingAction("continue")
     router.back()
   }
 
   function handleMainMenu() {
     haptics.play("menuTap")
+    explicitExitRef.current = true
     setPendingAction("main_menu")
     router.back()
   }

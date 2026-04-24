@@ -328,11 +328,8 @@ describe("useGameEngine — audio silencing on state transitions", () => {
 // line ~494. Result: the user watched the ad, earned the reward, and landed
 // on main menu with no replay.
 //
-// The GameScreen fix adds a `continueInFlight` guard to the useFocusEffect.
-// This engine-level test verifies the invariant that continueGame() — when
-// called from gameover state, as the successful-ad path does — actually runs
-// its full replay pipeline and reaches scheduleSequence with the preserved
-// sequence after the 500ms delay.
+// The screen-level fix guards the rewarded-ad async window so the engine does
+// not get reset out from under the continue flow before the ad resolves.
 describe("useGameEngine — rewarded continue replay", () => {
   it("continueGame schedules the sequence replay after the 500ms delay", () => {
     const { result } = startScoreAndLose()
