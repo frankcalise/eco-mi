@@ -22,7 +22,7 @@ Run these to verify changes before committing:
 
 ```bash
 # Type check (must pass — zero errors currently)
-npx tsc --noEmit
+bun run compile
 
 # Unit tests (must pass — 9 tests currently)
 bun run test
