@@ -240,9 +240,9 @@
       `/game-over` currently cascades stat pills at 250/350/450/550ms and delays the CTA block to `+700ms` — the Play Again button appears ~1.1s after mount, which makes the primary action feel late for non-PB games. Also, the score value itself never animates: it's baked into the pill so the "hero number" never lands. Tighten: compress pill stagger to ~60ms each, drop CTA delay from 700 → 350ms with a `translateY: 16 → 0, scale: 0.98 → 1` spring, and wrap the score value in a count-up (spring from 0 → final over ~450ms, `stiffness: 90, damping: 14`). Replace the title's `timing 300ms` with a spring `stiffness: 160, damping: 14` so "GAME OVER" lands with weight rather than fading in.
 
 - [ ] **Theme swap: animated surface transition (replace hard snap)**
-      Tapping a theme circle in `/settings` calls `setTheme(id)` synchronously — background, header, pads, and all surfaces re-render instantly. Premium apps sweep the transition. Wrap the root `View` in `_layout.tsx` with an `EaseView` that animates `backgroundColor` over ~350ms with `easeInOut`, or layer a crossfade overlay where the incoming theme fades in behind a departing scrim. Also rethink the 40×40 swatch — make each a mini 2×2 pad preview (all 4 theme pad colors in a quadrant at 48×48) so the swatch actually previews the theme, not just its red. Move the selection ring from per-swatch `borderWidth` toggle to a shared indicator that slides between options (`layoutId`-style).
+      Tapping a theme circle in `/settings` calls `setTheme(id)` synchronously — background, header, pads, and all surfaces re-render instantly. Premium apps sweep the transition. Attempted twice: (a) in-screen `EaseView` scrim over the body only — native stack header snapped visibly ahead of the body fade because it's rendered by `UINavigationController`, outside the screen's JSX. (b) root-level scrim wrapped in `FullWindowOverlay` from `react-native-screens` so it covers the nav bar on iOS — confirmed working but *still felt the same* on device because only the bg color crossfades while pad colors, text, and borders still snap underneath, so the eye catches the discontinuity. Real fix likely requires either (1) a full-window native snapshot of the prior frame (`react-native-theme-switch-animation` — adds a native dep; the library takes a `UIView` snapshot including nav bar and crossfades it against the live new state, which is the "unistyles-like" effect the user expected), or (2) `headerShown: false` + custom JS header everywhere, so the whole screen including chrome lives under a single JS-animatable opacity surface. Both are bigger than the polish budget this item was scoped to; revisit when there's appetite. The 2×2 swatch preview and sliding-indicator ideas mentioned in the original scope are tracked under the "Theme picker: show selected theme name + strengthen selected-state visual" entry (the 2×2 preview shipped; sliding indicator deferred).
 
-- [ ] **Sound-pack pill: explicit preview affordance**
+- [x] **Sound-pack pill: explicit preview affordance**
       `settings.tsx:231-278` pills auto-play a preview tone on tap but there's no visual cue signaling "tap to preview" — first-time users don't know. Add an `Ionicons name="volume-medium"` inside each owned pill (keep the `lock-closed` icon for unowned) and swap to `"volume-high"` with a gentle `opacity 0.6 → 1` loop while the pack is previewing, so users see *which* pack is speaking. Reuse the existing `soundDisabledHint` pattern to show a one-shot tooltip "Tap to preview" the first time Settings opens.
 
 - [ ] **Splash → index cross-fade (kill the blink)**
@@ -319,7 +319,7 @@
 - [x] **Tracking screen "Share Statistics" copy is misleading**
       "Share Statistics" implies game stats but actually triggers ATT ad tracking consent. Apple has rejected apps for misleading pre-permission language. Revise to something like "Allow Tracking" or "Support with Ads" that accurately describes the IDFA consent being requested.
 
-- [ ] **Theme picker: show selected theme name + strengthen selected-state visual**
+- [x] **Theme picker: show selected theme name + strengthen selected-state visual**
       The Settings theme row renders 4 colored circles — red, cyan, brick, pink — with no text labels. The only way a user knows what theme they're on is:
   - the 2px green border on the active circle (easy to miss, especially on Classic whose pad-red matches the highlight direction visually), and
   - the `lock-closed` icon that only appears on *unowned* themes, so owned + inactive themes are completely unlabeled.
@@ -395,7 +395,7 @@
 - [ ] **Mode-select "Dismiss" hardcoded English literal**
       `src/app/mode-select.tsx:73` uses the string `"Dismiss"` directly instead of an i18n key. ES/PT users see English. Move to `t("common:dismiss")` or equivalent.
 
-- [ ] **Sound-pack pill: touch target below 44pt**
+- [x] **Sound-pack pill: touch target below 44pt**
       `settings.tsx:235` pills use `paddingVertical: 6` + `hitSlop: { top: 6, bottom: 6, left: 4, right: 4 }` with 10px font — effective target is ~28–30pt tall, under iOS HIG 44pt. Bump vertical padding to 10 or hitSlop to `{ top: 10, bottom: 10, left: 8, right: 8 }`.
 
 ---
