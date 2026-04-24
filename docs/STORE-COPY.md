@@ -2,7 +2,7 @@
 
 ## English (EN)
 
-**Title:** Eco Mi - Memory Challenge Game
+**Title:** Eco Mi - Memory Game
 
 **Subtitle (iOS, 30 char):** Brain training color sequence
 
@@ -47,7 +47,7 @@ Free to play. No account required. Just tap and play!
 
 ## Spanish — Latin America (es-419)
 
-**Title:** Eco Mi - Memory Challenge Game
+**Title:** Eco Mi - Juego de Memoria
 
 **Subtitle (iOS, 30 char):** Entrena tu cerebro con colores
 
@@ -92,7 +92,7 @@ Gratis. Sin cuenta necesaria. ¡Solo toca y juega!
 
 ## Portuguese — Brazil (pt-BR)
 
-**Title:** Eco Mi - Memory Challenge Game
+**Title:** Eco Mi - Jogo de Memória
 
 **Subtitle (iOS, 30 char):** Treine seu cérebro com cores
 
