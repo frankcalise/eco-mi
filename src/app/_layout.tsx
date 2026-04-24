@@ -35,11 +35,6 @@ if (__DEV__) {
       callback: () => router.push("/haptics-lab"),
       shouldCollapse: true,
     },
-    {
-      name: "Audio buffer spike",
-      callback: () => router.push("/audio-buffer-spike"),
-      shouldCollapse: true,
-    },
   ])
 }
 
