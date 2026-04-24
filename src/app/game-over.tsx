@@ -32,6 +32,7 @@ import { useTheme } from "@/hooks/useTheme"
 import { useGameOverStore } from "@/stores/gameOverStore"
 import { usePendingActionStore } from "@/stores/pendingActionStore"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
+import { motion } from "@/theme/motion"
 import { useAnalytics } from "@/utils/analytics"
 import { formatDuration } from "@/utils/formatTime"
 import { useBreakpoints } from "@/utils/layoutBreakpoints"
@@ -123,6 +124,19 @@ export default function GameOverScreen() {
 
   const [letters, setLetters] = useState(["", "", ""])
   const [initialsSaved, setInitialsSaved] = useState(false)
+  const [displayedScore, setDisplayedScore] = useState(0)
+  const [playAgainAckScale, setPlayAgainAckScale] = useState(1)
+
+  // Transient timers (ack-scale handoffs) — cleared on unmount to avoid act warnings
+  // and keep the Play Again ack from firing on a stale screen.
+  const transientTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
+  function scheduleTransient(fn: () => void, ms: number) {
+    const id = setTimeout(() => {
+      transientTimersRef.current.delete(id)
+      fn()
+    }, ms)
+    transientTimersRef.current.add(id)
+  }
   const inputRef0 = useRef<TextInput>(null)
   const inputRef1 = useRef<TextInput>(null)
   const inputRef2 = useRef<TextInput>(null)
@@ -182,6 +196,34 @@ export default function GameOverScreen() {
     const timer = setTimeout(() => inputRefs[0].current?.focus(), 400)
     return () => clearTimeout(timer)
   }, [showInitialsInput])
+
+  // Hero score count-up: 0 → score over ~450ms with ease-out quadratic.
+  // rAF interpolation (not EaseView) because the pill value is a Text child,
+  // and react-native-ease animates transform/opacity, not text content.
+  // motion.grand is the conceptual reference for the "hero land" feel.
+  useEffect(() => {
+    const start = performance.now()
+    const durationMs = 450
+    let rafId: number
+    function tick() {
+      const elapsed = performance.now() - start
+      const t = Math.min(1, elapsed / durationMs)
+      const eased = 1 - (1 - t) * (1 - t)
+      setDisplayedScore(Math.round(score * eased))
+      if (t < 1) rafId = requestAnimationFrame(tick)
+    }
+    rafId = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafId)
+  }, [score])
+
+  // Flush any pending ack-scale timers if the screen unmounts mid-transition.
+  useEffect(() => {
+    const timers = transientTimersRef.current
+    return () => {
+      for (const id of timers) clearTimeout(id)
+      timers.clear()
+    }
+  }, [])
 
   const { removeAds, purchaseRemoveAds } = usePurchases()
   const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
@@ -293,8 +335,14 @@ export default function GameOverScreen() {
 
   function handlePlayAgain() {
     haptics.play("buttonPress")
-    setPendingAction("play_again")
-    router.back()
+    // Brief commitment ack: 1 → 1.05 → 1 before navigating. Without this the
+    // press feels uncommitted on non-PB games where there's no celebration.
+    setPlayAgainAckScale(1.05)
+    scheduleTransient(() => setPlayAgainAckScale(1), 100)
+    scheduleTransient(() => {
+      setPendingAction("play_again")
+      router.back()
+    }, 200)
   }
 
   function handleContinue() {
@@ -356,7 +404,7 @@ export default function GameOverScreen() {
             <EaseView
               initialAnimate={{ opacity: 0, translateY: 12 }}
               animate={{ opacity: 1, translateY: 0 }}
-              transition={{ default: { type: "timing", duration: 300 } }}
+              transition={{ default: motion.grand }}
             >
               <Text
                 style={[
@@ -464,13 +512,13 @@ export default function GameOverScreen() {
                 <StatPill
                   testID="pill-score"
                   label={t("game:score")}
-                  value={score}
+                  value={displayedScore}
                   icon="flash"
                   borderColor={
                     activeTheme.buttonColors.red.glowColor ?? activeTheme.buttonColors.red.color
                   }
                   theme={activeTheme}
-                  delay={250}
+                  delay={0}
                   isTablet={isTablet}
                 />
                 <StatPill
@@ -482,7 +530,7 @@ export default function GameOverScreen() {
                     activeTheme.buttonColors.blue.glowColor ?? activeTheme.buttonColors.blue.color
                   }
                   theme={activeTheme}
-                  delay={350}
+                  delay={60}
                   isTablet={isTablet}
                 />
               </View>
@@ -497,7 +545,7 @@ export default function GameOverScreen() {
                     activeTheme.buttonColors.green.color
                   }
                   theme={activeTheme}
-                  delay={450}
+                  delay={120}
                   isTablet={isTablet}
                 />
                 <StatPill
@@ -510,7 +558,7 @@ export default function GameOverScreen() {
                     activeTheme.buttonColors.yellow.color
                   }
                   theme={activeTheme}
-                  delay={550}
+                  delay={180}
                   isTablet={isTablet}
                 />
               </View>
@@ -525,9 +573,9 @@ export default function GameOverScreen() {
 
           {/* Bottom Section: CTAs */}
           <EaseView
-            initialAnimate={{ opacity: 0, translateY: 20 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ default: { type: "timing", duration: 300, delay: 700 } }}
+            initialAnimate={{ opacity: 0, translateY: 16, scale: 0.98 }}
+            animate={{ opacity: 1, translateY: 0, scale: 1 }}
+            transition={{ default: { ...motion.grand, delay: 350 } }}
             style={styles.bottomSection}
           >
             {showContinue && (
@@ -549,18 +597,20 @@ export default function GameOverScreen() {
               </PressableScale>
             )}
 
-            <PressableScale
-              testID="btn-play-again"
-              style={[styles.playAgainButton, { backgroundColor: activeTheme.accentColor }]}
-              onPress={handlePlayAgain}
-              accessibilityLabel={t("game:playAgain")}
-              accessibilityRole="button"
-            >
-              <Ionicons name="refresh" size={20} color={primaryButtonForeground} />
-              <Text style={[styles.playAgainText, { color: primaryButtonForeground }]}>
-                {t("game:playAgain")}
-              </Text>
-            </PressableScale>
+            <EaseView animate={{ scale: playAgainAckScale }} transition={{ default: motion.snap }}>
+              <PressableScale
+                testID="btn-play-again"
+                style={[styles.playAgainButton, { backgroundColor: activeTheme.accentColor }]}
+                onPress={handlePlayAgain}
+                accessibilityLabel={t("game:playAgain")}
+                accessibilityRole="button"
+              >
+                <Ionicons name="refresh" size={20} color={primaryButtonForeground} />
+                <Text style={[styles.playAgainText, { color: primaryButtonForeground }]}>
+                  {t("game:playAgain")}
+                </Text>
+              </PressableScale>
+            </EaseView>
 
             <View style={styles.bottomRow}>
               <PressableScale
