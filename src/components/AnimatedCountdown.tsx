@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react"
 import { Text, View, StyleSheet, type TextStyle } from "react-native"
 import { EaseView } from "react-native-ease"
 
-import { useTheme } from "@/hooks/useTheme"
 import { motion } from "@/theme/motion"
 
 type AnimatedCountdownProps = {
@@ -12,7 +11,6 @@ type AnimatedCountdownProps = {
 }
 
 export function AnimatedCountdown({ value, color, style }: AnimatedCountdownProps) {
-  const { activeTheme } = useTheme()
   const prevValue = useRef(value)
   const [displayValue, setDisplayValue] = useState(value)
   const [phase, setPhase] = useState<"idle" | "fade" | "bump">("idle")
@@ -44,13 +42,6 @@ export function AnimatedCountdown({ value, color, style }: AnimatedCountdownProp
     return () => clearTimeout(swap)
   }, [value, isSmallDelta])
 
-  const resolvedColor =
-    color === "#ef4444"
-      ? activeTheme.destructiveColor
-      : color === "#fbbf24"
-        ? activeTheme.warningColor
-        : color
-
   return (
     <View style={styles.container}>
       <EaseView
@@ -60,7 +51,7 @@ export function AnimatedCountdown({ value, color, style }: AnimatedCountdownProp
         }}
         transition={{ default: motion.countdown }}
       >
-        <Text style={[styles.text, style, { color: resolvedColor }]}>{displayValue}</Text>
+        <Text style={[styles.text, style, { color }]}>{displayValue}</Text>
       </EaseView>
     </View>
   )

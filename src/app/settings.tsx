@@ -17,6 +17,7 @@ import { useHaptics } from "@/hooks/useHaptics"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useSoundPack } from "@/hooks/useSoundPack"
 import { useTheme } from "@/hooks/useTheme"
+import { useTransientTimers } from "@/hooks/useTransientTimers"
 import { stackHeaderOptionsFromTheme } from "@/navigation/secondaryStackHeader"
 import { usePreferencesStore } from "@/stores/preferencesStore"
 import { UI_COLORS } from "@/theme/uiColors"
@@ -134,25 +135,15 @@ export default function SettingsScreen() {
     saveString(SETTINGS_SOUND_PREVIEW_HINT_SEEN, "true")
   }
 
-  const transientTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
-  function scheduleTransient(fn: () => void, ms: number) {
-    const id = setTimeout(() => {
-      transientTimersRef.current.delete(id)
-      fn()
-    }, ms)
-    transientTimersRef.current.add(id)
-  }
+  const scheduleTransient = useTransientTimers()
 
   const colorMap = buildColorMap(activeTheme)
   const { playPreview, initialize, cleanup } = useAudioTones(colorMap, soundPack.oscillatorType)
 
   useEffect(() => {
     initialize()
-    const timers = transientTimersRef.current
     return () => {
       cleanup()
-      for (const id of timers) clearTimeout(id)
-      timers.clear()
     }
   }, [])
 

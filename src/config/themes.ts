@@ -136,3 +136,10 @@ export const themeIds = Object.keys(gameThemes)
 export function getThemeById(id: string): GameTheme {
   return gameThemes[id] ?? gameThemes.classic
 }
+
+/** True when the theme uses a light backdrop (dark status-bar glyphs).
+ * Pastel is the only light theme today — callers use this to gate
+ * shadow-heavy treatments that read too loud on a pale surface. */
+export function isLightTheme(theme: GameTheme): boolean {
+  return theme.statusBarStyle === "dark"
+}

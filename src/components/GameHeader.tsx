@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { EaseView } from "react-native-ease"
 
 import { PressableScale } from "@/components/PressableScale"
-import type { GameTheme } from "@/config/themes"
+import { isLightTheme, type GameTheme } from "@/config/themes"
 import { useHaptics } from "@/hooks/useHaptics"
 
 type GameHeaderProps = {
@@ -42,12 +42,12 @@ export function GameHeader({ isIdle, theme, onModePress, onSettingsPress }: Game
       }
     }
   }, [isIdle, neonColors.length])
-  const titleBaseColor = theme.statusBarStyle === "dark" ? `${theme.textColor}B8` : `${theme.textColor}66`
-  const titleGhostColor =
-    theme.statusBarStyle === "dark" ? `${theme.backgroundColor}55` : `${theme.backgroundColor}33`
-  // Pastel is the only light theme (statusBarStyle: "dark"); a 1px offset ghost reads too loud on
-  // its light background, so the edge-sharpening ghost layer is suppressed there.
-  const showTitleGhost = theme.statusBarStyle !== "dark"
+  const isLight = isLightTheme(theme)
+  const titleBaseColor = isLight ? `${theme.textColor}B8` : `${theme.textColor}66`
+  const titleGhostColor = isLight ? `${theme.backgroundColor}55` : `${theme.backgroundColor}33`
+  // Ghost layer stays rendered so it sizes the absolute-positioned neon siblings,
+  // but is hidden on light themes where a 1px offset reads too loud.
+  const showTitleGhost = !isLight
 
   return (
     <View style={styles.header}>
@@ -80,12 +80,6 @@ export function GameHeader({ isIdle, theme, onModePress, onSettingsPress }: Game
         <View style={styles.titleStack}>
           {isIdle ? (
             <>
-              {/*
-                Ghost layer: always rendered so it sizes the absolute-positioned siblings, but on
-                Pastel (the only light theme) it's hidden via opacity since a 1px offset ghost reads
-                too loud on a light bg. Elsewhere it provides a crisp 1px offset-shadow edge to
-                sharpen the neon glyph.
-              */}
               <Text
                 style={[
                   styles.title,

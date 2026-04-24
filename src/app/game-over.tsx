@@ -29,6 +29,7 @@ import { usePostPBPrompt } from "@/hooks/usePostPBPrompt"
 import { usePurchases } from "@/hooks/usePurchases"
 import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
+import { useTransientTimers } from "@/hooks/useTransientTimers"
 import { useGameOverStore } from "@/stores/gameOverStore"
 import { usePendingActionStore } from "@/stores/pendingActionStore"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
@@ -127,16 +128,7 @@ export default function GameOverScreen() {
   const [displayedScore, setDisplayedScore] = useState(0)
   const [playAgainAckScale, setPlayAgainAckScale] = useState(1)
 
-  // Transient timers (ack-scale handoffs) — cleared on unmount to avoid act warnings
-  // and keep the Play Again ack from firing on a stale screen.
-  const transientTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
-  function scheduleTransient(fn: () => void, ms: number) {
-    const id = setTimeout(() => {
-      transientTimersRef.current.delete(id)
-      fn()
-    }, ms)
-    transientTimersRef.current.add(id)
-  }
+  const scheduleTransient = useTransientTimers()
   const inputRef0 = useRef<TextInput>(null)
   const inputRef1 = useRef<TextInput>(null)
   const inputRef2 = useRef<TextInput>(null)
@@ -215,15 +207,6 @@ export default function GameOverScreen() {
     rafId = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(rafId)
   }, [score])
-
-  // Flush any pending ack-scale timers if the screen unmounts mid-transition.
-  useEffect(() => {
-    const timers = transientTimersRef.current
-    return () => {
-      for (const id of timers) clearTimeout(id)
-      timers.clear()
-    }
-  }, [])
 
   const { removeAds, purchaseRemoveAds } = usePurchases()
   const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
@@ -477,7 +460,9 @@ export default function GameOverScreen() {
                           backgroundColor: allFilled
                             ? activeTheme.accentColor
                             : activeTheme.surfaceColor,
-                          borderColor: allFilled ? activeTheme.accentColor : activeTheme.borderColor,
+                          borderColor: allFilled
+                            ? activeTheme.accentColor
+                            : activeTheme.borderColor,
                         },
                       ]}
                       onPress={handleSaveInitials}
@@ -541,8 +526,7 @@ export default function GameOverScreen() {
                   value={highScore}
                   icon="trophy"
                   borderColor={
-                    activeTheme.buttonColors.green.glowColor ??
-                    activeTheme.buttonColors.green.color
+                    activeTheme.buttonColors.green.glowColor ?? activeTheme.buttonColors.green.color
                   }
                   theme={activeTheme}
                   delay={120}

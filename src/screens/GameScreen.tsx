@@ -30,6 +30,7 @@ import { PressableScale } from "@/components/PressableScale"
 import { StreakBanner } from "@/components/StreakBanner"
 import { TimerRing } from "@/components/TimerRing"
 import { INITIALS_SKIPPED, ONBOARDING_COMPLETED, SAVED_INITIALS } from "@/config/storageKeys"
+import { isLightTheme } from "@/config/themes"
 import { useAds } from "@/hooks/useAds"
 import { useGameBoardMetrics } from "@/hooks/useGameBoardMetrics"
 import { useGameEngine, type GameMode } from "@/hooks/useGameEngine"
@@ -725,13 +726,15 @@ export function GameScreen() {
             {mode === "timed" && timeRemaining !== null && gameState !== "idle" ? (
               <AnimatedCountdown
                 value={Math.ceil(timeRemaining)}
-                color={timeRemaining <= 10 ? "#ef4444" : activeTheme.textColor}
+                color={timeRemaining <= 10 ? activeTheme.destructiveColor : activeTheme.textColor}
                 style={centerTimerStyle}
               />
             ) : inputTimeRemaining !== null ? (
               <AnimatedCountdown
                 value={inputTimeRemaining}
-                color={inputTimeRemaining <= 3 ? "#ef4444" : "#fbbf24"}
+                color={
+                  inputTimeRemaining <= 3 ? activeTheme.destructiveColor : activeTheme.warningColor
+                }
                 style={centerTimerStyle}
               />
             ) : (
@@ -769,7 +772,7 @@ export function GameScreen() {
     />
   )
 
-  const isLightTheme = activeTheme.statusBarStyle === "dark"
+  const isLight = isLightTheme(activeTheme)
   const idleActionConfigs = [
     {
       key: "leaderboard",
@@ -809,11 +812,11 @@ export function GameScreen() {
   function renderIdleActionButtons() {
     return idleActionConfigs.map((action) => {
       const isRetroStats = activeTheme.id === "retro" && action.key === "stats"
-      const backgroundAlpha = isLightTheme ? "22" : isRetroStats ? "24" : "18"
-      const borderAlpha = isLightTheme ? "66" : isRetroStats ? "5C" : "40"
+      const backgroundAlpha = isLight ? "22" : isRetroStats ? "24" : "18"
+      const borderAlpha = isLight ? "66" : isRetroStats ? "5C" : "40"
       const backgroundColor = `${action.tone}${backgroundAlpha}`
       const borderColor = `${action.tone}${borderAlpha}`
-      const iconColor = isLightTheme
+      const iconColor = isLight
         ? activeTheme.textColor
         : isRetroStats
           ? activeTheme.buttonColors.blue.activeColor

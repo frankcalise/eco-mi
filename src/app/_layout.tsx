@@ -153,10 +153,7 @@ function Root() {
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      {/* Fade in as the native splash hides — prevents the "blink" where the
-        JS root would otherwise pop in instantly on top of the disappearing
-        native splash. 240ms easeOut mirrors the backlog spec (motion.exit is
-        200ms easeIn, which felt too abrupt for a first-frame fade-in). */}
+      {/* Fade in as the native splash hides so the JS root doesn't blink in. */}
       <EaseView
         style={[styles.splashBg, { backgroundColor: themeBg }]}
         initialAnimate={{ opacity: 0 }}
