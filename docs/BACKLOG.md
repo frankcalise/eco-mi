@@ -233,10 +233,10 @@
 
 - [x] **Idle main-menu: sparkle traveler tracing the pad ring** — built then removed after device testing. Prototyped a continuous orbit (rotating-wrapper variant first, then explicit sin/cos waypoints) but on device it read as "too busy" — the constant motion competed with the neon title color cycle and added visual noise without adding delight. Swapped for **free-play pad tapping** instead: pads are now interactive on the main menu so the player can tap them to play tones, providing the "alive" feeling via user action rather than ambient animation. The traveler component was deleted (in git history under `feat/pad-palette-polish` commits `2d996aa`, `c3a83e1`, `c80781d` if we ever want to revive it for a whack-a-mole mini-game — see Exploration).
 
-- [ ] **Start button breathe: pair scale loop with shadow/rim-glow**
+- [x] **Start button breathe: pair scale loop with shadow/rim-glow**
       `GameScreen.tsx:647-674` currently loops `scale: 1.0 → 1.02` every 1200ms with a static shadow. Premium apps pair idle breathing with a corresponding "lift" so the button appears to inhale. Two options: (a) animate `shadowRadius: 8 → 16` and `shadowOpacity: 0.3 → 0.5` in sync with the scale loop, or (b) swap the scale for an accent-colored rim glow (`borderWidth: 0 → 2`, `borderColor: activeTheme.accentColor + "80"`) for a more Stripe-like effect without the bouncy quality. Whichever direction, keep the 1200ms period so the rhythm stays meditative.
 
-- [ ] **Game-over hero landing: accelerate CTA + animate score value**
+- [x] **Game-over hero landing: accelerate CTA + animate score value**
       `/game-over` currently cascades stat pills at 250/350/450/550ms and delays the CTA block to `+700ms` — the Play Again button appears ~1.1s after mount, which makes the primary action feel late for non-PB games. Also, the score value itself never animates: it's baked into the pill so the "hero number" never lands. Tighten: compress pill stagger to ~60ms each, drop CTA delay from 700 → 350ms with a `translateY: 16 → 0, scale: 0.98 → 1` spring, and wrap the score value in a count-up (spring from 0 → final over ~450ms, `stiffness: 90, damping: 14`). Replace the title's `timing 300ms` with a spring `stiffness: 160, damping: 14` so "GAME OVER" lands with weight rather than fading in.
 
 - [ ] **Theme swap: animated surface transition (replace hard snap)**
@@ -245,13 +245,13 @@
 - [x] **Sound-pack pill: explicit preview affordance**
       `settings.tsx:231-278` pills auto-play a preview tone on tap but there's no visual cue signaling "tap to preview" — first-time users don't know. Add an `Ionicons name="volume-medium"` inside each owned pill (keep the `lock-closed` icon for unowned) and swap to `"volume-high"` with a gentle `opacity 0.6 → 1` loop while the pack is previewing, so users see *which* pack is speaking. Reuse the existing `soundDisabledHint` pattern to show a one-shot tooltip "Tap to preview" the first time Settings opens.
 
-- [ ] **Splash → index cross-fade (kill the blink)**
+- [x] **Splash → index cross-fade (kill the blink)**
       `_layout.tsx:85` calls `SplashScreen.hideAsync()` with no crossfade, so the native splash snaps off to the idle screen. Wrap the first render in a 240ms `EaseView` opacity fade so the logo dissolves into the game. Zero functional change; just removes the blink.
 
-- [ ] **AnimatedCountdown: quicker cross-fade or smart swap**
+- [x] **AnimatedCountdown: quicker cross-fade or smart swap**
       `src/components/AnimatedCountdown.tsx:23-27` drops the number for 150ms of its 1s life, which reads as a stutter. Options: (a) drop fade to ~80ms so the number is present for most of the tick, or (b) do a straight swap + scale bump for small deltas (±1) and only animate for large jumps (≥2). Also replace hardcoded `#ef4444` / `#fbbf24` with `activeTheme.destructiveColor` / `warningColor` so the countdown doesn't go red-on-red on the classic theme.
 
-- [ ] **Global motion token file (`src/theme/motion.ts`)**
+- [x] **Global motion token file (`src/theme/motion.ts`)**
       Animation timings and springs are scattered across ~20 components with varied stiffness values (300 / 400 / 200 / 220) and a mix of `easeOut` / `easeInOut` / `linear`. Premium products have one motion language. Create a `motion.ts` with named presets — `snap` (spring 400/22/0.7, for taps/pops), `smooth` (spring 220/20/0.9, for standard transitions), `grand` (spring 120/14/1.0, for hero moments), `exit` (timing 200 easeIn, for dismissal). Migrate components incrementally to consume these. Pure refactor: no user-visible change on day 1, but every subsequent animation edit gets more consistent.
 
 - [ ] **Leaderboard rank tiers: gold / silver / bronze**
@@ -263,10 +263,10 @@
 - [ ] **Locked achievement: progress subtitle**
       `achievements.tsx` locked rows show only the title + description. Give players something to chase: for quantitative achievements (games played, level reached, high score), render a small `2/5 games` or `Level 12 / 15` subtitle under the description so progress is visible. Requires wiring `useStats` into the achievements screen and computing the progress per achievement based on its unlock condition.
 
-- [ ] **Play Again: pre-navigation ack-scale**
+- [x] **Play Again: pre-navigation ack-scale**
       On press of Play Again in `/game-over`, the button scales down (via `PressableScale`) but there's no success beat before `router.back()` fires. Add a quick `scale 1 → 1.05 → 1` ack over ~200ms before calling `setPendingAction("play_again")` so the user feels the commitment land rather than the screen just disappearing.
 
-- [ ] **Title text-shadow: layered ghost for crisper neon**
+- [x] **Title text-shadow: layered ghost for crisper neon**
       `GameHeader` applies `textShadowRadius: 12` with no offset, which can render muddy on iOS. Test a 2-layer approach: primary text with `textShadowRadius: 8`, plus a ghost layer at `opacity: 0.4` offset by 1px — sharper neon feel, no perf cost. Visual review on device before shipping.
 
 - [~] **Share card: pad-colored score + pad-dot logo mark** — logo mark shipped; per-digit colored score prototyped and reverted (diluted hero-score dominance per device review). See CHANGELOG `[Unreleased]` → `Feat` → "Pad-palette polish" entry.
