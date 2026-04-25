@@ -150,7 +150,7 @@ function getTestSeed(): number | null {
 }
 
 export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineReturn {
-  const [state, send] = useMachine(gameEngineMachine)
+  const [state, send, actorRef] = useMachine(gameEngineMachine)
   const haptics = useHaptics()
 
   // Local UI state
@@ -160,23 +160,27 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const [inputTimeRemaining, setInputTimeRemaining] = useState<number | null>(null)
   const [buttonPositions, setButtonPositions] = useState<Color[]>([...colors])
   const [isShuffling, setIsShuffling] = useState(false)
+  const [timerDelta, setTimerDelta] = useState<number | null>(null)
+  const [sessionTime, setSessionTime] = useState(0)
 
-  // Refs
+  // Refs for state that JS-event handlers carry across renders (UI debounce,
+  // audio-clock continuations) but the machine doesn't track. Anything that
+  // existed only to compensate for stale closures (contextRef, scoreRef,
+  // sideEffectsFiredRef) is gone — the consolidated state-watching effect
+  // reads `state.context` live on each transition.
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const inputCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
   const buttonPressStartTime = useRef<number | null>(null)
   const inputLocked = useRef(false)
   const continueLocked = useRef(false)
-  const sideEffectsFiredRef = useRef(false)
   const visualSequenceTokenRef = useRef(0)
   const timerBonusRef = useRef(0)
   const wrongCountRef = useRef(0)
   const lastHapticSecond = useRef(-1)
-  const [timerDelta, setTimerDelta] = useState<number | null>(null)
   const deltaClearTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sessionStartTimeRef = useRef<number | null>(null)
-  const [sessionTime, setSessionTime] = useState(0)
+  const prevStateValueRef = useRef<string>("idle")
 
   function showTimerDelta(value: number, clearAfterMs = 2000) {
     if (deltaClearTimeoutRef.current) clearTimeout(deltaClearTimeoutRef.current)
@@ -188,7 +192,6 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   }
   const testSeed = getTestSeed()
   const seededRng = useRef(testSeed !== null ? mulberry32(testSeed) : null)
-  const scoreRef = useRef(0)
 
   const activeColorMap = options?.theme ? getColorMapForTheme(options.theme) : colorMap
 
@@ -208,22 +211,6 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   const ctx = state.context
   const gameState = toPublicState(state.value as string)
   const mode = ctx.mode
-
-  // Mirror machine context into a ref so deferred callbacks (setInterval,
-  // setTimeout, audio-clock completions) read live values instead of the
-  // render-time snapshot captured by JS closure. Without this, the timer
-  // tick and the 500ms continue-replay callback read stale `ctx.*` fields,
-  // and `handleGameOverSideEffects` can't observe `gameResultRecorded`
-  // flipping when called twice in one game.
-  const contextRef = useRef(ctx)
-  useEffect(() => {
-    contextRef.current = ctx
-  }, [ctx])
-
-  // Keep scoreRef in sync for timer callbacks
-  useEffect(() => {
-    scoreRef.current = ctx.score
-  }, [ctx.score])
 
   // --- Timeout management ---
 
@@ -306,11 +293,9 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       const remaining = durationSec + timerBonusRef.current - (Date.now() - startTime) / 1000
       if (remaining <= 0) {
         stopTimer()
-        clearAllTimeouts()
-        silenceAll()
+        // Hand off to the machine — the consolidated state-watching effect's
+        // `gameover` branch handles silenceAll + persistence + haptics.
         send({ type: "TIMER_EXPIRED" })
-        haptics.play("wrongButton")
-        handleGameOverSideEffects()
       } else {
         setTimeRemaining(remaining)
         const sec = Math.ceil(remaining)
@@ -323,29 +308,7 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     }, 100)
   }
 
-  function handleGameOverSideEffects() {
-    // Read live context instead of the render-time `ctx`/`mode` closures.
-    // This function is reachable from startTimer's setInterval (where
-    // `ctx` is captured at the render when `startTimer` was invoked), from
-    // endGame(), and from the non-timed wrong-input branch of
-    // handleButtonRelease — any two of which could fire in the same
-    // game-over transition (e.g. a timer tick landing the same frame as
-    // endGame before stopTimer cancels the interval). `gameResultRecorded`
-    // guards the machine-side recordGameResult, but saveHighScore and
-    // saveDailyResult have no such guard, so a local once-per-transition
-    // ref is belt-and-suspenders against double writes. It resets on
-    // start/reset/continue so legitimate repeat game-overs (e.g. losing
-    // again after continueGame) still persist a higher score.
-    if (sideEffectsFiredRef.current) return
-    sideEffectsFiredRef.current = true
-    const live = contextRef.current
-    const sc = scoreRef.current
-    if (sc > live.highScore) saveHighScore(sc)
-    if (!live.gameResultRecorded) recordGameResult(sc)
-    if (live.mode === "daily") saveDailyResult(sc)
-  }
-
-  // --- Sequence playback ---
+  // --- Visual sequence playback ---
 
   function flashButton(color: Color, duration: number) {
     setActiveButton(color)
@@ -353,16 +316,23 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     addTimeout(() => setActiveButton(null), duration)
   }
 
-  function showSequence(seq: Color[], currentLevel: number) {
-    const token = visualSequenceTokenRef.current
+  function cancelVisualSequence() {
+    visualSequenceTokenRef.current += 1
+    setActiveButton(null)
+  }
+
+  function runShowSequence(seq: Color[], currentLevel: number) {
+    const token = ++visualSequenceTokenRef.current
     const toneDuration = getToneDuration(currentLevel)
     const interval = getSequenceInterval(currentLevel)
     const flashDuration = Math.min(toneDuration, interval - 80)
 
-    // Audio: pre-schedule entire sequence on the audio clock (zero JS jitter)
+    // Audio: pre-schedule entire sequence on the audio clock (zero JS jitter).
     scheduleSequence(seq, interval / 1000, toneDuration / 1000)
 
-    // Visual: still via setTimeout (doesn't need audio-clock precision)
+    // Visuals: per-step setTimeout chain. Each callback bails if the token
+    // has been bumped (cancelVisualSequence on state exit, or another
+    // entry into "showing" superseding this one).
     seq.forEach((color, index) => {
       addTimeout(
         () => {
@@ -372,29 +342,30 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
             addTimeout(() => {
               if (token !== visualSequenceTokenRef.current) return
               send({ type: "SEQUENCE_DONE" })
-              if (mode !== "timed") {
-                const totalMs = getInputTimeout(seq.length)
-                const startTime = Date.now()
-                setInputTimeRemaining(null)
-                inputCountdownRef.current = setInterval(() => {
-                  const elapsed = Date.now() - startTime
-                  const remaining = Math.ceil((totalMs - elapsed) / 1000)
-                  if (remaining <= 5 && remaining > 0) setInputTimeRemaining(remaining)
-                  else if (remaining <= 0) {
-                    if (inputCountdownRef.current) {
-                      clearInterval(inputCountdownRef.current)
-                      inputCountdownRef.current = null
-                    }
-                    setInputTimeRemaining(null)
-                  }
-                }, 200)
-              }
             }, flashDuration + 100)
           }
         },
         (index + 1) * interval,
       )
     })
+  }
+
+  function startInputCountdown(totalMs: number) {
+    if (inputCountdownRef.current) clearInterval(inputCountdownRef.current)
+    const startTime = Date.now()
+    setInputTimeRemaining(null)
+    inputCountdownRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime
+      const remaining = Math.ceil((totalMs - elapsed) / 1000)
+      if (remaining <= 5 && remaining > 0) setInputTimeRemaining(remaining)
+      else if (remaining <= 0) {
+        if (inputCountdownRef.current) {
+          clearInterval(inputCountdownRef.current)
+          inputCountdownRef.current = null
+        }
+        setInputTimeRemaining(null)
+      }
+    }, 200)
   }
 
   function animateShuffleSequence(currentLevel: number): number {
@@ -426,41 +397,138 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     loadHighScore()
   }, [mode])
 
-  // Clean up countdown interval when machine exits waiting (e.g., INPUT_TIMEOUT fires autonomously)
+  // --- Consolidated state-watching effect ---
+  //
+  // Single dispatcher keyed on raw machine state.value (NOT the public
+  // projection — `starting`/`advancing`/`replaying` are distinct triggers).
+  // Side effects that belong to a state transition live here; per-event
+  // imperative side effects (touch noteOn, release noteOff) stay inline
+  // in their handlers because they need sub-frame audio latency.
+  //
+  // Subscribes directly to the actor (rather than running on a state.value
+  // useEffect) so transitions triggered inside timer callbacks dispatch
+  // synchronously — preserving the original code's "schedule next phase
+  // inside the addTimeout that fired this one" pattern, which matters for
+  // single-tick advanceTimersByTime test choreography.
+  //
+  // This collapses the prior stale-closure surface (timer-tick reading
+  // contextRef, continueGame's nested addTimeouts, handleGameOverSideEffects
+  // reachable from 3 paths) into one place that reads context live on every
+  // transition.
   useEffect(() => {
-    const sv = state.value as string
-    if (sv !== "waiting" && inputCountdownRef.current) {
-      clearInterval(inputCountdownRef.current)
-      inputCountdownRef.current = null
-      setInputTimeRemaining(null)
-    }
-  }, [state.value])
+    const sub = actorRef.subscribe((snapshot) => {
+      const next = snapshot.value as string
+      const prev = prevStateValueRef.current
+      if (prev === next) return
+      prevStateValueRef.current = next
+      const live = snapshot.context
 
-  // Capture elapsed session time whenever the machine enters gameover
-  const prevStateValueRef = useRef<string>(state.value as string)
-  useEffect(() => {
-    const sv = state.value as string
-    const prev = prevStateValueRef.current
-    if (prev !== "gameover" && sv === "gameover" && sessionStartTimeRef.current !== null) {
-      const elapsed = Math.floor((Date.now() - sessionStartTimeRef.current) / 1000)
-      setSessionTime(elapsed)
-    }
-    prevStateValueRef.current = sv
-  }, [state.value])
+      // Exit-side cleanup
+      if (prev === "waiting") {
+        if (inputCountdownRef.current) {
+          clearInterval(inputCountdownRef.current)
+          inputCountdownRef.current = null
+        }
+        setInputTimeRemaining(null)
+      }
 
-  function cancelVisualSequence() {
-    visualSequenceTokenRef.current += 1
-    setActiveButton(null)
+      // Enter-side dispatch
+      dispatchEnter(next, live)
+    })
+    return () => sub.unsubscribe()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actorRef])
+
+  function dispatchEnter(next: string, live: typeof state.context) {
+    switch (next) {
+      case "idle":
+        stopTimer()
+        silenceAll()
+        cancelVisualSequence()
+        clearAllTimeouts()
+        lastHapticSecond.current = -1
+        break
+
+      case "starting":
+        // Reach via START (fresh game) or CONTINUE (replay preserved sequence).
+        // silenceAll guards against AppState resume un-pausing residual audio
+        // from the prior session (e.g. rewarded-ad dismiss → continue path).
+        stopTimer()
+        silenceAll()
+        cancelVisualSequence()
+        lastHapticSecond.current = -1
+        if (live.mode === "timed" && !live.continuedThisGame) startTimer(60)
+        // Schedule the SET_INITIAL_SEQUENCE event 500ms after entry.
+        // Fresh start: generate a 1-color sequence.
+        // Continue: replay live.sequence (preserved by setupContinue).
+        addTimeout(() => {
+          const seqToShow = live.continuedThisGame
+            ? [...live.sequence]
+            : [colors[getNextColorIndex()]]
+          send({ type: "SET_INITIAL_SEQUENCE", sequence: seqToShow })
+        }, 500)
+        break
+
+      case "showing":
+        runShowSequence(live.sequence, live.level)
+        break
+
+      case "waiting":
+        if (live.mode !== "timed") startInputCountdown(getInputTimeout(live.sequence.length))
+        break
+
+      case "replaying":
+        // Defensive: kill any tail of the previous showing's audio queue
+        // before the 500ms machine delay elapses and we re-enter showing.
+        silenceAll()
+        break
+
+      case "advancing":
+        // 400ms post-input pause, then chaos shuffle (if applicable), then
+        // 600ms beat, then ADVANCE_COMPLETE → showing → effect re-fires for
+        // the new sequence.
+        addTimeout(() => {
+          const newSeq = [...live.sequence, colors[getNextColorIndex()]]
+          if (live.mode === "chaos") {
+            const dur = animateShuffleSequence(live.level)
+            addTimeout(() => send({ type: "ADVANCE_COMPLETE", newSequence: newSeq }), dur + 600)
+          } else {
+            addTimeout(() => send({ type: "ADVANCE_COMPLETE", newSequence: newSeq }), 600)
+          }
+        }, 400)
+        break
+
+      case "gameover":
+        stopTimer()
+        silenceAll()
+        cancelVisualSequence()
+        haptics.play("wrongButton")
+        // markGameOver (machine action) just ran; live context is post-mark.
+        // isNewHighScore precisely captures "this gameover bumped highScore"
+        // — markGameOver guards on `score > prevHighScore && !prevIsNewHighScore`.
+        // setupContinue clears isNewHighScore, so a higher score after CONTINUE
+        // re-fires this branch.
+        if (live.isNewHighScore) saveHighScore(live.score)
+        // recordGameResult fires once per game session (first gameover only).
+        // After CONTINUE, continuedThisGame is true; subsequent gameovers do
+        // not double-record. This matches the prior `!gameResultRecorded`
+        // guard, which was preserved across setupContinue.
+        if (!live.continuedThisGame) recordGameResult(live.score)
+        if (live.mode === "daily") saveDailyResult(live.score)
+        if (sessionStartTimeRef.current !== null) {
+          const elapsed = Math.floor((Date.now() - sessionStartTimeRef.current) / 1000)
+          setSessionTime(elapsed)
+        }
+        break
+    }
   }
 
   // --- Public actions ---
 
   function startGame() {
     clearAllTimeouts()
-    stopTimer()
     cancelVisualSequence()
     inputLocked.current = false
-    sideEffectsFiredRef.current = false
     timerBonusRef.current = 0
     wrongCountRef.current = 0
     lastHapticSecond.current = -1
@@ -479,51 +547,36 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     else seededRng.current = null
 
     send({ type: "START" })
-
-    if (mode === "timed") startTimer(60)
-
-    addTimeout(() => {
-      const newSeq = [colors[getNextColorIndex()]]
-      send({ type: "SET_INITIAL_SEQUENCE", sequence: newSeq })
-      showSequence(newSeq, 1)
-    }, 500)
+    // Effect on entering "starting" handles: stopTimer, silenceAll,
+    // startTimer (if timed), and the addTimeout(SET_INITIAL_SEQUENCE).
   }
 
   function resetGame() {
     clearAllTimeouts()
-    stopTimer()
     cancelVisualSequence()
-    // `scheduleSequence` writes gain automation directly onto the audio
-    // render thread's timeline — `clearAllTimeouts` only reaches JS timers.
-    // Without this, events survive a reset and can resurface audibly after
-    // an AppState suspend/resume cycle (e.g. rewarded ad → main menu).
-    silenceAll()
     inputLocked.current = false
-    sideEffectsFiredRef.current = false
     setWrongFlash(false)
     setButtonPositions([...colors])
     setIsShuffling(false)
     send({ type: "RESET" })
+    // Effect on entering "idle" handles: stopTimer, silenceAll, etc.
   }
 
   function endGame() {
     const sv = state.value as string
     if (sv !== "showing" && sv !== "waiting" && sv !== "advancing") return
-    clearAllTimeouts()
-    stopTimer()
-    cancelVisualSequence()
-    silenceAll()
-    inputLocked.current = false
-    setWrongFlash(false)
     if (ctx.score === 0) {
       setButtonPositions([...colors])
       setIsShuffling(false)
       send({ type: "RESET" })
       return
     }
-    haptics.play("wrongButton")
+    clearAllTimeouts()
+    cancelVisualSequence()
+    inputLocked.current = false
+    setWrongFlash(false)
     send({ type: "END_GAME" })
-    handleGameOverSideEffects()
+    // Effect on entering "gameover" handles: stopTimer, silenceAll, haptic, persistence
   }
 
   function continueGame() {
@@ -532,33 +585,15 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     continueLocked.current = true
     clearAllTimeouts()
     cancelVisualSequence()
-    // Kill anything left on the audio clock from the pre-game-over sequence
-    // *before* scheduling the replay. AppState resume on ad dismiss can
-    // un-pause the context mid-queue; without this, residual events overlap
-    // the replayed sequence. See resetGame for the same rationale.
-    silenceAll()
     inputLocked.current = false
-    sideEffectsFiredRef.current = false
     setWrongFlash(false)
     send({ type: "CONTINUE" })
-
+    // Effect on entering "starting" with continuedThisGame=true handles the
+    // 500ms-delayed SET_INITIAL_SEQUENCE using the preserved sequence.
+    // Release the UI debounce after the init has fired.
     addTimeout(() => {
-      // Read sequence/level from the ref inside the deferred callback so
-      // we pick up any machine mutation that happened between the call
-      // site and this 500ms-later firing. Pre-fix these were captured by
-      // JS closure at call time — latent today because the machine
-      // preserves sequence across CONTINUE, but one future mutation
-      // (e.g. a bonus round inserted on continue) would silently replay
-      // the wrong sequence.
-      const live = contextRef.current
-      const sequenceToReplay = [...live.sequence]
-      const levelToReplay = live.level
-      send({ type: "SET_INITIAL_SEQUENCE", sequence: sequenceToReplay })
-      addTimeout(() => {
-        continueLocked.current = false
-        showSequence(sequenceToReplay, levelToReplay)
-      }, 0)
-    }, 500)
+      continueLocked.current = false
+    }, 700)
   }
 
   function handleButtonTouch(color: Color) {
@@ -643,13 +678,6 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
       setActiveButton(null)
     }
 
-    // Clear input countdown
-    if (inputCountdownRef.current) {
-      clearInterval(inputCountdownRef.current)
-      inputCountdownRef.current = null
-    }
-    setInputTimeRemaining(null)
-
     // Check correctness
     const newPlayerLen = ctx.playerSequence.length + 1
     const expectedIndex =
@@ -657,59 +685,37 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
     const expectedColor = ctx.sequence[expectedIndex]
 
     if (color !== expectedColor) {
-      silenceAll()
       haptics.play("wrongButton")
-      // Drop pending sequence / chaos shuffle timers so nothing fires after gameover or reset.
-      if (mode !== "timed") {
-        clearAllTimeouts()
-        cancelVisualSequence()
-      }
       const shouldFlashWrongInput = mode === "timed" || ctx.score > 0
       if (shouldFlashWrongInput) {
         setWrongFlash(true)
         addTimeout(() => setWrongFlash(false), 300)
       }
-      send({ type: "WRONG_INPUT" })
-
       if (mode === "timed") {
         wrongCountRef.current += 1
         timerBonusRef.current -= wrongCountRef.current
         showTimerDelta(-wrongCountRef.current)
-        addTimeout(() => showSequence(ctx.sequence, ctx.level), 500)
-      } else {
-        handleGameOverSideEffects()
       }
+      // Machine handles the rest:
+      // - timed mode: WRONG_INPUT → replaying → (500ms) → showing
+      //   (consolidated effect schedules the audio replay on showing entry)
+      // - non-timed: WRONG_INPUT → gameover (effect handles silence + persistence)
+      send({ type: "WRONG_INPUT" })
       inputLocked.current = false
       return
     }
 
     // Correct input
     const willComplete = newPlayerLen === ctx.sequence.length
-    send({ type: "CORRECT_INPUT", color })
-
-    if (willComplete) {
-      if (mode === "timed") {
-        timerBonusRef.current += 2
-        showTimerDelta(2)
-      }
-      addTimeout(() => {
-        if (mode === "chaos") {
-          const shuffleDuration = animateShuffleSequence(ctx.level + 1)
-          addTimeout(() => {
-            const newSeq = [...ctx.sequence, colors[getNextColorIndex()]]
-            send({ type: "ADVANCE_COMPLETE", newSequence: newSeq })
-            showSequence(newSeq, ctx.level + 1)
-          }, shuffleDuration + 600)
-        } else {
-          addTimeout(() => {
-            const newSeq = [...ctx.sequence, colors[getNextColorIndex()]]
-            send({ type: "ADVANCE_COMPLETE", newSequence: newSeq })
-            showSequence(newSeq, ctx.level + 1)
-          }, 600)
-        }
-      }, 400)
+    if (willComplete && mode === "timed") {
+      timerBonusRef.current += 2
+      showTimerDelta(2)
     }
-
+    // Machine handles round advancement:
+    // - sequence-incomplete: stays in waiting, appends playerSequence
+    // - sequence-complete: → advancing (consolidated effect schedules
+    //   the 400/600ms beat + chaos shuffle + ADVANCE_COMPLETE)
+    send({ type: "CORRECT_INPUT", color })
     inputLocked.current = false
   }
 
