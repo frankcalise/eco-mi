@@ -12,37 +12,26 @@ type PadGlyphProps = {
 const GLYPH_SIZE_RATIO = 0.32
 const GLYPH_OPACITY = 0.55
 const STROKE_WIDTH_RATIO = 0.12
+// Diamond's inscribed-in-bbox silhouette looks ~15% smaller than the
+// other three shapes at equal bbox size because its visual mass is
+// concentrated toward the center. Scale its bbox up to match.
+const DIAMOND_SCALE = 1.18
 
 /**
  * Position-keyed shape overlay for colorblind play. Each pad gets a unique
  * silhouette so a player who cannot distinguish the four pad colors can still
  * read which pad just lit up. Hidden by default; gated by the
  * `colorblindPatternsEnabled` preference. WCAG 1.4.1 (Use of Color).
- *
- * The glyph nudges toward the pad's outer corner (away from the cross-gap)
- * so it sits in the visually "fattest" part of the quadrant rather than
- * floating in the center where the pad's curved edge tapers.
  */
 export function PadGlyph({ position, buttonSize, color }: PadGlyphProps) {
-  const size = Math.round(buttonSize * GLYPH_SIZE_RATIO)
-  const stroke = Math.max(2, Math.round(size * STROKE_WIDTH_RATIO))
+  const baseSize = Math.round(buttonSize * GLYPH_SIZE_RATIO)
+  const size = position === "bottomRight" ? Math.round(baseSize * DIAMOND_SCALE) : baseSize
+  const stroke = Math.max(2, Math.round(baseSize * STROKE_WIDTH_RATIO))
   const half = size / 2
   const inset = stroke / 2
 
-  // Outer corner per quadrant — nudges the glyph 28% toward the rounded edge.
-  const offset = Math.round(buttonSize * 0.28)
-  const cornerStyle = {
-    top: position === "topLeft" || position === "topRight" ? offset : undefined,
-    bottom: position === "bottomLeft" || position === "bottomRight" ? offset : undefined,
-    left: position === "topLeft" || position === "bottomLeft" ? offset : undefined,
-    right: position === "topRight" || position === "bottomRight" ? offset : undefined,
-  }
-
   return (
-    <View
-      pointerEvents="none"
-      style={[styles.container, cornerStyle, { width: size, height: size, opacity: GLYPH_OPACITY }]}
-    >
+    <View pointerEvents="none" style={[styles.container, { opacity: GLYPH_OPACITY }]}>
       <Svg width={size} height={size}>
         {position === "topLeft" && (
           <Circle
@@ -90,8 +79,8 @@ export function PadGlyph({ position, buttonSize, color }: PadGlyphProps) {
 
 const styles = StyleSheet.create({
   container: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-    position: "absolute",
   },
 })
