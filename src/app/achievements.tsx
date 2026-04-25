@@ -29,7 +29,7 @@ export default function AchievementsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: activeTheme.backgroundColor }]}>
-      <StatusBar style={activeTheme.statusBarStyle} backgroundColor={activeTheme.backgroundColor} />
+      <StatusBar style={activeTheme.statusBarStyle} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.gridWrap, isTablet && styles.gridWrapTablet]}>
           <View style={styles.grid}>

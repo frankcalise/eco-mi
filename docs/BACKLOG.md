@@ -542,12 +542,12 @@
 - [x] **Install expo-insights for update + adoption telemetry**
       `npx expo install expo-insights` adds first-class visibility into OTA update adoption, launch success/failure rates, and version distribution across the install base — visible in the Expo dashboard without needing to wire anything into PostHog/Sentry. Especially useful once we start shipping EAS Updates: we'll be able to see how quickly users pick up a new JS bundle and whether a bad update is causing launch failures. No runtime config required beyond the install; data flows automatically on production builds.
 
-- [ ] **Fix Android edge-to-edge deprecated APIs (Play Console vitals)**
+- [x] **Fix Android edge-to-edge deprecated APIs (Play Console vitals)**
       Android vitals flagged on 1.0.1: "Your app uses deprecated APIs or parameters for edge-to-edge." Android 15 (API 35) enforces edge-to-edge by default and deprecates `window.setStatusBarColor`, `setNavigationBarColor`, and `setNavigationBarDividerColor`. Audit app for any direct usage (unlikely in our RN code, but check native deps / plugins). Confirm `edgeToEdgeEnabled: true` is set in `app.config.ts` (already the SDK 55 default via `expo-build-properties`) and that we draw content behind system bars correctly using `react-native-safe-area-context`. Expand the Play Console action to see the exact deprecated API and affected lib. Likely just needs a dep bump or a config-plugin tweak.
       - Ref: Play Console → Android vitals → actions recommended
       - Surface: User experience / Release 1.0.1
 
-- [ ] **Remove Android resizability / orientation restrictions for large screens (Play Console vitals)**
+- [x] **Remove Android resizability / orientation restrictions for large screens (Play Console vitals)**
       Android vitals flagged on 1.0.1: "Remove resizability and orientation restrictions in your game to support large screen devices." Play Store ranks apps lower on tablets/foldables/ChromeOS when they lock orientation or declare non-resizable. We currently set `orientation: "portrait"` in `app.config.ts`. Options: (1) allow `orientation: "default"` on Android tablets only via config plugin, or (2) add `android:resizeableActivity="true"` + `android:supportsPictureInPicture="false"` and declare tablet support while keeping phone portrait-lock. Simon-style gameplay works fine in landscape — main work is making the board layout responsive. Lower priority than the edge-to-edge fix, but both affect the same 1.0.1 vitals surface.
       - Ref: Play Console → Android vitals → actions recommended
       - Surface: User experience / Release 1.0.1

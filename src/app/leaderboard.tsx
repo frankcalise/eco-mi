@@ -36,7 +36,7 @@ export default function LeaderboardScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: activeTheme.backgroundColor }]}>
-      <StatusBar style={activeTheme.statusBarStyle} backgroundColor={activeTheme.backgroundColor} />
+      <StatusBar style={activeTheme.statusBarStyle} />
       <View style={[styles.content, isTablet && styles.contentTablet]}>
         <HighScoreTable
           initialMode={mode}

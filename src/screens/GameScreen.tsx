@@ -929,10 +929,7 @@ export function GameScreen() {
           },
         ]}
       >
-        <StatusBar
-          style={activeTheme.statusBarStyle}
-          backgroundColor={activeTheme.backgroundColor}
-        />
+        <StatusBar style={activeTheme.statusBarStyle} />
 
         <GameHeader
           isIdle={isIdle}
