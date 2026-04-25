@@ -7,6 +7,7 @@ import { EaseView } from "react-native-ease"
 import { PressableScale } from "@/components/PressableScale"
 import { isLightTheme, type GameTheme } from "@/config/themes"
 import { useHaptics } from "@/hooks/useHaptics"
+import { useReducedMotion } from "@/hooks/useReducedMotion"
 
 type GameHeaderProps = {
   isIdle: boolean
@@ -18,13 +19,14 @@ type GameHeaderProps = {
 export function GameHeader({ isIdle, theme, onModePress, onSettingsPress }: GameHeaderProps) {
   const { t } = useTranslation()
   const haptics = useHaptics()
+  const reducedMotion = useReducedMotion()
   const neonColors = theme.titleCycleColors
 
   const [neonColorIndex, setNeonColorIndex] = useState(0)
   const neonIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
-    if (isIdle) {
+    if (isIdle && !reducedMotion) {
       setNeonColorIndex(0)
       neonIntervalRef.current = setInterval(() => {
         setNeonColorIndex((prev) => (prev + 1) % neonColors.length)
@@ -41,7 +43,7 @@ export function GameHeader({ isIdle, theme, onModePress, onSettingsPress }: Game
         neonIntervalRef.current = null
       }
     }
-  }, [isIdle, neonColors.length])
+  }, [isIdle, neonColors.length, reducedMotion])
   const isLight = isLightTheme(theme)
   const titleBaseColor = isLight ? `${theme.textColor}B8` : `${theme.textColor}66`
   const titleGhostColor = isLight ? `${theme.backgroundColor}55` : `${theme.backgroundColor}33`
@@ -71,9 +73,11 @@ export function GameHeader({ isIdle, theme, onModePress, onSettingsPress }: Game
         />
       </PressableScale>
       <EaseView
-        animate={{ scale: isIdle ? 1.03 : 1 }}
+        animate={{ scale: isIdle && !reducedMotion ? 1.03 : 1 }}
         transition={{
-          default: { type: "timing", duration: 1500, easing: "easeInOut", loop: "reverse" },
+          default: reducedMotion
+            ? { type: "timing", duration: 0 }
+            : { type: "timing", duration: 1500, easing: "easeInOut", loop: "reverse" },
         }}
         style={styles.headerCenter}
       >

@@ -2,6 +2,8 @@ import { useState } from "react"
 import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from "react-native"
 import { EaseView } from "react-native-ease"
 
+import { useReducedMotion } from "@/hooks/useReducedMotion"
+
 type PressableScaleProps = PressableProps & {
   scaleDown?: number
   opacityDown?: number
@@ -21,15 +23,18 @@ export function PressableScale({
   ...rest
 }: PressableScaleProps) {
   const [pressed, setPressed] = useState(false)
+  const reducedMotion = useReducedMotion()
 
   return (
     <EaseView
       animate={{
-        scale: pressed && !disabled ? scaleDown : 1,
+        scale: pressed && !disabled && !reducedMotion ? scaleDown : 1,
         opacity: pressed && !disabled ? opacityDown : 1,
       }}
       transition={{
-        default: { type: "spring", stiffness: 400, damping: 20, mass: 0.8 },
+        default: reducedMotion
+          ? { type: "timing", duration: 0 }
+          : { type: "spring", stiffness: 400, damping: 20, mass: 0.8 },
         opacity: { type: "timing", duration: 100, easing: "easeOut" },
       }}
       style={wrapperStyle}

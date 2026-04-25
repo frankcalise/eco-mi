@@ -3,6 +3,7 @@ import { EaseView } from "react-native-ease"
 
 import { PadGlow } from "@/components/PadGlow"
 import { colorMap, type Color } from "@/hooks/useGameEngine"
+import { useReducedMotion } from "@/hooks/useReducedMotion"
 import { UI_COLORS } from "@/theme/uiColors"
 
 type Position = "topLeft" | "topRight" | "bottomLeft" | "bottomRight"
@@ -73,6 +74,7 @@ export function GameButton({
   themeActiveColor,
   themeGlowColor,
 }: GameButtonProps) {
+  const reducedMotion = useReducedMotion()
   const info = colorMap[color]
   const position = POSITIONS[index]
 
@@ -102,11 +104,17 @@ export function GameButton({
         translateY,
       }}
       transition={{
-        default: { type: "spring", stiffness: 300, damping: 20, mass: 0.8 },
-        opacity: { type: "timing", duration: 150, easing: "easeOut" },
-        transform: isShuffling
-          ? { type: "timing", duration: 550, easing: "easeInOut" }
+        default: reducedMotion
+          ? { type: "timing", duration: 0 }
           : { type: "spring", stiffness: 300, damping: 20, mass: 0.8 },
+        opacity: reducedMotion
+          ? { type: "timing", duration: 0 }
+          : { type: "timing", duration: 150, easing: "easeOut" },
+        transform: reducedMotion
+          ? { type: "timing", duration: 0 }
+          : isShuffling
+            ? { type: "timing", duration: 550, easing: "easeInOut" }
+            : { type: "spring", stiffness: 300, damping: 20, mass: 0.8 },
       }}
       style={[
         styles.button,

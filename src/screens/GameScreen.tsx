@@ -38,6 +38,7 @@ import { useHaptics } from "@/hooks/useHaptics"
 import { useHighScores } from "@/hooks/useHighScores"
 import { useNotifications, shouldShowNotificationPrompt } from "@/hooks/useNotifications"
 import { usePurchases } from "@/hooks/usePurchases"
+import { useReducedMotion } from "@/hooks/useReducedMotion"
 import { useSoundPack } from "@/hooks/useSoundPack"
 import { useTheme } from "@/hooks/useTheme"
 import { useGameOverStore } from "@/stores/gameOverStore"
@@ -108,9 +109,11 @@ function BreathingStartButton({
   style?: StyleProp<ViewStyle>
   children: ReactNode
 }) {
+  const reducedMotion = useReducedMotion()
   const breathe = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
+    if (reducedMotion) return
     const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(breathe, {
@@ -129,7 +132,7 @@ function BreathingStartButton({
     )
     animation.start()
     return () => animation.stop()
-  }, [breathe])
+  }, [breathe, reducedMotion])
 
   const shadowRadius = breathe.interpolate({ inputRange: [0, 1], outputRange: [8, 16] })
   const shadowOpacity = breathe.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.5] })
@@ -139,6 +142,14 @@ function BreathingStartButton({
     ios: { shadowRadius, shadowOpacity },
     default: { elevation },
   })
+
+  if (reducedMotion) {
+    return (
+      <View style={style}>
+        <View style={gameScreenStyles.startButtonShadow}>{children}</View>
+      </View>
+    )
+  }
 
   return (
     <EaseView animate={{ scale: 1.02 }} transition={{ default: motion.breathe }} style={style}>

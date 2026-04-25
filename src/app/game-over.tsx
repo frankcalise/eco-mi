@@ -27,6 +27,7 @@ import { useHaptics } from "@/hooks/useHaptics"
 import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
 import { usePostPBPrompt } from "@/hooks/usePostPBPrompt"
 import { usePurchases } from "@/hooks/usePurchases"
+import { useReducedMotion } from "@/hooks/useReducedMotion"
 import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
 import { useTransientTimers } from "@/hooks/useTransientTimers"
@@ -105,6 +106,7 @@ export default function GameOverScreen() {
   const { activeTheme } = useTheme()
   const analytics = useAnalytics()
   const haptics = useHaptics()
+  const reducedMotion = useReducedMotion()
   const { isTablet } = useBreakpoints()
   const shareCardRef = useRef<ViewShot>(null)
 
@@ -387,8 +389,9 @@ export default function GameOverScreen() {
               >
                 <LottieView
                   source={require("../../assets/animations/trophy.json")}
-                  autoPlay
+                  autoPlay={!reducedMotion}
                   loop={false}
+                  progress={reducedMotion ? 1 : undefined}
                   style={styles.lottie}
                 />
               </EaseView>
