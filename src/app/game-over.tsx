@@ -213,7 +213,12 @@ export default function GameOverScreen() {
   // rAF interpolation (not EaseView) because the pill value is a Text child,
   // and react-native-ease animates transform/opacity, not text content.
   // motion.grand is the conceptual reference for the "hero land" feel.
+  // Snap to the final value when Reduce Motion is on.
   useEffect(() => {
+    if (reducedMotion) {
+      setDisplayedScore(score)
+      return
+    }
     const start = performance.now()
     const durationMs = 450
     let rafId: number
@@ -226,7 +231,7 @@ export default function GameOverScreen() {
     }
     rafId = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(rafId)
-  }, [score])
+  }, [score, reducedMotion])
 
   const { removeAds, purchaseRemoveAds } = usePurchases()
   const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
