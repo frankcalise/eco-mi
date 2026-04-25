@@ -27,6 +27,7 @@ import { useHaptics } from "@/hooks/useHaptics"
 import { useHighScores, type HighScoreEntry } from "@/hooks/useHighScores"
 import { usePostPBPrompt } from "@/hooks/usePostPBPrompt"
 import { usePurchases } from "@/hooks/usePurchases"
+import { useReducedMotion } from "@/hooks/useReducedMotion"
 import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
 import { useTransientTimers } from "@/hooks/useTransientTimers"
@@ -74,20 +75,36 @@ function StatPill({
       animate={{ opacity: 1, translateY: 0, scale: 1 }}
       transition={{ default: { type: "spring", stiffness: 220, damping: 18, delay } }}
     >
-      <View testID={testID} collapsable={false}>
+      <View
+        testID={testID}
+        collapsable={false}
+        accessible
+        accessibilityRole="text"
+        accessibilityLabel={`${label}, ${value}`}
+      >
         <Text
           style={[styles.pillLabel, isTablet && styles.pillLabelTablet, { color: borderColor }]}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
         >
           {label}
         </Text>
         <View style={[styles.pillRow, isTablet && styles.pillRowTablet]}>
-          <Ionicons name={icon} size={isTablet ? 32 : 20} color={borderColor} />
+          <Ionicons
+            name={icon}
+            size={isTablet ? 32 : 20}
+            color={borderColor}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          />
           <Text
             style={[
               styles.pillValue,
               isTablet && styles.pillValueTablet,
               { color: theme.textColor },
             ]}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
           >
             {value}
           </Text>
@@ -105,6 +122,7 @@ export default function GameOverScreen() {
   const { activeTheme } = useTheme()
   const analytics = useAnalytics()
   const haptics = useHaptics()
+  const reducedMotion = useReducedMotion()
   const { isTablet } = useBreakpoints()
   const shareCardRef = useRef<ViewShot>(null)
 
@@ -195,7 +213,12 @@ export default function GameOverScreen() {
   // rAF interpolation (not EaseView) because the pill value is a Text child,
   // and react-native-ease animates transform/opacity, not text content.
   // motion.grand is the conceptual reference for the "hero land" feel.
+  // Snap to the final value when Reduce Motion is on.
   useEffect(() => {
+    if (reducedMotion) {
+      setDisplayedScore(score)
+      return
+    }
     const start = performance.now()
     const durationMs = 450
     let rafId: number
@@ -208,7 +231,7 @@ export default function GameOverScreen() {
     }
     rafId = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(rafId)
-  }, [score])
+  }, [score, reducedMotion])
 
   const { removeAds, purchaseRemoveAds } = usePurchases()
   const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
@@ -385,12 +408,15 @@ export default function GameOverScreen() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ default: { type: "spring", stiffness: 200, damping: 15 } }}
               >
-                <LottieView
-                  source={require("../../assets/animations/trophy.json")}
-                  autoPlay
-                  loop={false}
-                  style={styles.lottie}
-                />
+                <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                  <LottieView
+                    source={require("../../assets/animations/trophy.json")}
+                    autoPlay={!reducedMotion}
+                    loop={false}
+                    progress={reducedMotion ? 1 : undefined}
+                    style={styles.lottie}
+                  />
+                </View>
               </EaseView>
             )}
 
@@ -453,6 +479,7 @@ export default function GameOverScreen() {
                           onChangeText={(text) => handleLetterChange(text, i)}
                           onKeyPress={({ nativeEvent }) => handleLetterKeyPress(nativeEvent.key, i)}
                           maxLength={1}
+                          maxFontSizeMultiplier={1.4}
                           autoCapitalize="characters"
                           autoCorrect={false}
                           textAlign="center"
@@ -748,9 +775,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 10,
     borderWidth: 2,
-    height: 64,
     justifyContent: "center",
-    width: 52,
+    minHeight: 64,
+    minWidth: 52,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
   },
   initialsPrompt: {
     fontFamily: "Oxanium-Medium",

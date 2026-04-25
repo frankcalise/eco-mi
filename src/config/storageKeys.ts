@@ -46,6 +46,7 @@ export const SETTINGS_NOTIFY_DAILY = "ecomi:settings:notifyDaily"
 export const SETTINGS_NOTIFY_STREAK = "ecomi:settings:notifyStreak"
 export const SETTINGS_NOTIFY_WINBACK = "ecomi:settings:notifyWinback"
 export const SETTINGS_SOUND_PREVIEW_HINT_SEEN = "ecomi:settings:soundPreviewHintSeen"
+export const SETTINGS_COLORBLIND_PATTERNS_ENABLED = "ecomi:settings:colorblindPatternsEnabled"
 
 // Achievements
 export const ACHIEVEMENTS = "ecomi:achievements"

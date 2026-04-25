@@ -121,6 +121,8 @@ export default function SettingsScreen() {
   const setNotifyStreak = usePreferencesStore((s) => s.setNotifyStreak)
   const notifyWinback = usePreferencesStore((s) => s.notifyWinback)
   const setNotifyWinback = usePreferencesStore((s) => s.setNotifyWinback)
+  const colorblindPatternsEnabled = usePreferencesStore((s) => s.colorblindPatternsEnabled)
+  const setColorblindPatternsEnabled = usePreferencesStore((s) => s.setColorblindPatternsEnabled)
 
   const [poppingSoundPack, setPoppingSoundPack] = useState<string | null>(null)
   const [soundHint, setSoundHint] = useState(false)
@@ -274,6 +276,12 @@ export default function SettingsScreen() {
                   key={pack.id}
                   testID={`btn-sound-pack-${pack.id}`}
                   hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={pack.name}
+                  accessibilityHint={t(
+                    isOwned ? "a11y:applySoundPack" : "a11y:previewLockedSoundPack",
+                  )}
+                  accessibilityState={{ selected: isSelected, disabled: false }}
                   onPress={() => {
                     dismissPreviewHint()
                     if (pack.id === soundPack.id) {
@@ -390,6 +398,10 @@ export default function SettingsScreen() {
                   key={id}
                   testID={`btn-theme-${id}`}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t(`themes:${id}` as const)}
+                  accessibilityHint={t(isOwned ? "a11y:applyTheme" : "a11y:previewLockedTheme")}
+                  accessibilityState={{ selected: isSelected, disabled: false }}
                   onPress={() => {
                     if (id === theme.id) {
                       clearPreview()
@@ -509,6 +521,30 @@ export default function SettingsScreen() {
               inactiveColor={activeTheme.secondaryTextColor}
             />
           </View>
+        </View>
+
+        {/* Accessibility */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: activeTheme.secondaryTextColor }]}>
+            {t("settings:accessibility")}
+          </Text>
+          <View style={styles.switchRow}>
+            <Text style={[styles.switchLabel, { color: activeTheme.textColor }]}>
+              {t("settings:colorblindPatterns")}
+            </Text>
+            <NativeToggle
+              value={colorblindPatternsEnabled}
+              onValueChange={setColorblindPatternsEnabled}
+              activeColor={activeTheme.accentColor}
+              inactiveColor={activeTheme.secondaryTextColor}
+            />
+          </View>
+          <Text
+            style={[styles.sectionHint, { color: activeTheme.secondaryTextColor }]}
+            accessibilityElementsHidden
+          >
+            {t("settings:colorblindPatternsHint")}
+          </Text>
         </View>
 
         {/* Notifications */}
@@ -661,6 +697,11 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 24,
+  },
+  sectionHint: {
+    fontFamily: "Oxanium-Regular",
+    fontSize: 12,
+    marginTop: 6,
   },
   sectionLabel: {
     fontFamily: "Oxanium-Medium",

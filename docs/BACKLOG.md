@@ -359,40 +359,40 @@
 
   Completed as its own session. Added semantic theme-chrome tokens (`panelColor`, `panelBorderColor`, `primaryForegroundColor`, per-pad `glowColor`, `titleCycleColors`) and moved the main gameplay chrome, game-over CTAs, prompts, tracking/notification screens, stats cards, title treatment, streak banner, and idle secondary-page buttons onto those tokens. Verified visually across Neon, Retro, and Pastel on idle + secondary screens.
 
-- [ ] **Colorblind mode: shape/glyph overlay on pads**
+- [x] **Colorblind mode: shape/glyph overlay on pads**
       Simon-style play depends entirely on distinguishing 4 colors + position. ~4–8% of males have red-green color deficiency, and on the retro theme both red (`#c0392b`) and green (`#27ae60`) desaturate to near-identical mid-greys for deuteranopes/protanopes. Add a user-toggleable "Colorblind patterns" setting that renders a unique glyph on each pad — circle / square / triangle / diamond, or numerals 1-4 — at ~24% opacity in the pad's contrast color. Also serves players in bright sunlight or on cheap displays. WCAG 1.4.1 (Use of Color). New setting in `settings.tsx` under "Accessibility" section, plumbed through theme context to `GameButton`.
 
-- [ ] **Reduced motion: `useReducedMotion` hook + gate loops / Lottie / shuffles**
+- [x] **Reduced motion: `useReducedMotion` hook + gate loops / Lottie / shuffles**
       Grepping `src/` for `AccessibilityInfo` / `isReduceMotionEnabled` returns zero results. The neon title color cycle (`GameHeader.tsx:71-95`), Start button scale breathe (`GameScreen.tsx:655,742`), shuffle animations, Lottie trophy (`game-over.tsx:331`), streak banner, and the `EaseView` pop on every `PressableScale` all fire unconditionally. Violates WCAG 2.3.3 and iOS `UIAccessibility.isReduceMotionEnabled`. Add a shared `useReducedMotion()` hook that subscribes to `AccessibilityInfo.reduceMotionChanged`; wrap each looping/large-transform animation with a guard (`reduced ? nothing : the animation`). For Lottie, swap to a static trophy PNG under reduced motion. For the shuffle mode, skip animations entirely and snap to final positions.
 
-- [ ] **Screen-reader sequence announcements + live region**
+- [x] **Screen-reader sequence announcements + live region**
       Game-state transitions ("Watch sequence" / "Repeat sequence"), individual pad flashes during playback, `wrongFlash`, and game-over are all visual-only. `GameStatusBar` has no `accessibilityLiveRegion`, and there is no `AccessibilityInfo.announceForAccessibility` call anywhere. Blind players cannot track the sequence even with audio — they hear only the tone frequency, not which pad played. WCAG 4.1.3 (Status Messages). Add `accessibilityLiveRegion="polite"` to the status text, and during `gameState === "showing"` announce each pad ("red, top left") at the start of its flash. Announce correct/wrong on each player tap, and "Game over, score 47" on transition.
 
-- [ ] **Game pad `accessibilityLabel` includes position**
+- [x] **Game pad `accessibilityLabel` includes position**
       `src/components/GameButton.tsx:116` uses `accessibilityLabel={color}` — a VoiceOver user hears "red / red / red / red" for four unlabeled pads. Switch to `"red pad, top left"` etc. via an i18n key like `a11y:pad` with `{ color, position }` interpolation. Also add `accessibilityState={{ disabled: !isActive }}` where appropriate so VO reads "red pad, top left, dimmed" during the showing phase.
 
-- [ ] **Theme / sound-pack picker: `accessibilityLabel` + `accessibilityState={{ selected }}`**
+- [x] **Theme / sound-pack picker: `accessibilityLabel` + `accessibilityState={{ selected }}`**
       `src/app/settings.tsx:325-364` (themes) and `:232-278` (sound packs) render `Pressable` circles/pills with zero a11y props — a VO user hears generic "button" and has no idea what Classic, Neon, Retro, Pastel even are. Add `accessibilityRole="button"`, `accessibilityLabel={theme.name}`, `accessibilityHint={isOwned ? t("a11y:applyTheme") : t("a11y:previewLocked")}`, `accessibilityState={{ selected: isSelected, disabled: !isOwned && !canPreview }}`. WCAG 4.1.2.
 
-- [ ] **Onboarding tooltip contrast fix (white-on-green fails AA in classic)**
+- [x] **Onboarding tooltip contrast fix (white-on-green fails AA in classic)**
       `src/components/OnboardingTooltip.tsx:25` renders white text on `activeTheme.accentColor`. On classic (`#22c55e`) the ratio is ~2.3:1 at 15px — fails AA. On pastel (`#6c5ce7`) it's ~7.4:1 (fine). Either pick the foreground dynamically via the `getReadableForeground()` util already added in `src/utils/color.ts`, or darken the classic accent so white-on-accent works globally.
 
-- [ ] **Retro + pastel secondary text marginal contrast**
+- [x] **Retro + pastel secondary text marginal contrast**
       Retro's `secondaryTextColor #998877` on background `#2c2c2c` is ~4.1:1 — fails AA for 12–14px body copy (needs 4.5:1). Pastel's `#7a7a9a` on `#f5f0ff` sits exactly at 4.5:1, which fails once sub-pixel anti-aliasing reduces effective contrast. Nudge retro secondary to ~`#b0a089`, pastel secondary to ~`#6a6a8a`.
 
-- [ ] **Timer ring: non-color urgency cue**
+- [x] **Timer ring: non-color urgency cue**
       The `TimerRing` turns red at ≤10s remaining but there's no size change and no haptic outside of the existing `countdownTick`. Adds color reliance (WCAG 1.4.1). Add a subtle scale pulse at ≤5s that matches the haptic cadence, and consider a ring thickness bump from 5s onward so the urgency is readable regardless of color perception.
 
-- [ ] **Lottie trophy: reduced-motion fallback**
+- [x] **Lottie trophy: reduced-motion fallback**
       `game-over.tsx:331` renders `LottieView autoPlay loop={false}` for new-high-score celebrations unconditionally. Under reduced motion this should swap to a static trophy PNG (or freeze on the final frame). Gated by the `useReducedMotion` task above.
 
-- [ ] **Initials boxes clip at large dynamic text sizes**
+- [x] **Initials boxes clip at large dynamic text sizes**
       `game-over.tsx:653-660` hardcodes `64×52` dimensions around a 32pt `Oxanium-Bold` character. iOS accessibility text sizes scale up to 310%, which clips the character inside the box. Let the container grow with content (`minWidth` + `alignItems: "center"` + intrinsic height) or clamp the inner `Text` size separately from the system text scale.
 
-- [ ] **`ModalOverlay`: `accessibilityViewIsModal` on iOS + focus trap**
+- [x] **`ModalOverlay`: `accessibilityViewIsModal` on iOS + focus trap**
       `src/components/ModalOverlay.tsx` backdrop is tap-to-dismiss but there's no `accessibilityViewIsModal={true}` — VoiceOver can swipe past the modal to content beneath. Add the prop on iOS and an equivalent `importantForAccessibility` gate on Android.
 
-- [ ] **Mode-select "Dismiss" hardcoded English literal**
+- [x] **Mode-select "Dismiss" hardcoded English literal**
       `src/app/mode-select.tsx:73` uses the string `"Dismiss"` directly instead of an i18n key. ES/PT users see English. Move to `t("common:dismiss")` or equivalent.
 
 - [x] **Sound-pack pill: touch target below 44pt**

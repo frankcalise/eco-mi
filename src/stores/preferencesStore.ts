@@ -1,6 +1,7 @@
 import { create } from "zustand"
 
 import {
+  SETTINGS_COLORBLIND_PATTERNS_ENABLED,
   SETTINGS_HAPTICS_ENABLED,
   SETTINGS_NOTIFY_DAILY,
   SETTINGS_NOTIFY_STREAK,
@@ -23,11 +24,18 @@ type PreferencesState = {
   setNotifyStreak: (value: boolean) => void
   notifyWinback: boolean
   setNotifyWinback: (value: boolean) => void
+  colorblindPatternsEnabled: boolean
+  setColorblindPatternsEnabled: (value: boolean) => void
 }
 
 // Defaults to true unless MMKV holds the literal string "false".
 function loadBoolPref(key: string): boolean {
   return loadString(key) !== "false"
+}
+
+// Defaults to false unless MMKV holds the literal string "true".
+function loadBoolPrefFalse(key: string): boolean {
+  return loadString(key) === "true"
 }
 
 function loadVolume(): number {
@@ -79,5 +87,10 @@ export const usePreferencesStore = create<PreferencesState>((set) => ({
   setNotifyWinback: (value) => {
     saveString(SETTINGS_NOTIFY_WINBACK, value ? "true" : "false")
     set({ notifyWinback: value })
+  },
+  colorblindPatternsEnabled: loadBoolPrefFalse(SETTINGS_COLORBLIND_PATTERNS_ENABLED),
+  setColorblindPatternsEnabled: (value) => {
+    saveString(SETTINGS_COLORBLIND_PATTERNS_ENABLED, value ? "true" : "false")
+    set({ colorblindPatternsEnabled: value })
   },
 }))

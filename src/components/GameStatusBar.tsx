@@ -38,7 +38,12 @@ export function GameStatusBar({
   }, [timerDelta])
 
   return (
-    <View style={styles.statusContainer}>
+    <View
+      style={styles.statusContainer}
+      accessible
+      accessibilityLiveRegion="polite"
+      accessibilityRole="text"
+    >
       {gameState === "showing" && (
         <Text style={[styles.statusText, { color: theme.secondaryTextColor }]}>
           {t("game:watchSequence")}

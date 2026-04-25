@@ -1,5 +1,5 @@
 import { type PropsWithChildren } from "react"
-import { Pressable, StyleSheet, type ViewStyle } from "react-native"
+import { Pressable, StyleSheet, View, type ViewStyle } from "react-native"
 import { EaseView } from "react-native-ease"
 
 import type { GameTheme } from "@/config/themes"
@@ -29,18 +29,20 @@ export function ModalOverlay({
       transition={{ default: { type: "timing", duration: 200 } }}
     >
       <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
-      <EaseView
-        style={[
-          styles.card,
-          { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor },
-          cardStyle,
-        ]}
-        initialAnimate={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ default: { type: "spring", stiffness: 300, damping: 20 } }}
-      >
-        {children}
-      </EaseView>
+      <View accessibilityViewIsModal importantForAccessibility="yes">
+        <EaseView
+          style={[
+            styles.card,
+            { backgroundColor: theme.backgroundColor, borderColor: theme.borderColor },
+            cardStyle,
+          ]}
+          initialAnimate={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ default: { type: "spring", stiffness: 300, damping: 20 } }}
+        >
+          {children}
+        </EaseView>
+      </View>
     </EaseView>
   )
 }

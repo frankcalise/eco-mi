@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import type { LayoutChangeEvent } from "react-native"
 import {
+  AccessibilityInfo,
   Animated,
   Easing,
   Platform,
@@ -38,11 +39,13 @@ import { useHaptics } from "@/hooks/useHaptics"
 import { useHighScores } from "@/hooks/useHighScores"
 import { useNotifications, shouldShowNotificationPrompt } from "@/hooks/useNotifications"
 import { usePurchases } from "@/hooks/usePurchases"
+import { useReducedMotion } from "@/hooks/useReducedMotion"
 import { useSoundPack } from "@/hooks/useSoundPack"
 import { useTheme } from "@/hooks/useTheme"
 import { useGameOverStore } from "@/stores/gameOverStore"
 import { usePendingActionStore } from "@/stores/pendingActionStore"
 import { usePendingModeStore } from "@/stores/pendingModeStore"
+import { usePreferencesStore } from "@/stores/preferencesStore"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { motion } from "@/theme/motion"
 import { UI_COLORS } from "@/theme/uiColors"
@@ -108,9 +111,11 @@ function BreathingStartButton({
   style?: StyleProp<ViewStyle>
   children: ReactNode
 }) {
+  const reducedMotion = useReducedMotion()
   const breathe = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
+    if (reducedMotion) return
     const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(breathe, {
@@ -129,7 +134,7 @@ function BreathingStartButton({
     )
     animation.start()
     return () => animation.stop()
-  }, [breathe])
+  }, [breathe, reducedMotion])
 
   const shadowRadius = breathe.interpolate({ inputRange: [0, 1], outputRange: [8, 16] })
   const shadowOpacity = breathe.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.5] })
@@ -139,6 +144,14 @@ function BreathingStartButton({
     ios: { shadowRadius, shadowOpacity },
     default: { elevation },
   })
+
+  if (reducedMotion) {
+    return (
+      <View style={style}>
+        <View style={gameScreenStyles.startButtonShadow}>{children}</View>
+      </View>
+    )
+  }
 
   return (
     <EaseView animate={{ scale: 1.02 }} transition={{ default: motion.breathe }} style={style}>
@@ -162,6 +175,7 @@ export function GameScreen() {
 
   const { soundPack } = useSoundPack()
   const { activeTheme } = useTheme()
+  const colorblindPatternsEnabled = usePreferencesStore((s) => s.colorblindPatternsEnabled)
   const analytics = useAnalytics()
   const haptics = useHaptics()
 
@@ -355,6 +369,29 @@ export function GameScreen() {
       playJingle()
     }
   }, [])
+
+  // Screen-reader announcements: full sequence on entering "showing", and a
+  // game-over summary on transition. Visual flashes proceed silently after.
+  const lastAnnouncedShowingRef = useRef(false)
+  useEffect(() => {
+    if (gameState === "showing" && !lastAnnouncedShowingRef.current) {
+      lastAnnouncedShowingRef.current = true
+      const pads = sequence.map((c) => t(`a11y:padColor_${c}`)).join(", ")
+      AccessibilityInfo.announceForAccessibility(t("a11y:watchSequence", { pads }))
+    } else if (gameState !== "showing") {
+      lastAnnouncedShowingRef.current = false
+    }
+  }, [gameState, sequence, t])
+
+  const lastAnnouncedGameOverRef = useRef(false)
+  useEffect(() => {
+    if (gameState === "gameover" && !lastAnnouncedGameOverRef.current) {
+      lastAnnouncedGameOverRef.current = true
+      AccessibilityInfo.announceForAccessibility(t("a11y:gameOver", { score, level }))
+    } else if (gameState !== "gameover") {
+      lastAnnouncedGameOverRef.current = false
+    }
+  }, [gameState, score, level, t])
 
   // Ref-wrap every unstable identity the gameover transition effect touches. The effect
   // intentionally fires only on gameState (and a few primitive deps) — we don't want it
@@ -678,6 +715,7 @@ export function GameScreen() {
             themeColor={activeTheme.buttonColors[color].color}
             themeActiveColor={activeTheme.buttonColors[color].activeColor}
             themeGlowColor={activeTheme.buttonColors[color].glowColor}
+            showPattern={colorblindPatternsEnabled}
           />
         ))}
 

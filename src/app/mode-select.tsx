@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import { useLocalSearchParams, useRouter } from "expo-router"
+import { useTranslation } from "react-i18next"
 
 import { GameModePickerContent } from "@/components/GameModePickerContent"
 import { GAME_MODES } from "@/config/gameModes"
@@ -19,6 +20,7 @@ function parseCurrentMode(raw: string | undefined): GameMode {
 }
 
 export default function ModeSelectScreen() {
+  const { t } = useTranslation()
   const router = useRouter()
   const { activeTheme } = useTheme()
   const haptics = useHaptics()
@@ -70,7 +72,7 @@ export default function ModeSelectScreen() {
           if (!pulsingMode) router.back()
         }}
         accessibilityRole="button"
-        accessibilityLabel="Dismiss"
+        accessibilityLabel={t("common:dismiss")}
       />
       <View
         style={[
