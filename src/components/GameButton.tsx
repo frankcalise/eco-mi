@@ -2,9 +2,11 @@ import { View, StyleSheet } from "react-native"
 import { EaseView } from "react-native-ease"
 
 import { PadGlow } from "@/components/PadGlow"
+import { PadGlyph } from "@/components/PadGlyph"
 import { colorMap, type Color } from "@/hooks/useGameEngine"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 import { UI_COLORS } from "@/theme/uiColors"
+import { getReadableForeground } from "@/utils/color"
 
 type Position = "topLeft" | "topRight" | "bottomLeft" | "bottomRight"
 
@@ -24,6 +26,7 @@ type GameButtonProps = {
   themeColor?: string
   themeActiveColor?: string
   themeGlowColor?: string
+  showPattern?: boolean
 }
 
 function getSlotCoords(
@@ -73,6 +76,7 @@ export function GameButton({
   themeColor,
   themeActiveColor,
   themeGlowColor,
+  showPattern,
 }: GameButtonProps) {
   const reducedMotion = useReducedMotion()
   const info = colorMap[color]
@@ -122,6 +126,13 @@ export function GameButton({
       ]}
     >
       <PadGlow color={displayGlowColor} isActive={isActive} buttonSize={buttonSize} padId={color} />
+      {showPattern && (
+        <PadGlyph
+          position={position}
+          buttonSize={buttonSize}
+          color={getReadableForeground(displayColor)}
+        />
+      )}
       <View
         testID={`btn-${color}${isActive ? "-active" : ""}`}
         style={[

@@ -44,6 +44,7 @@ import { useTheme } from "@/hooks/useTheme"
 import { useGameOverStore } from "@/stores/gameOverStore"
 import { usePendingActionStore } from "@/stores/pendingActionStore"
 import { usePendingModeStore } from "@/stores/pendingModeStore"
+import { usePreferencesStore } from "@/stores/preferencesStore"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { motion } from "@/theme/motion"
 import { UI_COLORS } from "@/theme/uiColors"
@@ -173,6 +174,7 @@ export function GameScreen() {
 
   const { soundPack } = useSoundPack()
   const { activeTheme } = useTheme()
+  const colorblindPatternsEnabled = usePreferencesStore((s) => s.colorblindPatternsEnabled)
   const analytics = useAnalytics()
   const haptics = useHaptics()
 
@@ -689,6 +691,7 @@ export function GameScreen() {
             themeColor={activeTheme.buttonColors[color].color}
             themeActiveColor={activeTheme.buttonColors[color].activeColor}
             themeGlowColor={activeTheme.buttonColors[color].glowColor}
+            showPattern={colorblindPatternsEnabled}
           />
         ))}
 
