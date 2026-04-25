@@ -1,4 +1,5 @@
 import { View, StyleSheet } from "react-native"
+import { useTranslation } from "react-i18next"
 import { EaseView } from "react-native-ease"
 
 import { PadGlow } from "@/components/PadGlow"
@@ -6,6 +7,7 @@ import { PadGlyph } from "@/components/PadGlyph"
 import { colorMap, type Color } from "@/hooks/useGameEngine"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 import { UI_COLORS } from "@/theme/uiColors"
+import { getPadLabel } from "@/utils/a11y"
 import { getReadableForeground } from "@/utils/color"
 
 type Position = "topLeft" | "topRight" | "bottomLeft" | "bottomRight"
@@ -78,6 +80,7 @@ export function GameButton({
   themeGlowColor,
   showPattern,
 }: GameButtonProps) {
+  const { t } = useTranslation()
   const reducedMotion = useReducedMotion()
   const info = colorMap[color]
   const position = POSITIONS[index]
@@ -148,8 +151,9 @@ export function GameButton({
           isActive && styles.pressableActive,
         ]}
         accessible
-        accessibilityLabel={color}
+        accessibilityLabel={getPadLabel(t, color, position)}
         accessibilityRole="button"
+        accessibilityState={{ disabled }}
         onTouchStart={disabled ? undefined : () => onPressIn()}
         onTouchEnd={disabled ? undefined : () => onPressOut()}
         onTouchCancel={disabled ? undefined : () => onPressOut()}

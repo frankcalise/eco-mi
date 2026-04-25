@@ -276,6 +276,12 @@ export default function SettingsScreen() {
                   key={pack.id}
                   testID={`btn-sound-pack-${pack.id}`}
                   hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={pack.name}
+                  accessibilityHint={t(
+                    isOwned ? "a11y:applySoundPack" : "a11y:previewLockedSoundPack",
+                  )}
+                  accessibilityState={{ selected: isSelected, disabled: false }}
                   onPress={() => {
                     dismissPreviewHint()
                     if (pack.id === soundPack.id) {
@@ -392,6 +398,10 @@ export default function SettingsScreen() {
                   key={id}
                   testID={`btn-theme-${id}`}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t(`themes:${id}` as const)}
+                  accessibilityHint={t(isOwned ? "a11y:applyTheme" : "a11y:previewLockedTheme")}
+                  accessibilityState={{ selected: isSelected, disabled: false }}
                   onPress={() => {
                     if (id === theme.id) {
                       clearPreview()

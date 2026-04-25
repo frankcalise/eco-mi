@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import type { LayoutChangeEvent } from "react-native"
 import {
+  AccessibilityInfo,
   Animated,
   Easing,
   Platform,
@@ -368,6 +369,29 @@ export function GameScreen() {
       playJingle()
     }
   }, [])
+
+  // Screen-reader announcements: full sequence on entering "showing", and a
+  // game-over summary on transition. Visual flashes proceed silently after.
+  const lastAnnouncedShowingRef = useRef(false)
+  useEffect(() => {
+    if (gameState === "showing" && !lastAnnouncedShowingRef.current) {
+      lastAnnouncedShowingRef.current = true
+      const pads = sequence.map((c) => t(`a11y:padColor_${c}`)).join(", ")
+      AccessibilityInfo.announceForAccessibility(t("a11y:watchSequence", { pads }))
+    } else if (gameState !== "showing") {
+      lastAnnouncedShowingRef.current = false
+    }
+  }, [gameState, sequence, t])
+
+  const lastAnnouncedGameOverRef = useRef(false)
+  useEffect(() => {
+    if (gameState === "gameover" && !lastAnnouncedGameOverRef.current) {
+      lastAnnouncedGameOverRef.current = true
+      AccessibilityInfo.announceForAccessibility(t("a11y:gameOver", { score, level }))
+    } else if (gameState !== "gameover") {
+      lastAnnouncedGameOverRef.current = false
+    }
+  }, [gameState, score, level, t])
 
   // Ref-wrap every unstable identity the gameover transition effect touches. The effect
   // intentionally fires only on gameState (and a few primitive deps) — we don't want it
