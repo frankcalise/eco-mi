@@ -456,6 +456,7 @@ export default function GameOverScreen() {
                           onChangeText={(text) => handleLetterChange(text, i)}
                           onKeyPress={({ nativeEvent }) => handleLetterKeyPress(nativeEvent.key, i)}
                           maxLength={1}
+                          maxFontSizeMultiplier={1.4}
                           autoCapitalize="characters"
                           autoCorrect={false}
                           textAlign="center"
@@ -751,9 +752,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 10,
     borderWidth: 2,
-    height: 64,
     justifyContent: "center",
-    width: 52,
+    minHeight: 64,
+    minWidth: 52,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
   },
   initialsPrompt: {
     fontFamily: "Oxanium-Medium",
