@@ -135,8 +135,8 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     alignItems: "center",
-    borderWidth: 1,
     borderRadius: 20,
+    borderWidth: 1,
     flex: 1,
     gap: 8,
     justifyContent: "center",
@@ -181,8 +181,8 @@ const styles = StyleSheet.create({
   },
   statCard: {
     alignItems: "center",
-    borderWidth: 1,
     borderRadius: 12,
+    borderWidth: 1,
     minWidth: "45%",
     paddingHorizontal: 16,
     paddingVertical: 20,

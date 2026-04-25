@@ -46,11 +46,7 @@ export default function TrackingScreen() {
             { backgroundColor: activeTheme.surfaceColor, borderColor: activeTheme.borderColor },
           ]}
         >
-          <Ionicons
-            name="shield-checkmark-outline"
-            size={64}
-            color={activeTheme.accentColor}
-          />
+          <Ionicons name="shield-checkmark-outline" size={64} color={activeTheme.accentColor} />
         </View>
 
         <Text style={[styles.title, { color: activeTheme.textColor }]}>{t("tracking:title")}</Text>
@@ -99,8 +95,8 @@ const styles = StyleSheet.create({
   },
   iconCircle: {
     alignItems: "center",
-    borderWidth: 1,
     borderRadius: 60,
+    borderWidth: 1,
     height: 120,
     justifyContent: "center",
     marginBottom: 32,
