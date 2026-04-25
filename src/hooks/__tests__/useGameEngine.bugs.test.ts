@@ -421,6 +421,89 @@ describe("useGameEngine — high-score persistence guard", () => {
 
     expect(countHighScoreWrites()).toBe(writesAfterLoss)
   })
+
+  // BACKLOG: "startTimer reads stale ctx". Pre-fix, the timer's setInterval
+  // callback closed over the render-time `ctx` and called
+  // handleGameOverSideEffects with that snapshot. After consolidation, the
+  // timer just sends TIMER_EXPIRED; the gameover dispatch reads live context
+  // from actor.subscribe. Verify expiry produces exactly one highScore write
+  // with the live score.
+  it("timer expiry persists the live score exactly once", () => {
+    const hook = renderHook(() => useGameEngine())
+
+    act(() => {
+      hook.result.current.setMode("timed")
+    })
+    act(() => {
+      hook.result.current.startGame()
+    })
+    act(() => {
+      jest.advanceTimersByTime(500)
+    })
+    // Showing → waiting (level 1)
+    act(() => {
+      jest.advanceTimersByTime(2500)
+    })
+    expect(hook.result.current.gameState).toBe("waiting")
+
+    const correct = hook.result.current.sequence[0]
+    act(() => {
+      hook.result.current.handleButtonTouch(correct)
+    })
+    act(() => {
+      jest.advanceTimersByTime(600)
+    })
+    act(() => {
+      hook.result.current.handleButtonRelease(correct)
+    })
+    expect(hook.result.current.score).toBe(10)
+    ;(saveString as jest.Mock).mockClear()
+
+    // Run the 60s timed clock to expiry. Multiple ticks may be inflight when
+    // remaining<=0; the consolidated dispatch's prev===next guard ensures the
+    // gameover branch fires exactly once.
+    act(() => {
+      jest.advanceTimersByTime(70_000)
+    })
+
+    expect(hook.result.current.gameState).toBe("gameover")
+    expect(countHighScoreWrites()).toBe(1)
+  })
+
+  // BACKLOG: "handleGameOverSideEffects double-fire" — covers the persistence
+  // path across continue + re-gameover. saveHighScore must be gated by
+  // isNewHighScore (cleared on setupContinue, re-asserted only when the new
+  // score beats the post-first-gameover highScore). Re-losing at the same
+  // score must NOT re-write.
+  it("does not re-persist highScore on a same-score gameover after continue", () => {
+    const { result } = startScoreAndLose()
+
+    expect(result.current.gameState).toBe("gameover")
+    expect(result.current.score).toBe(10)
+    expect(countHighScoreWrites()).toBe(1) // first loss wrote high=10
+    ;(saveString as jest.Mock).mockClear()
+
+    act(() => {
+      result.current.continueGame()
+    })
+    act(() => {
+      jest.advanceTimersByTime(700)
+    })
+    // continueGame preserves score (10) and sequence (length 2 from round 2
+    // pre-loss). Without playing further taps, end the game directly: same
+    // score 10 == existing highScore 10. markGameOver guards on score > high
+    // → isNewHighScore stays false → saveHighScore must NOT fire.
+    act(() => {
+      jest.advanceTimersByTime(3000) // reach waiting from the replay
+    })
+    expect(result.current.gameState).toBe("waiting")
+    act(() => {
+      result.current.endGame()
+    })
+    expect(result.current.gameState).toBe("gameover")
+    expect(result.current.score).toBe(10)
+    expect(countHighScoreWrites()).toBe(0)
+  })
 })
 
 describe("useGameEngine — symmetric input-lock", () => {
