@@ -14,8 +14,10 @@ import { PostPBPrompt } from "@/components/PostPBPrompt"
 import { PressableScale } from "@/components/PressableScale"
 import { ReviewPrompt } from "@/components/ReviewPrompt"
 import { ShareScoreCard } from "@/components/ShareScoreCard"
+import { TiredOfAdsPrompt } from "@/components/TiredOfAdsPrompt"
 import { ACHIEVEMENTS } from "@/config/achievements"
 import {
+  ADS_LIFETIME_INTERSTITIALS_SHOWN,
   DAILY_CURRENT_STREAK,
   INITIALS_SKIPPED,
   SAVED_INITIALS,
@@ -30,9 +32,11 @@ import { usePurchases } from "@/hooks/usePurchases"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 import { useStoreReview } from "@/hooks/useStoreReview"
 import { useTheme } from "@/hooks/useTheme"
+import { useTiredOfAdsPrompt } from "@/hooks/useTiredOfAdsPrompt"
 import { useTransientTimers } from "@/hooks/useTransientTimers"
 import { useGameOverStore } from "@/stores/gameOverStore"
 import { usePendingActionStore } from "@/stores/pendingActionStore"
+import { useSessionAdStore, shouldSwapRemoveAdsCta } from "@/stores/sessionAdStore"
 import { GameThemeProvider } from "@/theme/GameThemeContext"
 import { motion } from "@/theme/motion"
 import { useAnalytics } from "@/utils/analytics"
@@ -237,6 +241,21 @@ export default function GameOverScreen() {
   const { showReviewPrompt, triggerReviewCheck, dismissReviewPrompt, reviewTrigger } =
     useStoreReview()
   const { showPostPBPrompt, triggerPostPBCheck, dismissPostPBPrompt } = usePostPBPrompt()
+  const {
+    showTiredOfAdsPrompt,
+    triggerTiredOfAdsCheck,
+    dismissTiredOfAdsPrompt,
+    markPromptShown: markTiredOfAdsShownPersistent,
+  } = useTiredOfAdsPrompt()
+  const rewardedWatchedThisSession = useSessionAdStore((s) => s.rewardedWatchedThisSession)
+  const tiredOfAdsShownThisSession = useSessionAdStore((s) => s.tiredOfAdsShownThisSession)
+  const swappedCtaGameOversThisSession = useSessionAdStore((s) => s.swappedCtaGameOversThisSession)
+  const incrementSwappedCtaGameOvers = useSessionAdStore((s) => s.incrementSwappedCtaGameOvers)
+  const swapRemoveAdsCta = shouldSwapRemoveAdsCta({
+    rewardedWatchedThisSession,
+    tiredOfAdsShownThisSession,
+    swappedCtaGameOversThisSession,
+  })
   const { checkAchievements, newlyUnlocked, clearNewlyUnlocked } = useAchievements()
 
   const [achievementToast, setAchievementToast] = useState<{
@@ -269,11 +288,20 @@ export default function GameOverScreen() {
 
     // Review + PostPB prompts on new high score — mutually exclusive.
     // If review will show, skip PostPB so they don't stack on the same game-over.
+    let postPBScheduled = false
     if (isNewHighScore) {
       const reviewScheduled = triggerReviewCheck("new_high_score", false)
       if (!reviewScheduled && !removeAds) {
         triggerPostPBCheck()
+        postPBScheduled = true
       }
+    }
+
+    // "Tired of ads?" prompt — fires on game-over after lifetime interstitial #3.
+    // Mutually exclusive with PostPB (PB has priority on new-high-score games)
+    // and with the review prompt. One-shot persistent flag set on dismiss/convert.
+    if (!postPBScheduled && !removeAds && !isNewHighScore) {
+      triggerTiredOfAdsCheck()
     }
 
     // Daily streak milestone review prompt (3-day, 7-day)
@@ -281,6 +309,26 @@ export default function GameOverScreen() {
       triggerReviewCheck(`streak_${currentStreak}`, false)
     }
   }, [])
+
+  // Track game-overs where the swapped CTA is presented, so we can cap at
+  // REWARDED_SWAP_GAMEOVER_CAP and revert to the passive link before fatigue
+  // plateaus the conversion lift. One-time-per-mount via swapTrackedRef.
+  const swapTrackedRef = useRef(false)
+  useEffect(() => {
+    if (swapTrackedRef.current) return
+    if (!swapRemoveAdsCta) return
+    swapTrackedRef.current = true
+    incrementSwappedCtaGameOvers()
+    if (swappedCtaGameOversThisSession === 0) {
+      analytics.trackRemoveAdsCtaSwapped(rewardedWatchedThisSession)
+    }
+  }, [
+    swapRemoveAdsCta,
+    incrementSwappedCtaGameOvers,
+    swappedCtaGameOversThisSession,
+    analytics,
+    rewardedWatchedThisSession,
+  ])
 
   // Show achievement toast when newlyUnlocked changes
   useEffect(() => {
@@ -386,6 +434,44 @@ export default function GameOverScreen() {
       dismissPostPBPrompt()
     }
   }
+
+  async function handleTiredOfAdsPurchase() {
+    analytics.trackIapInitiated("ecomi_remove_ads")
+    const success = await purchaseRemoveAds()
+    if (success) {
+      analytics.trackTiredOfAdsPromptConverted()
+      analytics.trackIapCompleted("ecomi_remove_ads")
+      markTiredOfAdsShownPersistent()
+      dismissTiredOfAdsPrompt()
+    }
+    // Failure: leave the modal open so the user can retry. Do NOT mark the
+    // one-shot flag as shown — a network blip shouldn't burn the conversion
+    // window. The modal stays open until user dismisses by action.
+  }
+
+  function handleTiredOfAdsDismiss() {
+    analytics.trackTiredOfAdsPromptDismissed()
+    markTiredOfAdsShownPersistent()
+    dismissTiredOfAdsPrompt()
+  }
+
+  async function handleSwappedRemoveAds() {
+    analytics.trackRemoveAdsCtaTap("swapped")
+    analytics.trackIapInitiated("ecomi_remove_ads")
+    const success = await purchaseRemoveAds()
+    if (success) {
+      analytics.trackIapCompleted("ecomi_remove_ads")
+    }
+  }
+
+  // Fire the "shown" analytics event the first render the modal becomes visible.
+  const tiredShownLoggedRef = useRef(false)
+  useEffect(() => {
+    if (!showTiredOfAdsPrompt || tiredShownLoggedRef.current) return
+    tiredShownLoggedRef.current = true
+    const lifetime = parseInt(loadString(ADS_LIFETIME_INTERSTITIALS_SHOWN) ?? "0", 10)
+    analytics.trackTiredOfAdsPromptShown(lifetime)
+  }, [showTiredOfAdsPrompt, analytics])
 
   return (
     <GameThemeProvider value={activeTheme}>
@@ -665,18 +751,48 @@ export default function GameOverScreen() {
               <View style={styles.bottomRowSpacer} />
             </View>
 
-            {showRemoveAds && (
-              <PressableScale
-                testID="btn-remove-ads"
-                style={styles.removeAdsLink}
-                onPress={() => router.push("/settings")}
-              >
-                <Ionicons name="close-circle-outline" size={16} color={activeTheme.warningColor} />
-                <Text style={[styles.removeAdsText, { color: activeTheme.warningColor }]}>
-                  {t("game:removeAds")}
-                </Text>
-              </PressableScale>
-            )}
+            {showRemoveAds &&
+              (swapRemoveAdsCta ? (
+                <PressableScale
+                  testID="btn-remove-ads-swapped"
+                  style={[styles.removeAdsButton, { backgroundColor: activeTheme.accentColor }]}
+                  onPress={handleSwappedRemoveAds}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("iap:skipAdsCta")}
+                >
+                  <Ionicons
+                    name="shield-checkmark"
+                    size={16}
+                    color={activeTheme.primaryForegroundColor}
+                  />
+                  <Text
+                    style={[
+                      styles.removeAdsButtonText,
+                      { color: activeTheme.primaryForegroundColor },
+                    ]}
+                  >
+                    {t("iap:skipAdsCta")}
+                  </Text>
+                </PressableScale>
+              ) : (
+                <PressableScale
+                  testID="btn-remove-ads"
+                  style={styles.removeAdsLink}
+                  onPress={() => {
+                    analytics.trackRemoveAdsCtaTap("passive")
+                    router.push("/settings")
+                  }}
+                >
+                  <Ionicons
+                    name="close-circle-outline"
+                    size={16}
+                    color={activeTheme.warningColor}
+                  />
+                  <Text style={[styles.removeAdsText, { color: activeTheme.warningColor }]}>
+                    {t("game:removeAds")}
+                  </Text>
+                </PressableScale>
+              ))}
           </EaseView>
         </View>
 
@@ -700,6 +816,12 @@ export default function GameOverScreen() {
           theme={activeTheme}
           onRemoveAds={handleRemoveAds}
           onDismiss={dismissPostPBPrompt}
+        />
+        <TiredOfAdsPrompt
+          visible={showTiredOfAdsPrompt && !showReviewPrompt && !showPostPBPrompt}
+          theme={activeTheme}
+          onRemoveAds={handleTiredOfAdsPurchase}
+          onDismiss={handleTiredOfAdsDismiss}
         />
         <AchievementToast
           title={achievementToast?.title ?? ""}
@@ -865,6 +987,19 @@ const styles = StyleSheet.create({
   playAgainText: {
     fontFamily: "Oxanium-SemiBold",
     fontSize: 16,
+  },
+  removeAdsButton: {
+    alignItems: "center",
+    alignSelf: "center",
+    borderRadius: 10,
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+  },
+  removeAdsButtonText: {
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 14,
   },
   removeAdsLink: {
     alignItems: "center",

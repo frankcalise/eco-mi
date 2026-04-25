@@ -55,5 +55,20 @@ export function useAnalytics() {
     trackAudioContextRecycle(nodeCount: number) {
       capture("audio_context_recycled", { nodeCount })
     },
+    trackTiredOfAdsPromptShown(lifetimeCount: number) {
+      capture("tired_of_ads_prompt_shown", { lifetimeCount })
+    },
+    trackTiredOfAdsPromptDismissed() {
+      capture("tired_of_ads_prompt_dismissed")
+    },
+    trackTiredOfAdsPromptConverted() {
+      capture("tired_of_ads_prompt_converted")
+    },
+    trackRemoveAdsCtaSwapped(rewardedWatched: number) {
+      capture("remove_ads_cta_swapped", { rewardedWatched })
+    },
+    trackRemoveAdsCtaTap(variant: "passive" | "swapped") {
+      capture("remove_ads_cta_tap", { variant })
+    },
   }
 }

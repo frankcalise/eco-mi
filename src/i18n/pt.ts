@@ -185,6 +185,10 @@ const pt = {
     postPBTitle: "Novo Recorde Pessoal!",
     postPBBody: "Desfrute de uma experiência sem anúncios",
     maybeLater: "Talvez Depois",
+    tiredOfAdsTitle: "Curtindo Eco Mi? Jogue sem anúncios.",
+    tiredOfAdsBody: "Compra única. Sem assinaturas.",
+    removeAdsCta: "Remover anúncios",
+    skipAdsCta: "Sem anúncios",
   },
   share: {
     errorTitle: "Falha ao compartilhar",

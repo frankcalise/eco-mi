@@ -186,6 +186,10 @@ const en = {
     postPBTitle: "New Personal Best!",
     postPBBody: "Enjoy an uninterrupted, ad-free experience",
     maybeLater: "Maybe Later",
+    tiredOfAdsTitle: "Enjoying Eco Mi? Play ad-free.",
+    tiredOfAdsBody: "One-time purchase. No subscriptions.",
+    removeAdsCta: "Remove Ads",
+    skipAdsCta: "Skip the ads",
   },
   share: {
     errorTitle: "Sharing failed",

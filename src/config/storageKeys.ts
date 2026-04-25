@@ -19,6 +19,10 @@ export const PURCHASES_ENTITLEMENT_PREFIX = "ecomi:purchases:entitlement:"
 export const ADS_LAST_INTERSTITIAL_TIME = "ecomi:ads:lastInterstitialTime"
 export const ADS_SESSION_COUNT = "ecomi:ads:sessionCount"
 export const ADS_GAMES_PER_SESSION = "ecomi:ads:gamesPerSession"
+export const ADS_LIFETIME_INTERSTITIALS_SHOWN = "ecomi:ads:lifetimeInterstitialsShown"
+
+// IAP conversion prompts
+export const IAP_TIRED_OF_ADS_PROMPT_SHOWN = "ecomi:iap:tiredOfAdsPromptShown"
 
 // Game engine
 export const HIGH_SCORE_PREFIX = "ecomi:highScore:"

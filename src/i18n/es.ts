@@ -186,6 +186,10 @@ const es = {
     postPBTitle: "¡Nueva Mejor Marca!",
     postPBBody: "Disfruta de una experiencia sin anuncios",
     maybeLater: "Quizás Después",
+    tiredOfAdsTitle: "¿Disfrutas Eco Mi? Juega sin anuncios.",
+    tiredOfAdsBody: "Compra única. Sin suscripciones.",
+    removeAdsCta: "Quitar anuncios",
+    skipAdsCta: "Sin anuncios",
   },
   share: {
     errorTitle: "Error al compartir",

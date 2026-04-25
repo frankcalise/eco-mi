@@ -13,8 +13,10 @@ import {
 import {
   ADS_GAMES_PER_SESSION,
   ADS_LAST_INTERSTITIAL_TIME,
+  ADS_LIFETIME_INTERSTITIALS_SHOWN,
   ADS_SESSION_COUNT,
 } from "@/config/storageKeys"
+import { useSessionAdStore } from "@/stores/sessionAdStore"
 import { loadString, saveString } from "@/utils/storage"
 
 const INTERSTITIAL_IOS = process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_IOS ?? ""
@@ -233,6 +235,10 @@ export function useAds(): UseAdsReturn {
 
       const unsubReward = rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
         earned = true
+        // Per-session counter drives the game-over "Skip the ads" CTA swap.
+        // Increment on EARNED_REWARD (not on close) so the count reflects
+        // genuine rewarded engagement, not dismissed-without-reward shows.
+        useSessionAdStore.getState().incrementRewardedWatched()
       })
 
       const unsubClose = rewarded.addAdEventListener(AdEventType.CLOSED, () => {
@@ -281,6 +287,11 @@ export function useAds(): UseAdsReturn {
       saveString(ADS_LAST_INTERSTITIAL_TIME, Date.now().toString())
       gamesThisSessionRef.current = 0
       setAdShownThisSession(true)
+      // Lifetime counter drives the "Tired of ads?" prompt threshold.
+      // Increment only on confirmed show (after .show() succeeds, before any
+      // throw) so dismissed-pre-show or no-fill paths don't inflate it.
+      const lifetime = parseInt(loadString(ADS_LIFETIME_INTERSTITIALS_SHOWN) ?? "0", 10) + 1
+      saveString(ADS_LIFETIME_INTERSTITIALS_SHOWN, lifetime.toString())
       return true
     } catch {
       return false

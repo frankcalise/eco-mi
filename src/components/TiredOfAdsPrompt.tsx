@@ -1,0 +1,103 @@
+import { View, Text, StyleSheet } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import { useTranslation } from "react-i18next"
+
+import { ModalOverlay } from "@/components/ModalOverlay"
+import { PressableScale } from "@/components/PressableScale"
+import type { GameTheme } from "@/config/themes"
+
+type TiredOfAdsPromptProps = {
+  visible: boolean
+  theme: GameTheme
+  onRemoveAds: () => void
+  onDismiss: () => void
+}
+
+export function TiredOfAdsPrompt({
+  visible,
+  theme,
+  onRemoveAds,
+  onDismiss,
+}: TiredOfAdsPromptProps) {
+  const { t } = useTranslation()
+
+  return (
+    <ModalOverlay visible={visible} theme={theme} onDismiss={onDismiss} cardStyle={styles.card}>
+      <Ionicons name="sparkles" size={36} color={theme.accentColor} />
+      <Text style={[styles.title, { color: theme.textColor }]}>{t("iap:tiredOfAdsTitle")}</Text>
+      <Text style={[styles.body, { color: theme.secondaryTextColor }]}>
+        {t("iap:tiredOfAdsBody")}
+      </Text>
+      <View style={styles.actions}>
+        <PressableScale
+          style={[styles.removeAdsButton, { backgroundColor: theme.accentColor }]}
+          onPress={onRemoveAds}
+          accessibilityRole="button"
+          accessibilityLabel={t("iap:removeAdsCta")}
+        >
+          <Ionicons name="shield-checkmark" size={18} color={theme.primaryForegroundColor} />
+          <Text style={[styles.removeAdsText, { color: theme.primaryForegroundColor }]}>
+            {t("iap:removeAdsCta")}
+          </Text>
+        </PressableScale>
+        <PressableScale
+          style={styles.dismissButton}
+          onPress={onDismiss}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel={t("iap:maybeLater")}
+        >
+          <Text style={[styles.dismissText, { color: theme.secondaryTextColor }]}>
+            {t("iap:maybeLater")}
+          </Text>
+        </PressableScale>
+      </View>
+    </ModalOverlay>
+  )
+}
+
+const styles = StyleSheet.create({
+  actions: {
+    alignItems: "center",
+    gap: 8,
+    marginTop: 16,
+    width: "100%",
+  },
+  body: {
+    fontFamily: "Oxanium-Regular",
+    fontSize: 14,
+    marginTop: 6,
+    textAlign: "center",
+  },
+  card: {
+    alignItems: "center",
+    paddingHorizontal: 28,
+    paddingVertical: 24,
+  },
+  dismissButton: {
+    paddingVertical: 8,
+  },
+  dismissText: {
+    fontFamily: "Oxanium-Regular",
+    fontSize: 14,
+  },
+  removeAdsButton: {
+    alignItems: "center",
+    alignSelf: "center",
+    borderRadius: 10,
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+  },
+  removeAdsText: {
+    fontFamily: "Oxanium-SemiBold",
+    fontSize: 16,
+  },
+  title: {
+    fontFamily: "Oxanium-Bold",
+    fontSize: 20,
+    marginTop: 12,
+    textAlign: "center",
+  },
+})
