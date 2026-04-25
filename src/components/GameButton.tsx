@@ -129,13 +129,6 @@ export function GameButton({
       ]}
     >
       <PadGlow color={displayGlowColor} isActive={isActive} buttonSize={buttonSize} padId={color} />
-      {showPattern && (
-        <PadGlyph
-          position={position}
-          buttonSize={buttonSize}
-          color={getReadableForeground(displayColor)}
-        />
-      )}
       <View
         testID={`btn-${color}${isActive ? "-active" : ""}`}
         style={[
@@ -158,6 +151,13 @@ export function GameButton({
         onTouchEnd={disabled ? undefined : () => onPressOut()}
         onTouchCancel={disabled ? undefined : () => onPressOut()}
       />
+      {showPattern && (
+        <PadGlyph
+          position={position}
+          buttonSize={buttonSize}
+          color={getReadableForeground(displayColor)}
+        />
+      )}
     </EaseView>
   )
 }

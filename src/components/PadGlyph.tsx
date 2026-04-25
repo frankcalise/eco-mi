@@ -18,6 +18,10 @@ const STROKE_WIDTH_RATIO = 0.12
  * silhouette so a player who cannot distinguish the four pad colors can still
  * read which pad just lit up. Hidden by default; gated by the
  * `colorblindPatternsEnabled` preference. WCAG 1.4.1 (Use of Color).
+ *
+ * The glyph nudges toward the pad's outer corner (away from the cross-gap)
+ * so it sits in the visually "fattest" part of the quadrant rather than
+ * floating in the center where the pad's curved edge tapers.
  */
 export function PadGlyph({ position, buttonSize, color }: PadGlyphProps) {
   const size = Math.round(buttonSize * GLYPH_SIZE_RATIO)
@@ -25,17 +29,19 @@ export function PadGlyph({ position, buttonSize, color }: PadGlyphProps) {
   const half = size / 2
   const inset = stroke / 2
 
+  // Outer corner per quadrant — nudges the glyph 28% toward the rounded edge.
+  const offset = Math.round(buttonSize * 0.28)
+  const cornerStyle = {
+    top: position === "topLeft" || position === "topRight" ? offset : undefined,
+    bottom: position === "bottomLeft" || position === "bottomRight" ? offset : undefined,
+    left: position === "topLeft" || position === "bottomLeft" ? offset : undefined,
+    right: position === "topRight" || position === "bottomRight" ? offset : undefined,
+  }
+
   return (
     <View
       pointerEvents="none"
-      style={[
-        styles.container,
-        {
-          width: size,
-          height: size,
-          opacity: GLYPH_OPACITY,
-        },
-      ]}
+      style={[styles.container, cornerStyle, { width: size, height: size, opacity: GLYPH_OPACITY }]}
     >
       <Svg width={size} height={size}>
         {position === "topLeft" && (
