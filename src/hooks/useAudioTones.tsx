@@ -5,10 +5,7 @@ import type { OscillatorType } from "react-native-audio-api"
 import type { AudioBuffer, AudioBufferSourceNode } from "react-native-audio-api"
 
 import { usePreferencesStore } from "@/stores/preferencesStore"
-import {
-  createLoopingPadBuffer,
-  padBufferCacheKey,
-} from "@/utils/audio/androidPadBuffer"
+import { createLoopingPadBuffer, padBufferCacheKey } from "@/utils/audio/androidPadBuffer"
 import {
   buildPadOscPool,
   padOscPoolNoteOff,
