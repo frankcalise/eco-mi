@@ -894,7 +894,9 @@ export function GameScreen() {
         accessibilityLabel={t("a11y:startGame")}
         accessibilityRole="button"
         style={[styles.startButton, { backgroundColor: activeTheme.accentColor }]}
-        onPress={handleStartGame}
+        onPress={() => {
+          void handleStartGame()
+        }}
       >
         <Ionicons name="play" size={24} color={primaryButtonForeground} />
         <Text style={[styles.startButtonText, { color: primaryButtonForeground }]}>
@@ -966,7 +968,9 @@ export function GameScreen() {
                         accessibilityLabel={t("a11y:startGame")}
                         accessibilityRole="button"
                         style={[styles.startButton, { backgroundColor: activeTheme.accentColor }]}
-                        onPress={handleStartGame}
+                        onPress={() => {
+                          void handleStartGame()
+                        }}
                       >
                         <Ionicons name="play" size={24} color={primaryButtonForeground} />
                         <Text style={[styles.startButtonText, { color: primaryButtonForeground }]}>
