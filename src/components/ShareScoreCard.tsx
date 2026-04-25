@@ -33,7 +33,11 @@ export const ShareScoreCard = forwardRef<ViewShot, ShareScoreCardProps>(function
 
   return (
     <ViewShot ref={ref} options={{ format: "png", quality: 1.0 }} style={styles.offscreen}>
-      <View style={[styles.card, { backgroundColor: theme.backgroundColor }]}>
+      <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={[styles.card, { backgroundColor: theme.backgroundColor }]}
+      >
         <View style={styles.header}>
           {/* 2×2 pad-dot mark pairs with "ECO MI" so the game's pad identity
             is visible at feed-thumbnail scale even if the wordmark isn't. */}

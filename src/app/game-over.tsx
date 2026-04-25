@@ -75,20 +75,36 @@ function StatPill({
       animate={{ opacity: 1, translateY: 0, scale: 1 }}
       transition={{ default: { type: "spring", stiffness: 220, damping: 18, delay } }}
     >
-      <View testID={testID} collapsable={false}>
+      <View
+        testID={testID}
+        collapsable={false}
+        accessible
+        accessibilityRole="text"
+        accessibilityLabel={`${label}, ${value}`}
+      >
         <Text
           style={[styles.pillLabel, isTablet && styles.pillLabelTablet, { color: borderColor }]}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
         >
           {label}
         </Text>
         <View style={[styles.pillRow, isTablet && styles.pillRowTablet]}>
-          <Ionicons name={icon} size={isTablet ? 32 : 20} color={borderColor} />
+          <Ionicons
+            name={icon}
+            size={isTablet ? 32 : 20}
+            color={borderColor}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          />
           <Text
             style={[
               styles.pillValue,
               isTablet && styles.pillValueTablet,
               { color: theme.textColor },
             ]}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
           >
             {value}
           </Text>
@@ -387,13 +403,15 @@ export default function GameOverScreen() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ default: { type: "spring", stiffness: 200, damping: 15 } }}
               >
-                <LottieView
-                  source={require("../../assets/animations/trophy.json")}
-                  autoPlay={!reducedMotion}
-                  loop={false}
-                  progress={reducedMotion ? 1 : undefined}
-                  style={styles.lottie}
-                />
+                <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                  <LottieView
+                    source={require("../../assets/animations/trophy.json")}
+                    autoPlay={!reducedMotion}
+                    loop={false}
+                    progress={reducedMotion ? 1 : undefined}
+                    style={styles.lottie}
+                  />
+                </View>
               </EaseView>
             )}
 
