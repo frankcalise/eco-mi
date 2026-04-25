@@ -625,7 +625,8 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   }
 
   function previewPadRelease(color: Color) {
-    if (state.value !== "idle") {
+    // Symmetric lock guard — see handleButtonRelease for rationale.
+    if (state.value !== "idle" || !inputLocked.current) {
       if (inputLocked.current) {
         noteOff(color)
         setActiveButton(null)
@@ -652,8 +653,14 @@ export function useGameEngine(options?: UseGameEngineOptions): UseGameEngineRetu
   }
 
   function handleButtonRelease(color: Color) {
-    if (state.value !== "waiting") {
-      // State moved on between touch and release (backgrounding, INPUT_TIMEOUT, etc.).
+    // Symmetric lock guard. Without `!inputLocked.current` here, a press that
+    // fired during "showing" (rejected by handleButtonTouch's state check)
+    // followed by a release after SEQUENCE_DONE propagates would still dispatch
+    // CORRECT_INPUT with no preceding noteOn / activeButton / haptic — input
+    // registered as correct, but silent. Requiring the lock matches the
+    // contract: only releases that pair with an accepted press validate.
+    if (state.value !== "waiting" || !inputLocked.current) {
+      // Lock is set but state moved on (backgrounding, INPUT_TIMEOUT, etc.).
       // Release transient press state so the pad doesn't stay lit/audible/locked.
       if (inputLocked.current) {
         noteOff(color)

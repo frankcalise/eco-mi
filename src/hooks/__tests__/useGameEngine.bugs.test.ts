@@ -422,3 +422,52 @@ describe("useGameEngine — high-score persistence guard", () => {
     expect(countHighScoreWrites()).toBe(writesAfterLoss)
   })
 })
+
+describe("useGameEngine — symmetric input-lock", () => {
+  // Bug class: handleButtonTouch checks state.value at touch time and
+  // handleButtonRelease checks at release time. If those reads straddle
+  // a transition (press during "showing" just before SEQUENCE_DONE
+  // propagates, release after the machine reaches "waiting"), the touch
+  // path bails silently (no noteOn / haptic / activeButton / inputLocked)
+  // but the release path used to validate and dispatch CORRECT_INPUT
+  // anyway — input registered as correct, no audio / no flash.
+  // The fix: handleButtonRelease requires inputLocked.current to take
+  // the validation path, so an unmatched release no-ops symmetrically.
+  it("does not register a release whose paired touch was rejected", () => {
+    const hook = renderHook(() => useGameEngine())
+
+    act(() => {
+      hook.result.current.startGame()
+    })
+    // Engine has just entered "starting" — well before the 500ms
+    // SET_INITIAL_SEQUENCE fires, so we're nowhere near "waiting".
+    expect(hook.result.current.gameState).toBe("showing")
+
+    const playerSeqBefore = hook.result.current.playerSequence.length
+
+    // Touch fires while state is not "waiting" → handleButtonTouch
+    // early-returns: no inputLocked, no noteOn, no activeButton.
+    act(() => {
+      hook.result.current.handleButtonTouch("red")
+    })
+    expect(hook.result.current.activeButton).toBeNull()
+
+    // Advance to "waiting" so the release-time state check would pass
+    // under the old (asymmetric) guard.
+    act(() => {
+      jest.advanceTimersByTime(3000)
+    })
+    expect(hook.result.current.gameState).toBe("waiting")
+
+    // Release. Old behaviour: dispatched CORRECT_INPUT (or WRONG_INPUT)
+    // even though the touch never registered. New behaviour: no-op.
+    act(() => {
+      hook.result.current.handleButtonRelease("red")
+    })
+
+    // playerSequence must not have grown, and we must still be in
+    // "waiting" — no autonomous transition triggered by a phantom input.
+    expect(hook.result.current.playerSequence.length).toBe(playerSeqBefore)
+    expect(hook.result.current.gameState).toBe("waiting")
+  })
+})
