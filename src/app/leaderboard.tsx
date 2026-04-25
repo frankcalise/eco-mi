@@ -4,6 +4,7 @@ import { useLocalSearchParams, useNavigation } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import { useTranslation } from "react-i18next"
 
+import { AnchoredBanner } from "@/components/AnchoredBanner"
 import { HighScoreTable } from "@/components/HighScoreTable"
 import type { GameMode } from "@/hooks/useGameEngine"
 import { useTheme } from "@/hooks/useTheme"
@@ -45,13 +46,22 @@ export default function LeaderboardScreen() {
           theme={activeTheme}
         />
       </View>
+      <View style={styles.bannerSlot}>
+        <AnchoredBanner placement="leaderboard" />
+      </View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
+  bannerSlot: {
+    // ≥16px from the score table satisfies the AdMob accidental-tap policy
+    // (banner must not sit flush against tappable content).
+    marginTop: 16,
+  },
   container: {
     flex: 1,
+    justifyContent: "space-between",
     paddingHorizontal: 20,
   },
   content: {
