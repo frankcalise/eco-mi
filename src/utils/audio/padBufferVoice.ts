@@ -2,7 +2,6 @@
  * Pad-buffer and linear-gain utilities for `useAudioTones` (react-native-audio-api).
  * See docs/AUDIO-ARCHITECTURE.md.
  */
-import { Platform } from "react-native"
 import type { AudioBuffer, AudioContext, GainNode } from "react-native-audio-api"
 import type { OscillatorType } from "react-native-audio-api"
 
@@ -17,12 +16,9 @@ export const PAD_RETRIGGER_DISCONNECT_MS = Math.ceil(PAD_RETRIGGER_RELEASE_S * 1
 export const PAD_RETRIGGER_DISCONNECT_MS_ANDROID = 48
 /**
  * Android buffer pads: `noteOn` starts the looping source at `ctx.currentTime + attackLookaheadS`
- * (cold vs warm, see getPadBufferAttackParams).
- * iOS: `useAudioTones` uses a shorter sustain lookahead for osc pads instead.
+ * (cold vs warm, see getPadBufferAttackParams). iOS pads use the always-running
+ * oscillator pool in `useAudioTones`, so no per-press lookahead is needed there.
  */
-export const PAD_ATTACK_LOOKAHEAD_IOS_S = 0.02
-
-export const PAD_IOS_SUSTAIN_LOOKAHEAD_S = 0.002
 export const PAD_ATTACK_LOOKAHEAD_ANDROID_COLD_S = 0.1
 export const PAD_ATTACK_LOOKAHEAD_ANDROID_WARM_S = 0.012
 export const PAD_ANDROID_WARM_ENTRY_WINDOW_MS = 280
@@ -93,21 +89,22 @@ export function createLoopingSineBuffer(ctx: AudioContext, freq: number): AudioB
   return createLoopingPadBuffer(ctx, freq, "sine")
 }
 
+/**
+ * Android-only after the iOS pool migration. Returns warm vs cold lookahead
+ * for buffer-loop pad attack scheduling. (`useAudioTones` short-circuits iOS
+ * through the always-running oscillator pool before this fn is reached.)
+ */
 export function getPadBufferAttackParams(options: {
   lastPressInWallMs: number
   nowWallMs: number
 }): { attackLookaheadS: number } {
-  const isAndroid = Platform.OS === "android"
   const isAndroidWarm =
-    isAndroid &&
     options.lastPressInWallMs > 0 &&
     options.nowWallMs - options.lastPressInWallMs < PAD_ANDROID_WARM_ENTRY_WINDOW_MS
   return {
-    attackLookaheadS: isAndroid
-      ? isAndroidWarm
-        ? PAD_ATTACK_LOOKAHEAD_ANDROID_WARM_S
-        : PAD_ATTACK_LOOKAHEAD_ANDROID_COLD_S
-      : PAD_ATTACK_LOOKAHEAD_IOS_S,
+    attackLookaheadS: isAndroidWarm
+      ? PAD_ATTACK_LOOKAHEAD_ANDROID_WARM_S
+      : PAD_ATTACK_LOOKAHEAD_ANDROID_COLD_S,
   }
 }
 

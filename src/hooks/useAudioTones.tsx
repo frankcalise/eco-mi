@@ -10,7 +10,6 @@ import {
   DEFAULT_PAD_TARGET_GAIN,
   getPadBufferAttackParams,
   padBufferCacheKey,
-  PAD_IOS_SUSTAIN_LOOKAHEAD_S,
   PAD_ORPHAN_SOURCE_STOP_MS,
   PAD_POST_RELEASE_DISCONNECT_MS,
   PAD_RETRIGGER_DISCONNECT_MS,
@@ -34,7 +33,13 @@ const ONE_SHOT_ATTACK_S = 0.03
 const SEQ_RELEASE_S = 0.055
 const SEQUENCE_LOOKAHEAD_S = 0.05
 const SEQUENCE_ATTACK_S = ONE_SHOT_ATTACK_S
-/** Soft lowpass after master — reduces harsh harmonics and envelope zipper on iOS/Android. */
+/**
+ * Soft lowpass after master — Android only. On iOS the filter sat in front of
+ * cold-starting per-note `OscillatorNode`s and magnified envelope-zipper
+ * artifacts (the very fizz it was added to tame), so iOS bypasses it entirely
+ * and routes master → destination directly. Android still benefits from it
+ * smoothing buffer-loop boundary transitions for sine/square/triangle pads.
+ */
 const MASTER_TONE_LP_HZ = 6800
 const TARGET_GAIN = DEFAULT_PAD_TARGET_GAIN
 /** Same peak as `playPreview` so pads/sequence match settings (incl. purchase flow) — `TARGET_GAIN * 0.8`. */
@@ -99,7 +104,18 @@ type PadVoice = {
   releaseTid?: ReturnType<typeof setTimeout>
 }
 
-/** Android: buffer+loop (sine/sq/tri) or osc (saw). iOS: osc+linear. All pad envelopes are linear; master lowpass tames fizz. */
+/**
+ * iOS pad pool: 4 always-running oscillators (one per `POOL_FREQS` entry)
+ * gated by per-frequency gain nodes held at 0 between presses. Restores the
+ * v1.1.0 design after per-`noteOn` osc creation was found to cause "rattle"
+ * on iOS with `react-native-audio-api` ≥ 0.12.0 (cold-start transients +
+ * sub-quantum lookahead snapping the 0→peak ramp onto k-rate boundaries).
+ * `noteOn`/`noteOff` are pure gain ramps — no node creation/teardown on
+ * the hot path. Android keeps its buffer-loop / native-saw paths.
+ */
+type IosPadPoolVoice = { osc: OscillatorNode; gain: GainNode }
+
+/** Android: buffer+loop (sine/sq/tri) or osc (saw). iOS: oscillator pool — see `IosPadPoolVoice`. */
 function sustainPadsWithOsc(wave: OscillatorType) {
   if (Platform.OS === "ios") {
     return true
@@ -133,14 +149,14 @@ export function useAudioTones(
   const masterToneRef = useRef<BiquadFilterNode | null>(null)
   const bufferCacheRef = useRef<Map<string, AudioBuffer>>(new Map())
   const padByFreqRef = useRef<Map<number, PadVoice>>(new Map())
+  /** iOS only — see `IosPadPoolVoice` doc. Null on Android / before init. */
+  const iosPadPoolRef = useRef<Map<number, IosPadPoolVoice> | null>(null)
   const lastPressInWallMsRef = useRef(0)
   const contextReadyRef = useRef(false)
   const countersRef = useRef({ recreates: 0, resumeFalseNegatives: 0, droppedNotes: 0 })
   const sequenceRunIdRef = useRef(0)
   const sequenceTimeoutIdsRef = useRef<ReturnType<typeof setTimeout>[]>([])
-  const sequenceStepVoicesRef = useRef<
-    { source: PadSource; gain: GainNode }[]
-  >([])
+  const sequenceStepVoicesRef = useRef<{ source: PadSource; gain: GainNode }[]>([])
   const soundEnabled = usePreferencesStore((s) => s.soundEnabled)
   const volume = usePreferencesStore((s) => s.volume)
   const oscillatorTypeRef = useRef(oscillatorType)
@@ -176,10 +192,7 @@ export function useAudioTones(
       return
     }
     for (const f of POOL_FREQS) {
-      bufferCacheRef.current.set(
-        padBufferCacheKey(f, wave),
-        createLoopingPadBuffer(ctx, f, wave),
-      )
+      bufferCacheRef.current.set(padBufferCacheKey(f, wave), createLoopingPadBuffer(ctx, f, wave))
     }
   }
 
@@ -215,17 +228,60 @@ export function useAudioTones(
     audioContextRef.current = ctx
     const t0 = ctx.currentTime
     const master = ctx.createGain()
-    const tone = ctx.createBiquadFilter()
-    tone.type = "lowpass"
-    tone.frequency.setValueAtTime(MASTER_TONE_LP_HZ, t0)
-    tone.Q.setValueAtTime(0.707, t0)
     master.gain.setValueAtTime(usePreferencesStore.getState().volume, t0)
-    master.connect(tone)
-    tone.connect(ctx.destination)
+    if (Platform.OS === "ios") {
+      master.connect(ctx.destination)
+      masterToneRef.current = null
+    } else {
+      const tone = ctx.createBiquadFilter()
+      tone.type = "lowpass"
+      tone.frequency.setValueAtTime(MASTER_TONE_LP_HZ, t0)
+      tone.Q.setValueAtTime(0.707, t0)
+      master.connect(tone)
+      tone.connect(ctx.destination)
+      masterToneRef.current = tone
+    }
     masterGainRef.current = master
-    masterToneRef.current = tone
+    if (Platform.OS === "ios") {
+      buildIosPadPool(ctx, master)
+    }
     contextReadyRef.current = true
     rebuildBufferCache(ctx, oscillatorTypeRef.current)
+  }
+
+  function buildIosPadPool(ctx: AudioContext, master: GainNode) {
+    const pool = new Map<number, IosPadPoolVoice>()
+    const wave = oscillatorTypeRef.current
+    const t0 = ctx.currentTime
+    for (const freq of POOL_FREQS) {
+      const gain = ctx.createGain()
+      gain.gain.setValueAtTime(0, t0)
+      const osc = ctx.createOscillator()
+      osc.type = wave
+      osc.frequency.setValueAtTime(freq, t0)
+      osc.connect(gain)
+      gain.connect(master)
+      osc.start()
+      pool.set(freq, { osc, gain })
+    }
+    iosPadPoolRef.current = pool
+  }
+
+  function teardownIosPadPool() {
+    const pool = iosPadPoolRef.current
+    if (!pool) return
+    for (const v of pool.values()) {
+      try {
+        v.osc.stop()
+      } catch {}
+      try {
+        v.osc.disconnect()
+      } catch {}
+      try {
+        v.gain.disconnect()
+      } catch {}
+    }
+    iosPadPoolRef.current = null
   }
 
   function teardownAllPadVoices() {
@@ -275,6 +331,7 @@ export function useAudioTones(
   function recreateContext(caller: string = "unknown") {
     countersRef.current.recreates++
     alog("recreateContext", { caller })
+    teardownIosPadPool()
     teardownAllPadVoices()
     teardownAllSequenceStepVoices()
     clearAllSequenceTimeouts()
@@ -306,29 +363,35 @@ export function useAudioTones(
     const ctx = audioContextRef.current
     const master = masterGainRef.current
     if (!contextReadyRef.current || !ctx || !master) return
+    if (Platform.OS === "ios") {
+      const pool = iosPadPoolRef.current
+      if (pool) {
+        for (const v of pool.values()) {
+          v.osc.type = oscillatorType
+        }
+      }
+    }
     rebuildBufferCache(ctx, oscillatorType)
   }, [oscillatorType])
 
   /** Always linear (Hann/setValueCurve on iOS/Android was grainy / “rattly” on quick re-press). */
   function retriggerOrphanPad(tAudio: number, source: PadSource, gain: GainNode) {
     scheduleLinearPadRelease(gain, tAudio, PAD_RETRIGGER_RELEASE_S)
-    const ms = Platform.OS === "android" ? PAD_RETRIGGER_DISCONNECT_MS_ANDROID : PAD_RETRIGGER_DISCONNECT_MS
-    setTimeout(
-      () => {
+    const ms =
+      Platform.OS === "android" ? PAD_RETRIGGER_DISCONNECT_MS_ANDROID : PAD_RETRIGGER_DISCONNECT_MS
+    setTimeout(() => {
+      try {
+        gain.disconnect()
+      } catch {}
+      try {
+        source.disconnect()
+      } catch {}
+      setTimeout(() => {
         try {
-          gain.disconnect()
+          source.stop()
         } catch {}
-        try {
-          source.disconnect()
-        } catch {}
-        setTimeout(() => {
-          try {
-            source.stop()
-          } catch {}
-        }, PAD_ORPHAN_SOURCE_STOP_MS)
-      },
-      ms,
-    )
+      }, PAD_ORPHAN_SOURCE_STOP_MS)
+    }, ms)
   }
 
   function noteOn(color: Color) {
@@ -348,8 +411,35 @@ export function useAudioTones(
     }
 
     const wave = oscillatorTypeRef.current
-    const sustainedOsc = sustainPadsWithOsc(wave)
     const freq = colorMap[color].sound
+
+    /* iOS pool: always-running oscillator gated by a per-freq gain. No node
+     * creation on the hot path — `noteOn` is a pure linear ramp from the
+     * gain's current value to peak. Retrigger during attack/release just
+     * cancels and ramps again from `value` for click-free pickup. */
+    if (Platform.OS === "ios") {
+      const pool = iosPadPoolRef.current
+      if (!pool && contextReadyRef.current && audioContextRef.current === ctx) {
+        buildIosPadPool(ctx, master)
+      }
+      const voice = iosPadPoolRef.current?.get(freq)
+      if (!voice) {
+        countersRef.current.droppedNotes++
+        alog("noteOn: dropped (no iOS pool voice)", { color, freq })
+        return
+      }
+      const now = ctx.currentTime
+      const g = voice.gain.gain
+      const v0 = g.value
+      g.cancelScheduledValues(now)
+      g.setValueAtTime(v0, now)
+      g.linearRampToValueAtTime(SUSTAIN_PAD_PEAK, now + ONE_SHOT_ATTACK_S)
+      lastPressInWallMsRef.current = Date.now()
+      return
+    }
+
+    /* Android path (buffer-loop sine/sq/tri, native osc for saw) — unchanged. */
+    const sustainedOsc = sustainPadsWithOsc(wave)
     let padBuffer: AudioBuffer | null = null
     if (!sustainedOsc) {
       padBuffer = getPadBufferForFreq(ctx, freq)
@@ -381,9 +471,7 @@ export function useAudioTones(
       nowWallMs: wall,
     }
     const { attackLookaheadS } = getPadBufferAttackParams(wallParams)
-    const tStart = sustainedOsc
-      ? now + (Platform.OS === "ios" ? PAD_IOS_SUSTAIN_LOOKAHEAD_S : attackLookaheadS)
-      : now + attackLookaheadS
+    const tStart = now + attackLookaheadS
     lastPressInWallMsRef.current = wall
 
     if (sustainedOsc) {
@@ -394,14 +482,8 @@ export function useAudioTones(
       osc.frequency.setValueAtTime(freq, tStart)
       osc.connect(gain)
       gain.connect(master)
-      if (Platform.OS === "ios") {
-        gain.gain.setValueAtTime(0, tStart)
-        gain.gain.linearRampToValueAtTime(SUSTAIN_PAD_PEAK, tStart + ONE_SHOT_ATTACK_S)
-      } else {
-        /* Android: native saw; same env as `scheduleOneShot` / settings. */
-        gain.gain.setValueAtTime(0, tStart)
-        gain.gain.linearRampToValueAtTime(SUSTAIN_PAD_PEAK, tStart + ONE_SHOT_ATTACK_S)
-      }
+      gain.gain.setValueAtTime(0, tStart)
+      gain.gain.linearRampToValueAtTime(SUSTAIN_PAD_PEAK, tStart + ONE_SHOT_ATTACK_S)
       osc.start(tStart)
       padByFreqRef.current.set(freq, { kind: "osc", source: osc, gain })
       return
@@ -427,6 +509,17 @@ export function useAudioTones(
     if (!ctx) return
 
     const freq = colorMap[color].sound
+
+    /* iOS pool: pure gain ramp to 0. The oscillator keeps running silently —
+     * no disconnect, no deferred `source.stop()`, no orphan teardown. */
+    if (Platform.OS === "ios") {
+      const voice = iosPadPoolRef.current?.get(freq)
+      if (!voice) return
+      scheduleLinearPadRelease(voice.gain, ctx.currentTime, PAD_RELEASE_S)
+      return
+    }
+
+    /* Android: per-press voices need release → disconnect → deferred stop. */
     const voice = padByFreqRef.current.get(freq)
     if (!voice) return
     if (voice.releaseTid) {
@@ -434,9 +527,8 @@ export function useAudioTones(
       voice.releaseTid = undefined
     }
 
-    const { source: src, gain: g, kind } = voice
+    const { source: src, gain: g } = voice
     const now = ctx.currentTime
-    /* Linear release everywhere for pads: matches `scheduleOneShot` / preview; avoids iOS curve zipper. */
     scheduleLinearPadRelease(g, now, PAD_RELEASE_S)
     const postMs = PAD_RELEASE_S * 1000 + PAD_POST_RELEASE_DISCONNECT_MS
     voice.releaseTid = setTimeout(() => {
@@ -463,9 +555,22 @@ export function useAudioTones(
     clearAllSequenceTimeouts()
     sequenceRunIdRef.current++
     teardownAllSequenceStepVoices()
-    teardownAllPadVoices()
+    if (Platform.OS === "ios") {
+      /* Zero every pool gain immediately — keeps the always-running oscillators
+       * intact so the next `noteOn` is still a pure gain ramp. */
+      const pool = iosPadPoolRef.current
+      if (pool) {
+        const now = ctx.currentTime
+        for (const v of pool.values()) {
+          v.gain.gain.cancelScheduledValues(now)
+          v.gain.gain.setValueAtTime(0, now)
+        }
+      }
+    } else {
+      teardownAllPadVoices()
+    }
     if (!masterGainRef.current) return
-    /* Pads/sequence buffer cache (Android, non-saw); torn-down voices above. */
+    /* Pads/sequence buffer cache (Android, non-saw); iOS pool unaffected. */
     rebuildBufferCache(ctx, oscillatorTypeRef.current)
   }
 
@@ -695,6 +800,7 @@ export function useAudioTones(
     contextReadyRef.current = false
     clearAllSequenceTimeouts()
     teardownAllSequenceStepVoices()
+    teardownIosPadPool()
     teardownAllPadVoices()
     destroyBufferCache()
     if (audioContextRef.current) {
