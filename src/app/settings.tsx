@@ -338,16 +338,18 @@ export default function SettingsScreen() {
           {previewSoundPack && !ownsSoundPack(previewSoundPack.id) && (
             <PressableScale
               style={styles.unlockBtn}
-              onPress={async () => {
-                const productId = getSoundProductId(previewSoundPack.id)
-                if (!productId) return
-                analytics.trackIapInitiated(productId)
-                const success = await purchaseProduct(productId)
-                if (success) {
-                  analytics.trackIapCompleted(productId)
-                  playPreview(previewSoundPack.oscillatorType)
-                  setSoundPack(previewSoundPack.id)
-                }
+              onPress={() => {
+                void (async () => {
+                  const productId = getSoundProductId(previewSoundPack.id)
+                  if (!productId) return
+                  analytics.trackIapInitiated(productId)
+                  const success = await purchaseProduct(productId)
+                  if (success) {
+                    analytics.trackIapCompleted(productId)
+                    playPreview(previewSoundPack.oscillatorType)
+                    setSoundPack(previewSoundPack.id)
+                  }
+                })()
               }}
             >
               <Ionicons name="lock-open" size={14} color="white" />
@@ -486,15 +488,17 @@ export default function SettingsScreen() {
           {previewTheme && !ownsTheme(previewTheme.id) && (
             <PressableScale
               style={styles.unlockBtn}
-              onPress={async () => {
-                const productId = getThemeProductId(previewTheme.id)
-                if (!productId) return
-                analytics.trackIapInitiated(productId)
-                const success = await purchaseProduct(productId)
-                if (success) {
-                  analytics.trackIapCompleted(productId)
-                  setTheme(previewTheme.id)
-                }
+              onPress={() => {
+                void (async () => {
+                  const productId = getThemeProductId(previewTheme.id)
+                  if (!productId) return
+                  analytics.trackIapInitiated(productId)
+                  const success = await purchaseProduct(productId)
+                  if (success) {
+                    analytics.trackIapCompleted(productId)
+                    setTheme(previewTheme.id)
+                  }
+                })()
               }}
             >
               <Ionicons name="lock-open" size={14} color="white" />
@@ -594,10 +598,12 @@ export default function SettingsScreen() {
               style={styles.removeAdsBtn}
               accessibilityLabel={t("a11y:removeAds")}
               accessibilityRole="button"
-              onPress={async () => {
-                analytics.trackIapInitiated("ecomi_remove_ads")
-                const success = await purchaseRemoveAds()
-                if (success) analytics.trackIapCompleted("ecomi_remove_ads")
+              onPress={() => {
+                void (async () => {
+                  analytics.trackIapInitiated("ecomi_remove_ads")
+                  const success = await purchaseRemoveAds()
+                  if (success) analytics.trackIapCompleted("ecomi_remove_ads")
+                })()
               }}
             >
               <Ionicons name="shield-checkmark" size={18} color="white" />
@@ -612,10 +618,12 @@ export default function SettingsScreen() {
             style={[styles.restoreBtn, { borderColor: activeTheme.borderColor }]}
             accessibilityLabel={t("a11y:restorePurchases")}
             accessibilityRole="button"
-            onPress={async () => {
-              const success = await restorePurchases()
-              setRestoreMessage(success ? t("game:restoreSuccess") : t("game:restoreFailed"))
-              scheduleTransient(() => setRestoreMessage(null), 3000)
+            onPress={() => {
+              void (async () => {
+                const success = await restorePurchases()
+                setRestoreMessage(success ? t("game:restoreSuccess") : t("game:restoreFailed"))
+                scheduleTransient(() => setRestoreMessage(null), 3000)
+              })()
             }}
           >
             <Ionicons name="refresh" size={18} color={activeTheme.textColor} />

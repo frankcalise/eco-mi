@@ -729,7 +729,9 @@ export default function GameOverScreen() {
                     borderColor: activeTheme.borderColor,
                   },
                 ]}
-                onPress={handleShare}
+                onPress={() => {
+                  void handleShare()
+                }}
                 accessibilityLabel={t("game:share")}
                 accessibilityRole="button"
               >

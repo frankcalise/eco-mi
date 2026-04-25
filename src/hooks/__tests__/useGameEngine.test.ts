@@ -518,10 +518,15 @@ describe("useGameEngine - isNewHighScore", () => {
 
     expect(result.current.score).toBe(10)
 
-    // Wait for next sequence
+    // Wait for round 2 sequence to fully play out (advancing 1000ms +
+    // showing ~2200ms for level 2). Previous 3000ms wasn't quite enough
+    // and only worked because the press-straddle bug let a press during
+    // "showing" register on release after SEQUENCE_DONE — see the
+    // symmetric input-lock fix.
     act(() => {
-      jest.advanceTimersByTime(3000)
+      jest.advanceTimersByTime(4000)
     })
+    expect(result.current.gameState).toBe("waiting")
 
     // Now lose on round 2
     const wrongColor = colors.find((c) => c !== result.current.sequence[0])!
@@ -567,9 +572,11 @@ describe("useGameEngine - isNewHighScore", () => {
     act(() => {
       result.current.handleButtonRelease(firstColor)
     })
+    // See sibling test — round-2 sequence playback needs ~3200ms.
     act(() => {
-      jest.advanceTimersByTime(3000)
+      jest.advanceTimersByTime(4000)
     })
+    expect(result.current.gameState).toBe("waiting")
 
     const wrongColor = colors.find((c) => c !== result.current.sequence[0])!
     act(() => {
