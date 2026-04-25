@@ -506,8 +506,11 @@
 
 ## Tech Debt
 
-- [ ] **Migrate from expo-eas-observe to expo-observe**
-      `expo-eas-observe` was the early-access package name. The public release is `expo-observe`. Swap the dependency, update imports in `_layout.tsx` (`AppMetrics.markFirstRender`, `AppMetrics.markInteractive`), and verify TTI / frame-drop tracking still reports in the Expo dashboard.
+- [x] **Migrate from expo-eas-observe to expo-observe**
+      Swapped `expo-eas-observe@~0.0.32` (+ peer `expo-eas-client`) for `expo-observe@0.1.9`. Import in `src/app/_layout.tsx` flipped from `import AppMetrics from "expo-eas-observe"` to `import { AppMetrics, AppMetricsRoot } from "expo-observe"`. Manual `AppMetrics.markFirstRender()` removed — TTR is now measured automatically by `AppMetricsRoot.wrap()` HOC, composed outside of `Sentry.wrap` at the default export. `markInteractive()` retained at the post-splash effect site. Local type cast worked around an upstream packaging bug in `expo-app-metrics`'s `module.web.d.ts` (default export typed as class instead of instance) which trips because the project's `moduleSuffixes` resolves `.web` first. `bun run prebuild:clean` regenerated native projects (new `ExpoObserve` + `ExpoAppMetrics` pods replace the old `ExpoEASObserve`).
+
+- [ ] **Call `AppMetrics.markInteractive()` on every deep-linkable screen**
+      Per the new expo-observe docs: "If your app has multiple initial screens, ensure you call `markInteractive` on every one. If only screen A has the call but the user deep links to screen B, TTI won't be recorded until they navigate to A." Today the call lives only in `src/app/_layout.tsx`. Audit deep-linkable routes (`achievements`, `stats`, `leaderboard`, `settings`, `mode-select`, `game-over`) and add a `useDidMount`-style call on first focus — likely a small reusable hook. `markInteractive` is idempotent at the SDK level (only the first call records), so over-calling is safe.
 
 - [ ] **Lift `useAds` state into shared store (singleton + Zustand)**
       Currently `useAds` is called once in GameScreen, so `/game-over` can't directly invoke `showRewarded()` — it has to signal GameScreen via the pending-action store, which then shows the ad. If the ad fails, user bounces back to `/game-over` (handled gracefully now, but still awkward). Fix: split `useAds` — keep AdMob refs + event listeners in a module-level singleton (`src/services/adsService.ts`), expose reactive state (`rewardedReady`, `adShownThisSession`, `consentReady`) via a Zustand store. Any screen can then read store state and call `adsService.showRewarded()` directly. Non-blocking since the current fallback works; pick up when we touch ads for another reason.

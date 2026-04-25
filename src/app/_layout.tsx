@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { StyleSheet, View } from "react-native"
 import { registerDevMenuItems } from "expo-dev-menu"
-import AppMetrics from "expo-eas-observe"
+import { AppMetrics, AppMetricsRoot } from "expo-observe"
 import { router, Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import * as Sentry from "@sentry/react-native"
@@ -84,8 +84,10 @@ function Root() {
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync()
-      AppMetrics.markFirstRender()
-      AppMetrics.markInteractive()
+      // expo-app-metrics' module.web.d.ts incorrectly types `default` as the class
+      // (typeof Class) rather than an instance, hiding `markInteractive` at the type
+      // level. moduleSuffixes resolves .web first project-wide; cast locally.
+      ;(AppMetrics as unknown as { markInteractive: () => void }).markInteractive()
     }
   }, [loaded])
 
@@ -175,4 +177,4 @@ const styles = StyleSheet.create({
   },
 })
 
-export default SENTRY_DSN ? Sentry.wrap(Root) : Root
+export default AppMetricsRoot.wrap(SENTRY_DSN ? Sentry.wrap(Root) : Root)
