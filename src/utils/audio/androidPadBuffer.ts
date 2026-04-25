@@ -1,29 +1,62 @@
 /**
- * Pad-buffer and linear-gain utilities for `useAudioTones` (react-native-audio-api).
+ * Android buffer utilities retained for sequence playback and comparison
+ * experiments. Gameplay pads now use the cross-platform always-running
+ * oscillator pool in `padOscPool.ts`, so rapid taps do not create or tear
+ * down nodes on the hot path.
+ *
+ * iOS does not use this module — it goes through `padOscPool` instead.
  * See docs/AUDIO-ARCHITECTURE.md.
  */
-import type { AudioBuffer, AudioContext, GainNode } from "react-native-audio-api"
+import type { AudioBuffer, AudioContext } from "react-native-audio-api"
 import type { OscillatorType } from "react-native-audio-api"
 
-// --- Envelope + timing (shared with `useAudioTones` timing constants) ---
+// --- Legacy per-press voice timing (Android experiments) -------------------
 
-export const DEFAULT_PAD_TARGET_GAIN = 0.25
-export const PAD_RELEASE_S = 0.2
-export const PAD_POST_RELEASE_DISCONNECT_MS = 120
-export const PAD_ORPHAN_SOURCE_STOP_MS = 400
-export const PAD_RETRIGGER_RELEASE_S = 0.01
-export const PAD_RETRIGGER_DISCONNECT_MS = Math.ceil(PAD_RETRIGGER_RELEASE_S * 1000) + 80
-export const PAD_RETRIGGER_DISCONNECT_MS_ANDROID = 48
 /**
- * Android buffer pads: `noteOn` starts the looping source at `ctx.currentTime + attackLookaheadS`
- * (cold vs warm, see getPadBufferAttackParams). iOS pads use the always-running
- * oscillator pool in `useAudioTones`, so no per-press lookahead is needed there.
+ * Wait this long after the gain ramp completes before tearing down the
+ * source/gain nodes — guards against trimming the audible tail.
+ */
+export const PAD_POST_RELEASE_DISCONNECT_MS = 120
+
+/**
+ * After disconnecting an orphaned source, defer `source.stop()` by this
+ * margin so the engine has settled before we touch the node again.
+ */
+export const PAD_ORPHAN_SOURCE_STOP_MS = 400
+
+/**
+ * Fast linear release used when the same pad is retriggered while still
+ * sustaining — we ramp the orphaned voice down quickly to avoid a beat
+ * with the new voice ramping up.
+ */
+export const PAD_RETRIGGER_RELEASE_S = 0.01
+
+export const PAD_RETRIGGER_DISCONNECT_MS = Math.ceil(PAD_RETRIGGER_RELEASE_S * 1000) + 80
+
+/**
+ * Tighter window on Android: the engine reliably honours `disconnect()`
+ * faster than iOS used to, so we don't need the +80ms cushion.
+ */
+export const PAD_RETRIGGER_DISCONNECT_MS_ANDROID = 48
+
+// --- Attack lookahead (legacy Android buffer-pad experiments) --------------
+
+/**
+ * Cold-start press: schedule the loop a comfortable margin into the future
+ * so the first quantum of automation lands cleanly.
  */
 export const PAD_ATTACK_LOOKAHEAD_ANDROID_COLD_S = 0.1
+
+/**
+ * Warm press (within `PAD_ANDROID_WARM_ENTRY_WINDOW_MS` of the previous
+ * press): the engine is already hot, so a much shorter lookahead keeps
+ * rapid taps tight.
+ */
 export const PAD_ATTACK_LOOKAHEAD_ANDROID_WARM_S = 0.012
+
 export const PAD_ANDROID_WARM_ENTRY_WINDOW_MS = 280
 
-// --- Buffers: seamless single-channel audio for looping BufferSource ---
+// --- Buffer creation -------------------------------------------------------
 
 /**
  * Smallest length where (length * freq) / sampleRate is an integer number of
@@ -90,9 +123,9 @@ export function createLoopingSineBuffer(ctx: AudioContext, freq: number): AudioB
 }
 
 /**
- * Android-only after the iOS pool migration. Returns warm vs cold lookahead
- * for buffer-loop pad attack scheduling. (`useAudioTones` short-circuits iOS
- * through the always-running oscillator pool before this fn is reached.)
+ * Returns warm vs cold lookahead for buffer-loop pad attack scheduling.
+ * Gameplay pads no longer call this; it is retained for sequence-path tuning
+ * and quick A/B experiments against the old Android per-press strategy.
  */
 export function getPadBufferAttackParams(options: {
   lastPressInWallMs: number
@@ -106,14 +139,4 @@ export function getPadBufferAttackParams(options: {
       ? PAD_ATTACK_LOOKAHEAD_ANDROID_WARM_S
       : PAD_ATTACK_LOOKAHEAD_ANDROID_COLD_S,
   }
-}
-
-export function scheduleLinearPadRelease(g: GainNode, atTime: number, durationS: number) {
-  g.gain.cancelAndHoldAtTime(atTime)
-  const v0 = g.gain.value
-  if (v0 < 0.0001) {
-    return
-  }
-  g.gain.setValueAtTime(v0, atTime)
-  g.gain.linearRampToValueAtTime(0, atTime + durationS)
 }
