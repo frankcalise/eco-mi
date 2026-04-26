@@ -24,6 +24,7 @@ const classicTheme: GameTheme = {
     green: { color: "#22c55e", activeColor: "#86efac" },
     yellow: { color: "#eab308", activeColor: "#fde047" },
   },
+  titleCycleColors: ["#ef4444", "#60a5fa", "#4ade80"],
   backgroundColor: "#1a1a2e",
   textColor: "#ffffff",
   secondaryTextColor: "#a0a0a0",
