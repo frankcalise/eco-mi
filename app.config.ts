@@ -15,7 +15,7 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
     name: "Eco Mi",
     slug: "EcoMi",
     scheme: "ecomi",
-    version: "1.1.0",
+    version: "1.2.0",
     orientation: "default",
     userInterfaceStyle: "automatic",
     icon: "./assets/images/app-icon-ios.png",
@@ -38,7 +38,7 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
     },
     ios: {
       icon: "./assets/images/app-icon-ios.png",
-      supportsTablet: false,
+      supportsTablet: true,
       bundleIdentifier: "com.frankcalise.ecomi",
       privacyManifests: {
         NSPrivacyAccessedAPITypes: [
