@@ -42,7 +42,10 @@
       }
     },
     "production": {
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "EAS_GRADLE_CACHE": "1"
+      }
     }
   },
   "submit": {
