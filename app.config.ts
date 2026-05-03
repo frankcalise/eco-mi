@@ -39,6 +39,11 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
     ios: {
       icon: "./assets/images/app-icon-ios.png",
       supportsTablet: true,
+      // Disables iPad Split View / Slide Over so `expo-screen-orientation`
+      // locks are honored during full-screen ad presentation. Without this,
+      // iPad rotation mid-ad dismisses GADRewardedAd and breaks the
+      // continue flow.
+      requireFullScreen: true,
       bundleIdentifier: "com.frankcalise.ecomi",
       privacyManifests: {
         NSPrivacyAccessedAPITypes: [
@@ -49,7 +54,17 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
         ],
       },
       infoPlist: {
-        ITSAppUsesNonExemptEncryption: false,
+        "ITSAppUsesNonExemptEncryption": false,
+        // Exclude upside-down portrait on iPad. iPadOS 26 letterboxes apps
+        // into a compatibility window when rotated to an orientation they
+        // technically support but don't render naturally in. Dropping
+        // PortraitUpsideDown makes iPadOS retain the previous orientation
+        // on a 180° rotation instead of windowing the app.
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight",
+        ],
       },
     },
     web: {

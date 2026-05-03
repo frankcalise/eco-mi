@@ -281,7 +281,7 @@ export function GameScreen() {
   const {
     showInterstitial,
     showRewarded,
-    rewardedReady,
+    isRewardedReady,
     incrementGamesPlayed,
     incrementSessionCount,
     adShownThisSession,
@@ -504,7 +504,11 @@ export function GameScreen() {
       isNewHighScore,
       mode,
       showRemoveAds: !removeAds && adShownThisSession,
-      showContinue: rewardedReady && !continuedThisGame,
+      // Read the ref-backed live value: a rewarded ad that just dismissed
+      // (e.g. mid-rotation on iPad) flips the loaded flag synchronously, but
+      // the React state in `rewardedReady` may still be true in this closure.
+      // Using the live value prevents the broken-button loop after dismissal.
+      showContinue: isRewardedReady() && !continuedThisGame,
       sessionTime: getSessionTime(),
       needsInitials,
       leaderboardRank,

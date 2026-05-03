@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Platform } from "react-native"
+import * as ScreenOrientation from "expo-screen-orientation"
 import {
   InterstitialAd,
   RewardedAd,
@@ -49,10 +50,30 @@ function getRewardedAdUnitId(): string {
   })
 }
 
+// Maps the current device orientation to a single-axis lock so the user
+// can't rotate mid-ad. Rotating during a full-screen rewarded ad on iPad
+// causes GADRewardedAd to dismiss without firing a clean reward, leaving
+// the continue flow in a broken state.
+function orientationToLock(
+  orientation: ScreenOrientation.Orientation,
+): ScreenOrientation.OrientationLock {
+  switch (orientation) {
+    case ScreenOrientation.Orientation.LANDSCAPE_LEFT:
+    case ScreenOrientation.Orientation.LANDSCAPE_RIGHT:
+      return ScreenOrientation.OrientationLock.LANDSCAPE
+    case ScreenOrientation.Orientation.PORTRAIT_DOWN:
+    case ScreenOrientation.Orientation.PORTRAIT_UP:
+      return ScreenOrientation.OrientationLock.PORTRAIT_UP
+    default:
+      return ScreenOrientation.OrientationLock.PORTRAIT_UP
+  }
+}
+
 type UseAdsReturn = {
   showInterstitial: (roundsPlayed: number, removeAds: boolean) => Promise<boolean>
   showRewarded: () => Promise<boolean>
   rewardedReady: boolean
+  isRewardedReady: () => boolean
   incrementGamesPlayed: () => void
   incrementSessionCount: () => void
   adShownThisSession: boolean
@@ -221,6 +242,25 @@ export function useAds(): UseAdsReturn {
     return new Promise<boolean>((resolve) => {
       let settled = false
       let timeoutId: ReturnType<typeof setTimeout> | null = null
+      let priorLock: ScreenOrientation.OrientationLock | null = null
+
+      async function restoreOrientation() {
+        if (priorLock === null) return
+        const lockToRestore = priorLock
+        priorLock = null
+        try {
+          if (
+            lockToRestore === ScreenOrientation.OrientationLock.UNKNOWN ||
+            lockToRestore === ScreenOrientation.OrientationLock.OTHER
+          ) {
+            await ScreenOrientation.unlockAsync()
+          } else {
+            await ScreenOrientation.lockAsync(lockToRestore)
+          }
+        } catch {
+          // Best-effort — never block the resolve path on orientation API errors.
+        }
+      }
 
       function settle(result: boolean) {
         if (settled) return
@@ -230,6 +270,7 @@ export function useAds(): UseAdsReturn {
         unsubReward()
         unsubClose()
         unsubError()
+        void restoreOrientation()
         resolve(result)
       }
 
@@ -255,11 +296,23 @@ export function useAds(): UseAdsReturn {
       // continue-in-flight guard in GameScreen stays stuck forever.
       timeoutId = setTimeout(() => settle(earned), REWARDED_TIMEOUT_MS)
 
-      try {
-        rewarded.show()
-      } catch {
-        settle(false)
-      }
+      // Lock orientation to the current axis before show. iPad rotation mid-ad
+      // dismisses GADRewardedAd without a clean reward, leaving the continue
+      // flow looping on a button that no longer launches an ad.
+      ;(async () => {
+        try {
+          priorLock = await ScreenOrientation.getOrientationLockAsync()
+          const current = await ScreenOrientation.getOrientationAsync()
+          await ScreenOrientation.lockAsync(orientationToLock(current))
+        } catch {
+          // If the orientation API is unavailable, fall through and show anyway.
+        }
+        try {
+          rewarded.show()
+        } catch {
+          settle(false)
+        }
+      })()
     })
   }
 
@@ -312,6 +365,7 @@ export function useAds(): UseAdsReturn {
     showInterstitial,
     showRewarded,
     rewardedReady,
+    isRewardedReady: () => rewardedLoadedRef.current,
     incrementGamesPlayed,
     incrementSessionCount,
     adShownThisSession,
